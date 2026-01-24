@@ -12,7 +12,7 @@ module Engine
 
         GAME_DISPLAY_TITLE = 'Shikoku 1889'
 
-        GAME_DESIGNER = 'Yasutaka Ikeda (池田 康隆)'
+        GAME_DESIGNER = 'Yasutaka Ikeda (池田 康隆さん)'
         GAME_INFO_URL = 'https://github.com/tobymao/18xx/wiki/1889'
         GAME_LOCATION = 'Japan'
         GAME_PUBLISHER = :grand_trunk_games
