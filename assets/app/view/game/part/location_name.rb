@@ -7,7 +7,7 @@ module View
     module Part
       class LocationName < Base
         LINE_HEIGHT = 15
-        CHARACTER_WIDTH = 8
+        CHARACTER_WIDTH = 16
         BACKGROUND_COLOR = '#FFFFFF'
         BACKGROUND_OPACITY = '0.5'
 
