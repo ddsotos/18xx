@@ -15,7 +15,7 @@ module Engine
         GAME_DESIGNER = 'Shinichi Takasaki(高崎　真一)'
         GAME_INFO_URL = 'https://boardgamegeek.com/boardgame/38335/1890'
         GAME_LOCATION = '大阪, Japan'
-        GAME_PUBLISHER = '高崎工房/サクラ会'
+        GAME_PUBLISHER = :grand_trunk_games#'高崎工房/サクラ会'
         GAME_RULES_URL = 'https://boardgamegeek.com/filepage/90922/rules'
 
         PLAYER_RANGE = [2, 7].freeze
