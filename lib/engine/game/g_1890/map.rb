@@ -134,15 +134,14 @@ module Engine
             %w[C18 D9 F9] => 'city=revenue:0;upgrade=cost:80,terrain:water',
           },
           yellow: {
-            # ['B19'] => 'path=a:1,B:0',
-            # ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
-            #            'upgrade=cost:80,terrain:water;path=a:0,B:_0;path=a:4,B:_1;path=a:5,B:_2;label=KY',
-            # ['K4'] => 'city=revenue:30;path=a:0,b:_0;path=a:1,b:_0;path=a:2,b:_0;label=T',
-            # ['E22'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;',
+            ['B19'] => 'path=a:1,b:0',
+            ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
+                       'upgrade=cost:80,terrain:water;path=a:0,b:_0;path=a:4,b:_1;path=a:5,b:_2;label=KY',
+            ['E22'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;',
             ['F5'] => 'city=revenue:30,slots:1;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
-            # ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
-            # %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
-            # ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
+            ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
+            %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
+            ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
           },
           gray: {
             ['D5'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;path=a:0,b:_0',
