@@ -74,7 +74,7 @@ module Engine
           'E10' => '伊丹',
           'E12' => '豊中',
           'E14' => '茨城・摂津',
-          'E22' => '枚方',
+          'E16' => '枚方',
 
           # F段
           'F1' => '姫路・山陽',
@@ -125,17 +125,21 @@ module Engine
         HEXES = {
           white: {
             %w[D11 D13 D17 E2 I14 J13 K12 K14 L11 L13 L17] => '',
-            %w[E10 E12 F3 F7 F15 H15 K18 L9 M8] => 'city=revenue:0',
+            %w[E12 F3 F7 H15 K18 L9 M8] => 'city=revenue:0',
             ['F11'] => 'city=revenue:0;label=Y',
             %w[D3 D7 I18 J19 K10] => 'town=revenue:0',
             %w[G16] => 'town=revenue:0;town=revenue:0',
-            %w[A16 B15 C8 E18 F17] => 'upgrade=cost:80,terrain:water',
-            %w[B9 B11 B13 C4 C6 C10 C12 C14 E4 E6 E8 F17 G18 H17 I16 J17 K16 L15 M10 M12] => 'upgrade=cost:120,terrain:mountain',
+            %w[A16 B15 C8 F17] => 'upgrade=cost:80,terrain:water',
+            %w[B9 B11 B13 C4 C6 C10 C12 C14 E4 E6 F17 G18 H17 I16 J17 K16 L15 M10 M12] => 'upgrade=cost:120,terrain:mountain',
             %w[D9 F9] => 'city=revenue:0;upgrade=cost:80,terrain:water',
             ['C18'] => 'city=revenue:0;upgrade=cost:80,terrain:water;border=edge:1,type:impassable',
             ['C16'] => 'upgrade=cost:80,terrain:water;border=edge:4,type:impassable;border=edge:5,type:impassable',
-            ['D17'] => 'border=edge:2,type:impassable;border=edge:1,type:impassable',
+            ['D17'] => 'border=edge:2,type:impassable;border=edge:1,type:impassable;border=edge:4,type:impassable',
             %w[D15 F13] => 'city=revenue:0;border=edge:4,type:impassable;border=edge:5,type:impassable',
+            ['F15'] => 'city=revenue:0;border=edge:2,type:impassable;border=edge:1,type:impassable',
+            ['E18'] => 'upgrade=cost:80,terrain:water;border=edge:0,type:impassable;border=edge:1,type:impassable',
+            ['E10'] => 'city=revenue:0;border=edge:1,type:impassable',
+            ['E8'] => 'upgrade=cost:120,terrain:mountain;border=edge:4,type:impassable',
 
           },
           yellow: {
@@ -144,17 +148,21 @@ module Engine
                        'upgrade=cost:80,terrain:water;path=a:0,b:_0;path=a:4,b:_1;path=a:5,b:_2;label=KY',
             ['F5'] => 'city=revenue:30,slots:1;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
             ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
-            %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
+            %w[J11] => 'city=revenue:0;city=revenue:0',
             ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
             ['H13'] => 'city=revenue:40;city=revenue:40;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_1;label=OE',
             ['H11'] => 'city=revenue:30;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_0;label=OW',
             ['H19'] => 'city=revenue:40;city=revenue:40;upgrade=cost:80;path=a:0,b:_0;path=a:1,b:_1;path=a:3,b:_1',
             ['J15'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;',
+            ['E16'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;border=edge:2,type:impassable;border=edge:1,type:impassable;border=edge:4,type:impassable',
+            ['E14'] => 'city=revenue:0;city=revenue:0;border=edge:5,type:impassable;border=edge:4,type:impassable',
+            ['G14'] => 'city=revenue:0;city=revenue:0;border=edge:2,type:impassable',
+
           },
           gray: {
             ['D5'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;path=a:0,b:_0',
             ['G20'] => 'path=a:2,b:0',
-            ['D19'] => 'city=revenue:20,slots:1;path=a:2,b:0;path=a:2,b:_0',
+            ['D19'] => 'city=revenue:20,slots:1;path=a:2,b:0;path=a:2,b:_0;border=edge:1,type:impassable',
           },
           red: {
             ['F1'] => 'offboard=revenue:yellow_40|brown_50|diesel_70;path=a:3,b:_0;path=a:4,b:_0',
