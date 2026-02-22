@@ -66,8 +66,8 @@ module Engine
           'D3' => '三木',
           'D5' => '谷上',
           'D7' => '有馬',
-          'D11' => '宝塚',
-          'D17' => '高槻',
+          'D9' => '宝塚',
+          'D15' => '高槻',
           'D21' => '宇治',
 
           # E段
@@ -125,7 +125,7 @@ module Engine
         HEXES = {
           white: {
             %w[D11 D13 D17 E2 I14 J13 K12 K14 L11 L13 L17] => '',
-            %w[C24 E10 E12 F3 F7 F13 F15 H15 K18 L9 M8] => 'city=revenue:0',
+            %w[C24 D15 E10 E12 F3 F7 F13 F15 H15 K18 L9 M8] => 'city=revenue:0',
             ['F11'] => 'city=revenue:0;label=Y',
             %w[D3 D7 I18 J19 K10] => 'town=revenue:0',
             %w[G16] => 'town=revenue:0;town=revenue:0',
@@ -134,17 +134,15 @@ module Engine
             %w[C18 D9 F9] => 'city=revenue:0;upgrade=cost:80,terrain:water',
           },
           yellow: {
-            ['C4'] => 'city=revenue:20;path=a:2,b:_0',
-            ['B19'] => 'path=a:1,B:0',
-            ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
-                       'upgrade=cost:80,terrain:water;path=a:0,B:_0;path=a:4,B:_1;path=a:5,B:_2;label=KY',
-            ['K4'] => 'city=revenue:30;path=a:0,b:_0;path=a:1,b:_0;path=a:2,b:_0;label=T',
-            ['E22'] => 'city=revenue:20;path=a:0,b:_0;path=a:3,b:_0;',
-            ['F5'] => 'city=revenue:30;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
-            ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
-            %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
-            ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
-
+            # ['B19'] => 'path=a:1,B:0',
+            # ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
+            #            'upgrade=cost:80,terrain:water;path=a:0,B:_0;path=a:4,B:_1;path=a:5,B:_2;label=KY',
+            # ['K4'] => 'city=revenue:30;path=a:0,b:_0;path=a:1,b:_0;path=a:2,b:_0;label=T',
+            # ['E22'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;',
+            ['F5'] => 'city=revenue:30,slots:1;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
+            # ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
+            # %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
+            # ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
           },
           gray: {
             ['D5'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;path=a:0,b:_0',
@@ -157,7 +155,7 @@ module Engine
             ['A14'] => 'offboard=revenue:yellow_10|brown_20|diesel_30;path=a:5,b:_0;path=a:0,b:_0',
             ['A20'] => 'offboard=revenue:yellow_30|brown_30|diesel_40;path=a:4,b:_0;path=a:5,b:_0;path=a:0,b:_0',
             ['B21'] => 'offboard=revenue:yellow_30|brown_30|diesel_40;path=a:1,b:_0',
-            ['K19'] => 'offboard=revenue:yellow_20|brown_30|diesel_40;path=a:1,b:_0;path=a:2,b:_0',
+            ['K20'] => 'offboard=revenue:yellow_20|brown_30|diesel_40;path=a:1,b:_0;path=a:2,b:_0',
             ['M6'] => 'offboard=revenue:yellow_0|brown_0|diesel_50;path=a:4,b:_0',
             ['M14'] => 'offboard=revenue:yellow_20|brown_20|diesel_30;path=a:1,b:_0;path=a:2,b:_0',
             ['N7'] => 'offboard=revenue:yellow_20|brown_30|diesel_40;path=a:3,b:_0',
