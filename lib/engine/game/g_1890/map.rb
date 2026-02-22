@@ -71,8 +71,8 @@ module Engine
           'D21' => '宇治',
 
           # E段
-          'E12' => '伊丹',
-          'E14' => '豊中',
+          'E10' => '伊丹',
+          'E12' => '豊中',
           'E14' => '茨城・摂津',
           'E22' => '枚方',
 
@@ -82,85 +82,85 @@ module Engine
           'F5' => '神戸',
           'F7' => '芦屋',
           'F9' => '西宮',
-          'F18' => '高槻',
+          'F11' => '尼崎',
+          'F13' => '吹田',
+          'F15' => '寝屋川',
 
           # G段
-          'G8' => '芦屋',
-          'G20' => '摂津',
+          'G12' => '大阪北',
+          'G14' => '守口・門真',
+          'G16' => '大東・四条畷',
 
           # H段
-          'H9' => '西宮',
-          'H16' => '吹田',
-          'H22' => '枚方',
+          'H11' => '大阪西',
+          'H13' => '大阪東',
+          'H15' => '東大阪',
+          'H19' => '奈良',
 
           # I段
-          'I14' => '尼崎',
-          'I20' => '寝屋川',
+          'I12' => '大阪南',
+          'I18' => '郡山',
           # J段
-          'J14' => '大阪北',
-          'J18' => '守口',
-          'J22' => '四条畷',
+          'J11' => '堺',
+          'J15' => '柏原',
+          'J19' => '天理',
 
           # K段
-          'K12' => '大阪西',
-          'K14' => '堺',
-          'K16' => '大阪東',
-          'K18' => '門真',
-          'K20' => '東大阪',
-          'K26' => '郡山',
+          'K10' => '泉大津',
+          'K18' => '桜井',
+          'K20' => '伊勢・東海',
 
           # L段
-          'L12' => '泉大津',
-          'L14' => '大阪南',
-          'L16' => '柏原',
-          'L26' => '天理',
+          'L9' => '岸和田',
 
           # M段
-          'M10' => '岸和田',
-          'M16' => '高野山',
-          'M24' => '桜井',
+          'M6' => '関西空港',
+          'M8' => '泉佐野',
+          'M14' => '高野山',
 
           # N段
-          'N8' => '泉佐野',
-          'N24' => '伊勢・東海',
-
-          # O段
-          'O6' => '関西空港',
-
-          # P段
-          'P8' => '和歌山'
+          'N7' => '和歌山',
         }.freeze
-
+#ラベルはKY 京都 KB 神戸 ON 大阪北
         HEXES = {
           white: {
-            %w[D3 H3 J3 B5 C8 E8 I8 D9 I10] => '',
-            %w[F3 G4 H7 A10 J11 G12 E2 I2 K8 C10] => 'city=revenue:0',
-            ['J5'] => 'town=revenue:0',
-            %w[B11 G10 I12 J9] => 'town=revenue:0;icon=image:port',
-            ['K6'] => 'upgrade=cost:80,terrain:water',
-            %w[H5 I6] => 'upgrade=cost:80,terrain:water|mountain',
-            %w[E4 D5 F5 C6 E6 G6 D7 F7 A8 G8 B9 H9 H11 H13] => 'upgrade=cost:80,terrain:mountain',
-            ['I4'] => 'city=revenue:0;label=H;upgrade=cost:80',
+            %w[D11 D13 D17 E2 I14 J13 K12 K14 L11 L13 L17] => '',
+            %w[C24 E10 E12 F3 F7 F13 F15 H15 K18 L9 M8] => 'city=revenue:0',
+            ['F11'] => 'city=revenue:0;label=Y',
+            %w[D3 D7 I18 J19 K10] => 'town=revenue:0',
+            %w[G16] => 'town=revenue:0;town=revenue:0',
+            %w[A16 B15 C8 C16 E24 F25] => 'upgrade=cost:80,terrain:water',
+            %w[B9 B11 B13 C4 C6 C10 C12 C14 E4 E6 E8 F17 G18 H17 I16 J17 K16 L15 M10 M12] => 'upgrade=cost:120,terrain:mountain',
+            %w[C18 D9 F9] => 'city=revenue:0;upgrade=cost:80,terrain:water',
           },
           yellow: {
             ['C4'] => 'city=revenue:20;path=a:2,b:_0',
+            ['B19'] => 'path=a:1,B:0',
+            ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
+                       'upgrade=cost:80,terrain:water;path=a:0,B:_0;path=a:4,B:_1;path=a:5,B:_2;label=KY',
             ['K4'] => 'city=revenue:30;path=a:0,b:_0;path=a:1,b:_0;path=a:2,b:_0;label=T',
+            ['E22'] => 'city=revenue:20;path=a:0,b:_0;path=a:3,b:_0;',
+            ['F5'] => 'city=revenue:30;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
+            ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
+            %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
+            ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
+
           },
           gray: {
-            ['B7'] => 'city=revenue:40,slots:2;path=a:1,b:_0;path=a:3,b:_0;path=a:5,b:_0',
-            ['B3'] => 'town=revenue:20;path=a:0,b:_0;path=a:_0,b:5',
-            ['G14'] => 'town=revenue:20;path=a:3,b:_0;path=a:_0,b:4',
-            ['J7'] => 'path=a:1,b:5',
+            ['D5'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;path=a:0,b:_0',
+            ['G20'] => 'path=a:2,b:0',
+            ['D19'] => 'city=revenue:20,slots:1;path=a:2,b:0;path=a:2,b:_0',
           },
           red: {
             ['F1'] => 'offboard=revenue:yellow_40|brown_50|diesel_70;path=a:3,b:_0;path=a:4,b:_0',
-            ['B7'] => 'offboard=revenue:yellow_20|brown_40|diesel_80;path=a:4,b:_0;path=a:5,b:_0;path=a:6,b:_0',
-            ['A14'] => 'offboard=revenue:yellow_20|brown_40|diesel_80;path=a:4,b:_0;path=a:5,b:_0;path=a:6,b:_0',
-            ['L7'] => 'offboard=revenue:yellow_20|brown_40|diesel_80;path=a:1,b:_0;path=a:2,b:_0',
-          },
-          green: {
-            ['F9'] => 'city=revenue:30,slots:2;path=a:2,b:_0;path=a:3,b:_0;'\
-                      'path=a:4,b:_0;path=a:5,b:_0;label=K;upgrade=cost:80',
+            ['B7'] => 'offboard=revenue:yellow_10|brown_20|diesel_30;path=a:4,b:_0;path=a:5,b:_0;path=a:0,b:_0',
+            ['A14'] => 'offboard=revenue:yellow_10|brown_20|diesel_30;path=a:5,b:_0;path=a:0,b:_0',
+            ['A20'] => 'offboard=revenue:yellow_30|brown_30|diesel_40;path=a:4,b:_0;path=a:5,b:_0;path=a:0,b:_0',
+            ['B21'] => 'offboard=revenue:yellow_30|brown_30|diesel_40;path=a:1,b:_0',
+            ['K19'] => 'offboard=revenue:yellow_20|brown_30|diesel_40;path=a:1,b:_0;path=a:2,b:_0',
+            ['M6'] => 'offboard=revenue:yellow_0|brown_0|diesel_50;path=a:4,b:_0',
+            ['M14'] => 'offboard=revenue:yellow_20|brown_20|diesel_30;path=a:1,b:_0;path=a:2,b:_0',
+            ['N7'] => 'offboard=revenue:yellow_20|brown_30|diesel_40;path=a:3,b:_0',
           },
         }.freeze
 
