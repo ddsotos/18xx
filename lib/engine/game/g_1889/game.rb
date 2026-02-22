@@ -166,6 +166,9 @@ module Engine
 
         def setup
           remove_company(company_by_id('SIR')) if two_player? && !beginner_game?
+          @companies, @future_companies = @companies.partition do 
+            |c| c.sym[0] != 'I'
+          end
           return unless beginner_game?
 
           neuter_private_companies
@@ -251,12 +254,21 @@ module Engine
           @companies.delete(company)
         end
 
-        def initial_auction_companies
-          privates
+        def new_stock_round
+          case @turn
+          when 0
+            @companies += @future_companies
+            update_cache(:companies)
+          when 1
+            @companies += @future_companies
+            update_cache(:companies)
+          end
+
+          super
         end
 
-        def privates
-          @companies.select { |c| c.sym[0] != 'U' }
+        def unowned_purchasable_companies(_entity)
+          @companies.select { |c| c.sym[0] != 'M' }
         end
 
 
