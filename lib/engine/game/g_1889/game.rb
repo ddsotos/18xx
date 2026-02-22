@@ -251,6 +251,15 @@ module Engine
           @companies.delete(company)
         end
 
+        def initial_auction_companies
+          privates
+        end
+
+        def privates
+          @companies.select { |c| c.sym[0] != 'U' }
+        end
+
+
         def buy_company(player, company)
           price = company.value
           company.owner = player
