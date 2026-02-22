@@ -68,7 +68,7 @@ module Engine
           'D7' => '有馬',
           'D9' => '宝塚',
           'D15' => '高槻',
-          'D21' => '宇治',
+          'D19' => '宇治',
 
           # E段
           'E10' => '伊丹',
@@ -125,11 +125,11 @@ module Engine
         HEXES = {
           white: {
             %w[D11 D13 D17 E2 I14 J13 K12 K14 L11 L13 L17] => '',
-            %w[C24 D15 E10 E12 F3 F7 F13 F15 H15 K18 L9 M8] => 'city=revenue:0',
+            %w[D15 E10 E12 F3 F7 F13 F15 H15 K18 L9 M8] => 'city=revenue:0',
             ['F11'] => 'city=revenue:0;label=Y',
             %w[D3 D7 I18 J19 K10] => 'town=revenue:0',
             %w[G16] => 'town=revenue:0;town=revenue:0',
-            %w[A16 B15 C8 C16 E24 F25] => 'upgrade=cost:80,terrain:water',
+            %w[A16 B15 C8 C16 E18 F17] => 'upgrade=cost:80,terrain:water',
             %w[B9 B11 B13 C4 C6 C10 C12 C14 E4 E6 E8 F17 G18 H17 I16 J17 K16 L15 M10 M12] => 'upgrade=cost:120,terrain:mountain',
             %w[C18 D9 F9] => 'city=revenue:0;upgrade=cost:80,terrain:water',
           },
@@ -137,11 +137,15 @@ module Engine
             ['B19'] => 'path=a:1,b:0',
             ['B17'] => 'city=revenue:40;city=revenue:40;city=revenue:40;'\
                        'upgrade=cost:80,terrain:water;path=a:0,b:_0;path=a:4,b:_1;path=a:5,b:_2;label=KY',
-            ['E22'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;',
+            ['E16'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;',
             ['F5'] => 'city=revenue:30,slots:1;path=a:1,b:_0;path=a:2,b:_0;path=a:4,b:_0',
             ['G12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:2,b:_0;path=a:3,b:_0;label=ON',
             %w[E14 G14 J11] => 'city=revenue:0;city=revenue:0',
             ['I12'] => 'city=revenue:40,slots:2;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
+            ['H13'] => 'city=revenue:40;city=revenue:40;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_1;label=OE',
+            ['H11'] => 'city=revenue:30;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_0;label=OW',
+            ['H19'] => 'city=revenue:40;city=revenue:40;upgrade=cost:80;path=a:0,b:_0;path=a:1,b:_1;path=a:3,b:_1',
+            ['J15'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;',
           },
           gray: {
             ['D5'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;path=a:0,b:_0',
