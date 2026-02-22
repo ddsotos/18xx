@@ -6,12 +6,20 @@ module Engine
       module Entities
         COMPANIES = [
           {
-            name: 'Takamatsu E-Railroad',
+            name: '有馬鉄道',
             value: 20,
             revenue: 5,
-            desc: 'Blocks Takamatsu (K4) while owned by a player.',
-            sym: 'TR',
-            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['K4'] }],
+            desc: '配置制限:有馬(D7) \n 企業に売られたら有馬にタイル配置',
+            sym: 'AR',
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['D7'] },
+                        {
+                          type: 'tile_lay',
+                          hexes: ['D7'],
+                          tiles: %w[3 4 58],
+                          when: 'sold',
+                          owner_type: 'corporation',
+                          count: 1,
+                        }],
             color: nil,
           },
           {
