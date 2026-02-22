@@ -164,11 +164,14 @@ module Engine
           'SIR' => 90,
         }.freeze
 
+        def setup_preround
+          @companies, @future_companies = @companies.partition do 
+            |c| c.sym[0] != 'M'
+          end
+        end
+
         def setup
           remove_company(company_by_id('SIR')) if two_player? && !beginner_game?
-          @companies, @future_companies = @companies.partition do 
-            |c| c.sym[0] != 'I'
-          end
           return unless beginner_game?
 
           neuter_private_companies
@@ -256,9 +259,6 @@ module Engine
 
         def new_stock_round
           case @turn
-          when 0
-            @companies += @future_companies
-            update_cache(:companies)
           when 1
             @companies += @future_companies
             update_cache(:companies)
