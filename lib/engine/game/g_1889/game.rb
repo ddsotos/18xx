@@ -168,6 +168,7 @@ module Engine
           @companies, @future_companies = @companies.partition do 
             |c| c.sym[0] != 'M'
           end
+          @future_companies.each { |c| c.owner = @bank}
         end
 
         def setup
@@ -257,10 +258,23 @@ module Engine
           @companies.delete(company)
         end
 
+        def bank_first?
+          false
+        end
+
+
         def new_stock_round
+          @log << "new stock round. old round is #{@turn} "
+
           case @turn
           when 1
+            @log << "add futurecompany. size: #{@future_companies.size} "
             @companies += @future_companies
+            @log << "added futurecompany. size: #{@companies.size} "
+            @log << "buyable_bank_owned_companies size: #{buyable_bank_owned_companies.size} "
+            @log << "unclosed_companies size: #{@companies.select { |c| !c.closed? }.size} "
+                    
+
             update_cache(:companies)
           end
 
@@ -268,7 +282,7 @@ module Engine
         end
 
         def unowned_purchasable_companies(_entity)
-          @companies.select { |c| c.sym[0] != 'M' }
+          @companies.select { |c| c.sym[0] != 'H' }
         end
 
 
