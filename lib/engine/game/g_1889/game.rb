@@ -282,7 +282,7 @@ module Engine
         end
 
         def unowned_purchasable_companies(_entity)
-          @companies.select { |c| c.sym[0] != 'H' }
+          @companies.select { |c| !c.owned_by_player? }
         end
 
 

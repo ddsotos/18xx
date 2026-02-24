@@ -138,44 +138,16 @@ module Engine
         EBUY_FROM_OTHERS = :never # allow ebuying other corp trains for up to face
         HOME_TOKEN_TIMING = :operating_round
 
-        BEGINNER_GAME_PRIVATES = {
-          2 => %w[DR SIR],
-          3 => %w[DR SIR ER],
-          4 => %w[DR SIR ER SMR],
-          5 => %w[DR SIR ER SMR TR],
-          6 => %w[DR SIR ER SMR TR MF],
-        }.freeze
 
-        BEGINNER_GAME_PRIVATE_REVENUES = {
-          'TR' => 5,
-          'MF' => 15,
-          'ER' => 15,
-          'SMR' => 20,
-          'DR' => 20,
-          'SIR' => 25,
-        }.freeze
 
-        BEGINNER_GAME_PRIVATE_VALUES = {
-          'TR' => 20,
-          'MF' => 40,
-          'ER' => 40,
-          'SMR' => 60,
-          'DR' => 60,
-          'SIR' => 90,
-        }.freeze
-
-        def setup
-          remove_company(company_by_id('SIR')) if two_player? && !beginner_game?
-          return unless beginner_game?
-
-          neuter_private_companies
-          close_unused_privates
-          remove_blockers_and_icons
-
-          # companies are randomly distributed to players and they buy their company
-          @companies.sort_by! { rand }
-          @players.zip(@companies).each { |p, c| buy_company(p, c) }
+        def setup_preround
+          @companies, @latecomer_companies = @companies.partition do 
+            |c| c.type != :latecomer
+          end
+          @companies.each { |c| @log << "is #{c.type} " }
+          @latecomer_companies.each { |c| c.owner = @bank}
         end
+
 
         def operating_round(round_num)
           Round::Operating.new(self, [
@@ -193,16 +165,6 @@ module Engine
           ], round_num: round_num)
         end
 
-        def init_round
-          return super unless beginner_game?
-
-          stock_round
-        end
-
-        def optional_tiles
-          remove_beginner_tiles unless beginner_game?
-        end
-
         def active_players
           return super if @finished
 
@@ -210,54 +172,36 @@ module Engine
           current_entity == company ? [@round.company_sellers[company]] : super
         end
 
-        def beginner_game?
-          @optional_rules.include?(:beginner_game)
+        def bank_first?
+          false
         end
 
-        def remove_beginner_tiles
-          @tiles.reject! { |tile| tile.id.start_with?('Beg') }
-          @all_tiles.reject! { |tile| tile.id.start_with?('Beg') }
-        end
+        def new_stock_round
+          @log << "new stock round. old round is #{@turn} "
 
-        def remove_blockers_and_icons
-          %w[C4 K4 B11 G10 I12 J9].each do |coords|
-            hex = hex_by_id(coords)
-            hex.tile.blockers.reject! { true }
-            hex.tile.icons.reject! { true }
+          case @turn
+          when 1
+            @companies.each { |c| @log << "is #{c.type} " }
+            @log << "add latecomercompany. size: #{@latecomer_companies.size} "
+            @companies += @latecomer_companies
+            @log << "added latecomercompany. size: #{@companies.size} "
+            @log << "buyable_bank_owned_companies size: #{buyable_bank_owned_companies.size} "
+            @log << "unclosed_companies size: #{@latecomer_companies.select { |c| !c.closed? }.size} "
+            @log << "corps size: #{@corporations.size} "
+
+            update_cache(:companies)
           end
+
+          super
         end
 
-        def neuter_private_companies
-          @companies.each { |c| neuter_company(c) }
+        def unowned_purchasable_companies(_entity)
+          @companies.select { |c| !c.owned_by_player? }
         end
 
-        def neuter_company(company)
-          company_abilities = company.abilities.dup
-          company_abilities.each { |ability| company.remove_ability(ability) }
-          company.desc = 'Closes when the first 5 train is bought. Cannot be purchased by a corporation'
-          company.value = BEGINNER_GAME_PRIVATE_VALUES[company.sym]
-          company.revenue = BEGINNER_GAME_PRIVATE_REVENUES[company.sym]
-          company.add_ability(Ability::NoBuy.new(type: 'no_buy'))
-        end
 
-        def close_unused_privates
-          companies_dup = @companies.dup
-          companies_dup.each { |c| remove_company(c) unless BEGINNER_GAME_PRIVATES[@players.size].include?(c.sym) }
-        end
 
-        def remove_company(company)
-          company.close!
-          @round.active_step.companies.delete(company) unless beginner_game?
-          @companies.delete(company)
-        end
 
-        def buy_company(player, company)
-          price = company.value
-          company.owner = player
-          player.companies << company
-          player.spend(price, @bank)
-          @log << "#{player.name} buys #{company.name} for #{format_currency(price)}"
-        end
       end
     end
   end
