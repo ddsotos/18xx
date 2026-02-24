@@ -57,7 +57,7 @@ module Engine
             sym: '阪国',
             type: :private,
             abilities: [
-              # { type: 'shares', shares: 'HS_1' }
+              { type: 'shares', shares: '阪神_1' }
             ],
             color: nil,
           },
@@ -70,7 +70,7 @@ module Engine
             type: :private,
             abilities: [
               { type: 'blocks_hexes', owner_type: 'player', hexes: %w[J11 I10] },          
-              # { type: 'shares', shares: 'KH_1' }
+              { type: 'shares', shares: '京阪_1' }
             ],
             color: nil,
           },
