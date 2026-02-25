@@ -148,6 +148,11 @@ module Engine
           @latecomer_companies.each { |c| c.owner = @bank}
         end
 
+        def setup
+          super
+          @minors.each {|m| place_home_token(m)}
+        end
+
 
         def operating_round(round_num)
           Round::Operating.new(self, [
@@ -244,7 +249,6 @@ module Engine
           minor.owner = company.player
           @bank.spend(company.treasury, minor)
           minor.float!
-          place_home_token(minor)
         end
 
 
