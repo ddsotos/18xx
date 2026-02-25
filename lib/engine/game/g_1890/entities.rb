@@ -141,7 +141,29 @@ module Engine
                         ],
             color: nil,
           },
-
+          {
+            name: '河南鉄道',#TODO 
+            value: 100,
+            revenue: 0,
+            desc: '第2フェイズから、近鉄への合併が可能になります。第3フェイズになると、近鉄に強制合併されます。'\
+                  '近鉄の10%株に引き替えて閉鎖します。閉鎖時に現金の半分(端数切り上げ)と列車を近鉄が引き取ります。残りの現金を社長に払い戻します。',
+            sym: '河南',
+            type: :minor,
+            abilities: [{ type: 'no_buy', owner_type: 'player' }],
+            color: nil,
+          },
+          {
+            name: '大阪電気軌道',#TODO 
+            value: 200,
+            revenue: 0,
+            desc: '大阪電気軌道は、近鉄の前身となった会社です。初期株式ラウンドで購入されたとき、近鉄の株価を決定します。'\
+                  '近鉄の社長株 (20%)に引き替えて閉鎖します。近鉄はこの2株で設立されます。全資産を近鉄が引き継ぎます。'\
+                  '第2フェイズから、近鉄への転換が可能になります。第2フェイズ下期になると、近鉄に強制転換されます。',
+            sym: '大軌',
+            type: :minor,
+            abilities: [{ type: 'no_buy', owner_type: 'player' }],
+            color: nil,
+          },
 
 
         ].freeze
@@ -197,6 +219,28 @@ module Engine
             coordinates: 'E12',
             color: '#6A3437',
           },
+        ].freeze
+
+        MINORS = [
+          {
+            name: '河南鉄道',
+            sym: '河南',
+            logo: '1824/C2',
+            tokens: [0],
+            coordinates: 'J15',
+            color: '#F58220',
+            text_color: 'black',
+          },
+          {
+            name: '大阪電気軌道',
+            sym: '大軌',
+            logo: '1824/C3',
+            tokens: [0],
+            coordinates: 'H13',
+            color: '#F7A1F1F',
+            text_color: 'black',
+          },
+
         ].freeze
       end
     end

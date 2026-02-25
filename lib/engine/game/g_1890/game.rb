@@ -160,7 +160,7 @@ module Engine
             Engine::Step::Route,
             Engine::Step::Dividend,
             Engine::Step::DiscardTrain,
-            Engine::Step::BuyTrain,
+            G1890::Step::BuyTrain,
             [Engine::Step::BuyCompany, { blocks: true }],
           ], round_num: round_num)
         end
@@ -197,6 +197,54 @@ module Engine
 
         def unowned_purchasable_companies(_entity)
           @companies.select { |c| !c.owned_by_player? }
+        end
+
+        # from1824
+        # def after_buy_company(player, company, price)
+        #   abilities(company, :shares) do |ability|
+        #     ability.shares.each do |share|
+        #       if share.
+        #         float_minor!(share.corporation, company.value)
+        #       else
+        #         share_pool.buy_shares(player, share, exchange: :free)
+        #       end
+        #     end
+        #   end
+        # end
+
+
+        # # from1824
+        # def float_minor!(minor, value)
+        #   @bank.spend(value, minor)
+        #   @log << "#{minor.name} receives #{value}"
+        #   minor.floated = true
+        # end
+      def after_buy_company(player, company, _price)
+        abilities(company, :shares) do |ability|
+          ability.shares.each do |share|
+            if share.president
+              @round.companies_pending_par << company
+            else
+              share_pool.buy_shares(player, share, exchange: :free)
+            end
+          end
+        end
+        abilities(company, :acquire_company) do |ability|
+          acquired_company = company_by_id(ability.company)
+          acquired_company.owner = player
+          player.companies << acquired_company
+          @log << "#{player.name} receives #{acquired_company.name}"
+          after_buy_company(player, acquired_company, 0)
+        end
+        acquire_minor(company)
+      end
+
+        def acquire_minor(company)
+          return unless (minor = @minors.find { |m| m.name == company.sym })
+          minor.owner = company.player
+          @bank.spend(company.treasury, minor)
+          minor.float!
+          place_home_token(minor)
         end
 
 
