@@ -183,6 +183,17 @@ module Engine
 
         def new_stock_round
           @log << "new stock round. old round is #{@turn} "
+          @corporations.each{
+            |c| if c.name == '近鉄'
+                shares =c.ipo_shares
+                @log << "近鉄 share num: #{shares.size} "
+                shares[0].buyable = false
+                shares[6].buyable = false
+                shares[7].buyable = false
+                shares[8].buyable = false
+
+        end
+          }
 
           case @turn
           when 1
