@@ -171,6 +171,7 @@ module Engine
                           corporations: ['近鉄'],
                           when: 'any',
                           from: 'reserved'},
+                        { type: 'shares', shares: '近鉄_0' },
                        ],
             color: nil,
           },

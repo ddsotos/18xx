@@ -157,7 +157,7 @@ module Engine
         def operating_round(round_num)
           Round::Operating.new(self, [
             Engine::Step::Bankrupt,
-            Engine::Step::Exchange,
+            G1890::Step::Exchange,
             G1890::Step::SpecialTrack,
             Engine::Step::BuyCompany,
             Engine::Step::Track,
@@ -183,20 +183,20 @@ module Engine
 
         def new_stock_round
           @log << "new stock round. old round is #{@turn} "
-          @corporations.each{
-            |c| if c.name == '近鉄'
-                shares =c.ipo_shares
-                @log << "近鉄 share num: #{shares.size} "
-                shares[0].buyable = false
-                shares[6].buyable = false
-                shares[7].buyable = false
-                shares[8].buyable = false
-
-        end
-          }
 
           case @turn
           when 1
+            @corporations.each{
+            |c| if c.name == '近鉄'
+                shares =c.ipo_shares
+                @log << "近鉄 share num: #{shares.size} "
+                shares[5].buyable = false
+                shares[6].buyable = false
+                shares[7].buyable = false
+
+              end
+            }
+
             @companies.each { |c| @log << "is #{c.type} " }
             @log << "add latecomercompany. size: #{@latecomer_companies.size} "
             @companies += @latecomer_companies
