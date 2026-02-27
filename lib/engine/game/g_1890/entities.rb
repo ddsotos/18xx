@@ -236,11 +236,9 @@ module Engine
             name: '近畿鉄道',
             logo: '1889/TR',
             simple_logo: '1889/TR.alt',
-            tokens: [0, 40, 100, 100],
+            tokens: [0, 40, 100, 100,100,100],
             ipo_shares: [10, 10, 10, 10],
             reserved_shares: [20,10, 10, 10, 10],
-
-            coordinates: 'K18',
             color: '#6A3437',
           },
         ].freeze

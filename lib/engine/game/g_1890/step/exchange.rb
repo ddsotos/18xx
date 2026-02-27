@@ -8,7 +8,7 @@ module Engine
     module G1890
       module Step
         class Exchange < Engine::Step::Exchange
-        #   include MinorExchange
+          include MinorExchange
 
           def round_state
             super.merge(
@@ -29,56 +29,38 @@ module Engine
           end
 
           def can_exchange?(entity, _bundle = nil)
-            @game.log << "can_exchange? #{entity.name} "
             super
           end
 
           def process_buy_shares(action)
+            entity = action.entity
+            @game.log << "can_exchange? #{entity.name} "
+            minor = @game.minors.find { |m| m.name == entity.sym }
+            exchange_minor(minor, action.bundle)
+            # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
+          end
+
+          def process_pass(_action)
+            @game.minors.dup.each do |minor|
+              next unless minor&.owner == current_entity
+
+              merge_minor!(minor, nil, @game.bank)
+            end
+
             super
-            # unless can_exchange?(action.entity, action.bundle)
-            #   raise GameError, "Cannot exchange #{action.entity.id} for " \
-            #                    "#{action.bundle.corporation.id}"
+          end
+
+          def exchange_minor(minor, bundle)
+            corporation = bundle.corporation
+            source = bundle.owner
+            # unless can_gain?(minor.owner, bundle, exchange: true)
+            #   raise GameError, "#{minor.name} cannot be exchanged for #{corporation.name}"
             # end
 
-            # bundle = action.bundle
-            # share = bundle.shares.first
-            # @round.minor = action.entity
-            # @round.major = share.corporation
-            # if approval_needed?(@round.minor, share)
-            #   log_request(@round.minor, @round.major)
-            #   @round.pending_approval = @round.major
-            #   @round.bundle = bundle
-            # else
-            #   transfer = treasury_share?(share) ? :choose : :none
-            #   exchange_minor(@round.minor, bundle, transfer)
-            #   if @round.stock?
-            #     @round.current_actions << action
-            #     @round.last_to_act = current_entity
-            #   end
-            # end
-          end
+            # exchange_share(minor, corporation, source)
+            @game.log << "merge_minor #{minor.name} "
 
-          private
-
-          # Does this bundle contain a treasury share, or one from the bank pool?
-          def treasury_share?(share)
-            share.corporation.shares.include?(share)
-          end
-
-          def approval_needed?(minor, share)
-            corporation = share.corporation
-
-            !corporation.operating_history.empty? &&
-              minor.owner != corporation.owner &&
-              treasury_share?(share) &&
-              !corporation.receivership?
-          end
-
-          def log_request(minor, major)
-            msg = "#{minor.owner.name} requested #{major.owner.name}’s " \
-                  "permission to exchange minor #{minor.name} for a " \
-                  "#{major.id} treasury share."
-            @round.process_action(Engine::Action::Log.new(minor.owner, message: msg))
+            merge_minor!(minor, corporation, source)
           end
         end
       end

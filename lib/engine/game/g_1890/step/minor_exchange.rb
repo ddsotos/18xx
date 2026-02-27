@@ -18,31 +18,44 @@ module Engine
         end
 
         def merge_minor!(minor, corporation, source)
-          maybe_remove_token(minor, corporation, source)
+          # maybe_remove_token(minor, corporation, source)
 
-          if source == corporation
-            transfer_treasury(minor, corporation)
-            transfer_trains(minor, corporation)
-          else
-            transfer_treasury(minor, @game.bank)
-            transfer_trains(minor, @game.depot)
+          transfer_treasury(minor, corporation)
+          transfer_trains(minor, corporation)
+          minor.placed_tokens.each do |token|
+            transfer_minor_token!(token, corporation) 
           end
 
-          @game.close_corporation(minor, quiet: false) unless @round.pending_acquisition
-          minor.close! unless @round.pending_acquisition
+
+          @game.close_corporation(minor, quiet: false) 
+          minor.close! 
         end
 
-        def maybe_remove_token(minor, corporation, source)
-          return unless corporation
-          return minor.tokens.first.remove! if corporation.placed_tokens.empty?
+        def transfer_minor_token!(token, corporation)
+            minor = token.corporation
+            city = token.city
+            coord = city.hex.coordinates
+            token.remove!
+            token_to_place = corporation.unplaced_tokens.{ |t| t.price != 40 }# first cost is 40 so 40 token must be reserved
+            city.place_token(corporation, corporation.next_token, check_tokenable: false)
+            return unless minor.assigned?(coord)
 
-          # if this merge share is coming from somewhere other than a corporation
-          # i.e. the share pool, don't make a pending acquisition, because
-          # a share pool exchange does not allow for token replacement.
-          return if source != corporation
-
-          @round.pending_acquisition = { minor: minor, corporation: corporation }
+            minor.remove_assignment!(coord)
+            corporation.assign!(coord)
         end
+
+
+        # def maybe_remove_token(minor, corporation, source)
+        #   return unless corporation
+        #   return minor.tokens.first.remove! if corporation.placed_tokens.empty?
+
+        #   # if this merge share is coming from somewhere other than a corporation
+        #   # i.e. the share pool, don't make a pending acquisition, because
+        #   # a share pool exchange does not allow for token replacement.
+        #   return if source != corporation
+
+        #   @round.pending_acquisition = { minor: minor, corporation: corporation }
+        # end
 
         def exchange_share(minor, corporation, source)
           return unless corporation
@@ -84,7 +97,6 @@ module Engine
           @game.log << "#{destination.name} takes #{transferred.map(&:name).join(', ')}"\
                        " train#{transferred.one? ? '' : 's'} from #{source.name}"
 
-          @game.maybe_discard_pullman(destination)
         end
 
         def can_gain?(entity, bundle, exchange: false)
