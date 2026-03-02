@@ -155,7 +155,7 @@ module Engine
 
 
         def operating_round(round_num)
-          Round::Operating.new(self, [
+          G1890::Round::Operating.new(self, [
             Engine::Step::Bankrupt,
             G1890::Step::Exchange,
             G1890::Step::SpecialTrack,
@@ -261,7 +261,13 @@ module Engine
           @bank.spend(company.treasury, minor)
           minor.float!
         end
-
+      def city_tokened_by?(city, entity)
+        if entity.name = '阪鉄'
+          daiki = @minors.find { |m| m.name == '大軌' }
+          return city.tokened_by(daiki)
+        end
+        super
+      end
 
 
 
