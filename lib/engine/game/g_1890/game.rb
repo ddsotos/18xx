@@ -262,9 +262,9 @@ module Engine
           minor.float!
         end
       def city_tokened_by?(city, entity)
-        if entity.name = '阪鉄'
+        if entity.name == '阪鉄'
           daiki = @minors.find { |m| m.name == '大軌' }
-          return city.tokened_by(daiki)
+          return city.tokened_by?(daiki)
         end
         super
       end
