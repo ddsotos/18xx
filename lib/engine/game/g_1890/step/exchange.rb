@@ -69,10 +69,9 @@ module Engine
 
             hantetsu = @game.minors.find { |m| m.name == "阪鉄" }
             merge_minor!(hantetsu, corporation, source)
-            @game.share_pool.buy_shares(hantetsu.owner,
-                                        bundle,
-                                        exchange: minor,
-                                        silent: false)
+            # @game.share_pool.buy_shares(hantetsu.owner,
+            #                             bundle,
+            #                             silent: false)
 
 
             @round.recalculate_order_when_merge_Kintetsu if @round.respond_to?(:recalculate_order_when_merge_Kintetsu)
