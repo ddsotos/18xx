@@ -61,6 +61,22 @@ module Engine
             @game.log << "merge_minor #{minor.name} "
 
             merge_minor!(minor, corporation, source)
+
+            corporation.floatable = true #Kintetsu floats when president share is bought
+            initialCapital = corporation.par_price.price * 4
+            @game.bank.spend(initialCapital, corporation)
+            @game.log << "#{corporation.name} floats with #{initialCapital} (par_price *4)"
+
+            hantetsu = @game.minors.find { |m| m.name == "阪鉄" }
+            merge_minor!(hantetsu, corporation, source)
+            @game.share_pool.buy_shares(hantetsu.owner,
+                                        bundle,
+                                        exchange: minor,
+                                        silent: false)
+
+
+            @round.recalculate_order_when_merge_Kintetsu if @round.respond_to?(:recalculate_order_when_merge_Kintetsu)
+
           end
         end
       end
