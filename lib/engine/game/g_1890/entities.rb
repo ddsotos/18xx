@@ -175,6 +175,22 @@ module Engine
                        ],
             color: nil,
           },
+          {
+            name: '大阪鉄道',#TODO 
+            value: 100,
+            revenue: 0,
+            desc: '近鉄の株1株に引き替えて閉鎖します。閉鎖時に全資産を近鉄は引き継ぎます。'\
+                  '近鉄が設立されたら、強制実行されます。',
+            sym: '阪鉄',
+            type: :minor,
+            abilities: [{ type: 'no_buy', owner_type: 'player' },
+                        { type: 'exchange',
+                          corporations: ['近鉄'],
+                          when: 'any',
+                          from: 'reserved'},
+                       ],
+            color: nil,
+          },
 
 
         ].freeze
@@ -237,8 +253,8 @@ module Engine
             logo: '1889/TR',
             simple_logo: '1889/TR.alt',
             tokens: [0, 40, 100, 100,100,100],
-            ipo_shares: [10, 10, 10, 10],
-            reserved_shares: [20,10, 10, 10, 10],
+            floatable: false,
+            float_percent: 20,
             color: '#6A3437',
           },
         ].freeze
@@ -247,7 +263,7 @@ module Engine
           {
             name: '河南鉄道',
             sym: '河南',
-            logo: '1824/C2',
+            logo: '1824/C1',
             tokens: [0],
             coordinates: 'J15',
             color: '#F58220',
@@ -256,11 +272,20 @@ module Engine
           {
             name: '大阪電気軌道',
             sym: '大軌',
-            logo: '1824/C3',
+            logo: '1824/C2',
             tokens: [0],
             coordinates: 'H13',
             color: '#F7A1F1F',
             text_color: 'black',
+          },
+          {
+            name: '大阪鉄道',
+            sym: '阪鉄',
+            logo: '1824/C3',
+            color: '#F7A1F1F',
+            text_color: 'black',
+            tokens: [0],
+            coordinates: 'C18',
           },
 
         ].freeze
