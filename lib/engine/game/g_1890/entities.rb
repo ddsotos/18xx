@@ -183,12 +183,7 @@ module Engine
                   '近鉄が設立されたら、強制実行されます。',
             sym: '阪鉄',
             type: :minor,
-            abilities: [{ type: 'no_buy', owner_type: 'player' },
-                        { type: 'exchange',
-                          corporations: ['近鉄'],
-                          when: 'any',
-                          from: 'reserved'},
-                       ],
+            abilities: [{ type: 'no_buy', owner_type: 'player' }                       ],
             color: nil,
           },
 
