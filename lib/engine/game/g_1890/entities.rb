@@ -284,8 +284,7 @@ module Engine
             logo: '1824/C3',
             color: '#F7A1F1F',
             text_color: 'black',
-            tokens: [0],
-            coordinates: 'C18',
+            tokens: [],
           },
 
         ].freeze

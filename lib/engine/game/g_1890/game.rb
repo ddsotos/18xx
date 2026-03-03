@@ -160,7 +160,7 @@ module Engine
             G1890::Step::Exchange,
             G1890::Step::SpecialTrack,
             Engine::Step::BuyCompany,
-            Engine::Step::Track,
+            G1890::Step::Track,
             Engine::Step::Token,
             Engine::Step::Route,
             Engine::Step::Dividend,
