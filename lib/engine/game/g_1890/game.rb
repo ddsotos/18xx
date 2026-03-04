@@ -100,14 +100,15 @@ module Engine
             distance: 2,
             price: 80,
             rusts_on: '4',
-            num: 6,
+            num: 1,
           },
           {
             name: '3',
             distance: 3,
-            price: 180,
+            price: 80,
             rusts_on: '6',
             num: 5,
+            events: [{ 'type' => 'conversion_to_Kintetsu' }],
           },
           {
             name: '4',
@@ -137,6 +138,9 @@ module Engine
         EBUY_PRES_SWAP = false # allow presidential swaps of other corps when ebuying
         EBUY_FROM_OTHERS = :never # allow ebuying other corp trains for up to face
         HOME_TOKEN_TIMING = :operating_round
+        EVENTS_TEXT = Base::EVENTS_TEXT.dup.merge(
+          'conversion_to_Kintetsu' => ['近鉄への強制転換', '大阪電気軌道がまだ近鉄に転換していなければ、強制転換（大阪鉄道も合併）'],
+        ).freeze
 
 
 
@@ -215,26 +219,14 @@ module Engine
           @companies.select { |c| !c.owned_by_player? }
         end
 
-        # from1824
-        # def after_buy_company(player, company, price)
-        #   abilities(company, :shares) do |ability|
-        #     ability.shares.each do |share|
-        #       if share.
-        #         float_minor!(share.corporation, company.value)
-        #       else
-        #         share_pool.buy_shares(player, share, exchange: :free)
-        #       end
-        #     end
-        #   end
-        # end
+
+      def event_conversion_to_Kintetsu!
+        return unless daiki = @minors.find { |m| m.name == "大軌" }
+        kintetsu = @corporations.find{|c| c.name == '近鉄'}
+        exchange_minor(daiki,kintetsu.shares[0].to_bundle)
+      end
 
 
-        # # from1824
-        # def float_minor!(minor, value)
-        #   @bank.spend(value, minor)
-        #   @log << "#{minor.name} receives #{value}"
-        #   minor.floated = true
-        # end
       def after_buy_company(player, company, _price)
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|
@@ -268,6 +260,105 @@ module Engine
         end
         super
       end
+
+          def exchange_minor(minor, bundle)
+            corporation = bundle.corporation
+            source = bundle.owner
+            # unless can_gain?(minor.owner, bundle, exchange: true)
+            #   raise GameError, "#{minor.name} cannot be exchanged for #{corporation.name}"
+            # end
+
+            @log << "merge_minor #{minor.name} "
+
+            if minor.name == "大軌"
+              merge_minor!(minor, corporation, source)
+              corporation.floatable = true #Kintetsu floats when president share is bought
+              initialCapital = corporation.par_price.price * 4
+              @bank.spend(initialCapital, corporation)
+              @log << "#{corporation.name} floats with #{initialCapital} (par_price *4)"
+
+              hantetsu = @minors.find { |m| m.name == "阪鉄" }
+              exchange_share(hantetsu, corporation, source)
+              merge_minor!(hantetsu, corporation, source)
+              @round.recalculate_order_when_merge_Kintetsu if @round.respond_to?(:recalculate_order_when_merge_Kintetsu)
+              hantetsu_private = @companies.find { |c| c.sym == "阪鉄" }
+              hantetsu_private.close!
+            else
+              exchange_share(minor, corporation, source)
+              merge_minor!(minor, corporation, source)
+            end
+
+          end
+        def merge_minor!(minor, corporation, source)
+          transfer_treasury(minor, corporation)
+          transfer_trains(minor, corporation)
+          minor.placed_tokens.each do |token|
+            transfer_minor_token!(token, corporation) 
+          end
+
+
+          close_corporation(minor, quiet: false) 
+          minor.close! 
+        end
+
+        def transfer_minor_token!(token, corporation)
+            minor = token.corporation
+            city = token.city
+            coord = city.hex.coordinates
+            token.remove!
+            token_to_place = corporation.unplaced_tokens.find { |t| t.price != 40 }# first cost is 40 so 40 token must be reserved
+            city.place_token(corporation, corporation.next_token, check_tokenable: false)
+            return unless minor.assigned?(coord)
+
+            minor.remove_assignment!(coord)
+            corporation.assign!(coord)
+        end
+
+        def transfer_trains(source, destination)
+          return unless source.trains.any?
+
+          transferred = []
+          if destination == @depot
+            source.trains.dup.each do |train|
+              @depot.reclaim_train(train)
+              transferred << train
+            end
+          else
+            transferred = transfer(:trains, source, destination)
+          end
+
+          @log << "#{destination.name} takes #{transferred.map(&:name).join(', ')}"\
+                       " train#{transferred.one? ? '' : 's'} from #{source.name}"
+
+        end
+
+        def transfer_treasury(source, destination)
+          return unless source.cash.positive?
+
+          @log << "#{destination.name} takes #{format_currency(source.cash)}"\
+                       " from #{source.name} remaining cash"
+
+          source.spend(source.cash, destination)
+        end
+
+
+        def exchange_share(minor, corporation, source)
+          return unless corporation
+
+          @log << "#{minor.owner.name} exchanges #{minor.name} for a "\
+                       "10% share of #{corporation.name}"
+
+          bundle = if source == corporation
+                     corporation.treasury_shares.first.to_bundle
+                   else
+                     @share_pool.shares_of(corporation).first.to_bundle
+                   end
+
+                  @share_pool.buy_shares(minor.owner,
+                                    bundle,
+                                    exchange: true)
+
+        end
 
 
 

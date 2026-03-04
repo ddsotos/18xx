@@ -17,30 +17,7 @@ module Engine
           corporation.available_share || @game.share_pool.shares_by_corporation[corporation]&.first
         end
 
-        def merge_minor!(minor, corporation, source)
-          transfer_treasury(minor, corporation)
-          transfer_trains(minor, corporation)
-          minor.placed_tokens.each do |token|
-            transfer_minor_token!(token, corporation) 
-          end
 
-
-          @game.close_corporation(minor, quiet: false) 
-          minor.close! 
-        end
-
-        def transfer_minor_token!(token, corporation)
-            minor = token.corporation
-            city = token.city
-            coord = city.hex.coordinates
-            token.remove!
-            token_to_place = corporation.unplaced_tokens.find { |t| t.price != 40 }# first cost is 40 so 40 token must be reserved
-            city.place_token(corporation, corporation.next_token, check_tokenable: false)
-            return unless minor.assigned?(coord)
-
-            minor.remove_assignment!(coord)
-            corporation.assign!(coord)
-        end
 
         def exchange_share(minor, corporation, source)
           return unless corporation
@@ -66,23 +43,6 @@ module Engine
           source.spend(source.cash, destination)
         end
 
-        def transfer_trains(source, destination)
-          return unless source.trains.any?
-
-          transferred = []
-          if destination == @game.depot
-            source.trains.dup.each do |train|
-              @game.depot.reclaim_train(train)
-              transferred << train
-            end
-          else
-            transferred = @game.transfer(:trains, source, destination)
-          end
-
-          @game.log << "#{destination.name} takes #{transferred.map(&:name).join(', ')}"\
-                       " train#{transferred.one? ? '' : 's'} from #{source.name}"
-
-        end
 
         def can_gain?(entity, bundle, exchange: false)
           return if !bundle || !entity
