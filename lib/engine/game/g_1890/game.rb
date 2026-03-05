@@ -157,6 +157,15 @@ module Engine
           @minors.each {|m| place_home_token(m)}
         end
 
+      def stock_round
+        Engine::Round::Stock.new(self, [
+          Engine::Step::DiscardTrain,
+          Engine::Step::Exchange,
+          Engine::Step::SpecialTrack,
+          G1890::Step::BuySellParShares,
+        ])
+      end
+
 
         def operating_round(round_num)
           G1890::Round::Operating.new(self, [
@@ -167,7 +176,7 @@ module Engine
             G1890::Step::Track,
             Engine::Step::Token,
             Engine::Step::Route,
-            Engine::Step::Dividend,
+            G1890::Step::Dividend,
             Engine::Step::DiscardTrain,
             G1890::Step::BuyTrain,
             [Engine::Step::BuyCompany, { blocks: true }],

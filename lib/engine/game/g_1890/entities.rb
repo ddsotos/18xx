@@ -242,7 +242,6 @@ module Engine
             color: '#6A3437',
           },
           {
-            float_percent: 50,
             sym: '近鉄',
             name: '近畿鉄道',
             logo: '1889/TR',
@@ -252,6 +251,17 @@ module Engine
             float_percent: 20,
             color: '#6A3437',
           },
+          {
+            float_percent: 50,
+            sym: 'JR',
+            name: 'JR',
+            logo: '1889/KU',
+            simple_logo: '1889/KU.alt',
+            tokens: [0, 0, 0, 0,40,100],
+            coordinates: %w[G12 B17 H19 F5],
+            color: '#6A3437',
+          },
+
         ].freeze
 
         MINORS = [
