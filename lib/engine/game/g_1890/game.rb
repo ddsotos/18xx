@@ -287,6 +287,9 @@ module Engine
               exchange_share(minor, corporation, source)
               merge_minor!(minor, corporation, source)
             end
+            privateOfMinor = @companies.find { |c| c.sym == minor.name }
+            privateOfMinor.close!
+
 
           end
         def merge_minor!(minor, corporation, source)

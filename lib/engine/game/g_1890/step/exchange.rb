@@ -37,7 +37,6 @@ module Engine
             @game.log << "can_exchange? #{entity.name} "
             minor = @game.minors.find { |m| m.name == entity.sym }
             @game.exchange_minor(minor, action.bundle)
-            entity.close!
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
           end
 
