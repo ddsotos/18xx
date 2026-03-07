@@ -65,11 +65,11 @@ module Engine
             name: '京津鉄道',
             value: 160,
             revenue: 25,
-            desc: '配置制限:京都(B17)京都の東(B19) \n 京阪電鉄の株券1株が付属',
+            desc: "配置制限:京都(B17)京都の東(B19) \n 京阪電鉄の株券1株が付属",
             sym: '京津',
             type: :private,
             abilities: [
-              { type: 'blocks_hexes', owner_type: 'player', hexes: %w[J11 I10] },          
+              { type: 'blocks_hexes', owner_type: 'player', hexes: %w[B17 B19] },          
               { type: 'shares', shares: '京阪_1' }
             ],
             color: nil,
@@ -87,7 +87,7 @@ module Engine
             abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: %w[G12 H11 H13] },
                         { type: 'close', when: 'bought_train', corporation: 'HT' },
                         { type: 'no_buy' },
-                        # { type: 'shares', shares: 'HT_0' }
+                        { type: 'shares', shares: 'HT_0' }
                       ],
             sym: '市電',
             type: :private,
@@ -258,10 +258,26 @@ module Engine
             logo: '1889/KU',
             simple_logo: '1889/KU.alt',
             tokens: [0, 0, 0, 0,40,100],
-            coordinates: %w[G12 B17 H19 F5],
+            coordinates: %w[F5],
+            abilities: [
+              { type: 'reservation', hex: 'G12', city: 0 },
+              { type: 'reservation', hex: 'B17', city: 1 },
+              { type: 'reservation', hex: 'H19', city: 0 },
+            ],
+
             color: '#6A3437',
           },
+          {
+            float_percent: 50,
+            sym: 'メトロ',
+            name: '大阪地下鉄',
+            logo: '1824/SR',
+            simple_logo: '1889/SR.alt',
+            tokens: [0],
+            coordinates: 'H11',
 
+            color: '#6A3437',
+          },
         ].freeze
 
         MINORS = [

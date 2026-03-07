@@ -228,7 +228,34 @@ module Engine
           @companies.select { |c| !c.owned_by_player? }
         end
 
+        def place_home_token(corporation)
+          return super unless corporation.name == "JR"
+          Array(corporation.coordinates).each do |coord|
+            hex = hex_by_id(coord)
+            tile = hex&.tile
+            cities = tile.cities
+            city = cities.find { |c| c.reserved_by?(corporation) } || cities.first
+            token = corporation.find_token_by_type
 
+            @log << "#{corporation.name} places a token on #{hex.name}"
+            city.place_token(corporation, token)
+          end
+            abilities = corporation.all_abilities.select { |ability| ability.type == :reservation}
+            abilities.each { |r| 
+            hex = hex_by_id(r.hex)
+            @log << "#{corporation.name} places a token on #{hex.name}"
+
+            tile = hex&.tile
+            cities = tile.cities
+            city = cities[r.city]
+            token = corporation.find_token_by_type
+            city.place_token(corporation, token)
+            corporation.remove_ability(r) 
+          }
+
+          @graph.clear
+        end
+        
       def event_conversion_to_Kintetsu!
         return unless daiki = @minors.find { |m| m.name == "大軌" }
         kintetsu = @corporations.find{|c| c.name == '近鉄'}
