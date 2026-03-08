@@ -103,7 +103,7 @@ module Engine
             num: 1,
           },
           {
-            name: '2+2',
+            name: '2-2',
             distance: [{ 'nodes' => ['town'], 'pay' => 2, 'visit' => 2 },
                        { 'nodes' => %w[city offboard town], 'pay' => 2, 'visit' => 2 }],
             price: 120,
@@ -118,7 +118,7 @@ module Engine
             num: 1,
           },
           {
-            name: '3+3',
+            name: '3-3',
             distance: [{ 'nodes' => ['town'], 'pay' => 3, 'visit' => 3 },
                        { 'nodes' => %w[city offboard town], 'pay' => 3, 'visit' => 3 }],
             price: 230,
@@ -132,7 +132,7 @@ module Engine
             price: 300,
             rusts_on: 'D',
             num: 1,
-            # events: [{ 'type' => 'kanan_merge_to_Kintetsu' }],
+            events: [{ 'type' => 'kanan_merge_to_Kintetsu' }],
           },
           {
             name: '5',
@@ -162,6 +162,7 @@ module Engine
         EVENTS_TEXT = Base::EVENTS_TEXT.dup.merge(
           'conversion_to_Kintetsu' => ['近鉄への強制転換', '大阪電気軌道がまだ近鉄に転換していなければ、強制転換（大阪鉄道も合併）'],
           'remove_extra_tile_lay_from_JR' => ['JRの2タイル配置終了', 'JRは、ここまでは2か所でタイル配置できる'],
+          'kanan_merge_to_Kintetsu' => ['河南の強制合併', '近鉄開始から合併可'],
           ).freeze
 
 
@@ -230,6 +231,7 @@ module Engine
             |c| if c.name == '近鉄'
                 shares =c.ipo_shares
                 @log << "近鉄 share num: #{shares.size} "
+                shares[4].buyable = false
                 shares[5].buyable = false
                 shares[6].buyable = false
                 shares[7].buyable = false
@@ -288,6 +290,12 @@ module Engine
         return unless daiki = @minors.find { |m| m.name == "大軌" }
         kintetsu = @corporations.find{|c| c.name == '近鉄'}
         exchange_minor(daiki,kintetsu.shares[0].to_bundle)
+      end
+
+      def event_kanan_merge_to_Kintetsu!
+        return unless kanan = @minors.find { |m| m.name == "河南" }
+        kintetsu = @corporations.find{|c| c.name == '近鉄'}
+        exchange_minor(kanan,kintetsu.shares[6].to_bundle)
       end
 
       def event_remove_extra_tile_lay_from_JR!
