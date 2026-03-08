@@ -18,6 +18,19 @@ module Engine
             (buying_power(entity) >= action[:cost]) && (action[:lay] || action[:upgrade])
           end
 
+
+          def upgradeable_tiles(entity, hex)
+            if hex.tile.color == :green
+              case hex.location_name
+              when "西宮"
+                return @game.tiles.select { |t| t.name == 'BNI' }
+              end
+            end
+            tiles = super
+            return tiles.reject! { |t| t.name == 'BNI' }
+          end
+
+
         end
       end
     end
