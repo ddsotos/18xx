@@ -28,7 +28,7 @@ module Engine
 
         CERT_LIMIT = { 2 => 26, 3 => 18, 4 => 15, 5 => 13, 6 => 11, 7 => 10 }.freeze
 
-        STARTING_CASH = { 2 => 1260, 3 => 840, 4 => 630, 5 => 504, 6 => 420, 7 => 360}.freeze
+        STARTING_CASH = { 2 => 1260, 3 => 840, 4 => 1000, 5 => 504, 6 => 420, 7 => 360}.freeze
 
         CAPITALIZATION = :full
 
@@ -142,7 +142,9 @@ module Engine
             events: [{ 'type' => 'close_companies' },
                      { 'type' => 'remove_extra_tile_lay_from_JR' },],
           },
-          { name: '6', distance: 6, price: 630, num: 2 },
+          { name: '6', distance: 6, price: 630, num: 2,
+            events: [{ 'type' => 'Osaka_Expo' }],
+          },
           {
             name: 'D',
             distance: 999,
@@ -152,7 +154,7 @@ module Engine
             discount: { '4' => 300, '5' => 300, '6' => 300 },
           },
 ].freeze
-
+        @Osaka_Expo_timing = false
         EBUY_PRES_SWAP = false # allow presidential swaps of other corps when ebuying
         EBUY_FROM_OTHERS = :never # allow ebuying other corp trains for up to face
         HOME_TOKEN_TIMING = :operating_round
@@ -162,7 +164,8 @@ module Engine
         EVENTS_TEXT = Base::EVENTS_TEXT.dup.merge(
           'conversion_to_Kintetsu' => ['近鉄への強制転換', '大阪電気軌道がまだ近鉄に転換していなければ、強制転換（大阪鉄道も合併）'],
           'remove_extra_tile_lay_from_JR' => ['JRの2タイル配置終了', 'JRは、ここまでは2か所でタイル配置できる'],
-          'kanan_merge_to_Kintetsu' => ['河南の強制合併', '近鉄開始から合併可'],
+          'kanan_merge_to_Kintetsu' => ['河南の強制合併', '近鉄開始以降合併可だが、このタイミングで強制合併'],
+          'Osaka_Expo' => ['万博(1970)', '北大阪急行が一度だけ40の追加配当を行う'],
           ).freeze
 
 
@@ -301,6 +304,52 @@ module Engine
       def event_remove_extra_tile_lay_from_JR!
         jr = @corporations.find{|c| c.name == 'JR'}
         jr.remove_ability(jr.all_abilities.find { |ability| ability.type == :extra_tile_lay})
+      end
+
+      def event_Osaka_Expo!
+        @Osaka_Expo_timing = true
+      end
+
+
+
+      def payout_companies(ignore: [])
+        companies = companies_to_payout(ignore: ignore)
+
+        companies.sort_by! do |company|
+          [
+            company.owned_by_player? ? [0, @players.index(company.owner)] : [1, company.owner],
+            company.revenue,
+            company.name,
+          ]
+        end
+
+        companies.each do |company|
+          
+          owner = company.owner
+          next if owner == bank
+          case company.sym
+          when "京福"
+            keihan = @corporations.find{|c| c.name == '京阪'}
+            if keihan.tokens.find{|t| t.hex&.location_name == '京都'}
+              bank.spend(40, keihan)
+              @log << "#{keihan.name} have token in 京都, so collects 40 from 京福"
+            end
+          when "泉北"
+            @corporations.select{|c| c.tokens.find{|t| t.hex&.location_name == '堺'}}.each do |c| 
+              bank.spend(40, c)
+              @log << "#{keihan.name} have token in 堺, so collects 40 from 泉北"
+            end
+          when "北急"
+            if @Osaka_Expo_timing
+              bank.spend(40, c)
+              @log << "#{owner.name} collects 40 from 北急 as Expo special revenue"
+              @Osaka_Expo_timing = false
+            end
+          end
+          revenue = company.revenue
+          @bank.spend(revenue, owner)
+          @log << "#{owner.name} collects #{format_currency(revenue)} from #{company.name}"
+        end
       end
 
 
