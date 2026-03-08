@@ -85,9 +85,9 @@ module Engine
                   '大阪地下鉄の最初の手番がくれば、大阪市内の3ヘックスへのタイルの置き換えは、自由になるものとします。'\
                   '大阪地下鉄が列車を購入すると大阪市電は閉鎖されます。この個人会社は、公共会社が購入することが出来ません。',
             abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: %w[G12 H11 H13] },
-                        { type: 'close', when: 'bought_train', corporation: 'HT' },
+                        { type: 'close', when: 'bought_train', corporation: 'メトロ' },
                         { type: 'no_buy' },
-                        { type: 'shares', shares: 'HT_0' }
+                        { type: 'shares', shares: 'メトロ_0' }
                       ],
             sym: '市電',
             type: :private,

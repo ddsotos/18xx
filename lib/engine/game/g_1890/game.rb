@@ -115,14 +115,15 @@ module Engine
             distance: 4,
             price: 300,
             rusts_on: 'D',
-            num: 4,
+            num: 1,
           },
           {
             name: '5',
             distance: 5,
             price: 450,
-            num: 3,
-            events: [{ 'type' => 'close_companies' }],
+            num: 1,
+            events: [{ 'type' => 'close_companies' },
+                     { 'type' => 'remove_extra_tile_lay_from_JR' },],
           },
           { name: '6', distance: 6, price: 630, num: 2 },
           {
@@ -138,9 +139,13 @@ module Engine
         EBUY_PRES_SWAP = false # allow presidential swaps of other corps when ebuying
         EBUY_FROM_OTHERS = :never # allow ebuying other corp trains for up to face
         HOME_TOKEN_TIMING = :operating_round
+        EXTRA_TILE_LAYS = [{ lay: true, upgrade: true },
+                           { lay: true, upgrade: true, cannot_reuse_same_hex: true },].freeze
+
         EVENTS_TEXT = Base::EVENTS_TEXT.dup.merge(
           'conversion_to_Kintetsu' => ['近鉄への強制転換', '大阪電気軌道がまだ近鉄に転換していなければ、強制転換（大阪鉄道も合併）'],
-        ).freeze
+          'remove_extra_tile_lay_from_JR' => ['JRの2タイル配置終了', 'JRは、ここまでは2か所でタイル配置できる'],
+          ).freeze
 
 
 
@@ -155,6 +160,11 @@ module Engine
         def setup
           super
           @minors.each {|m| place_home_token(m)}
+          jr = @corporations.find{|c| c.name == 'JR'}
+          jr.add_ability(Engine::Ability::Base.new(
+            type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
+          ))
+
         end
 
       def stock_round
@@ -262,15 +272,21 @@ module Engine
         exchange_minor(daiki,kintetsu.shares[0].to_bundle)
       end
 
+      def event_remove_extra_tile_lay_from_JR!
+        jr = @corporations.find{|c| c.name == 'JR'}
+        jr.remove_ability(jr.all_abilities.find { |ability| ability.type == :extra_tile_lay})
+      end
+
 
       def after_buy_company(player, company, _price)
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|
-            if share.president
-              @round.companies_pending_par << company
-            else
+            # if share.president
+            #   @round.companies_pending_par << company
+            #   @log << "share.president"
+            # else
               share_pool.buy_shares(player, share, exchange: :free)
-            end
+            # end
           end
         end
         abilities(company, :acquire_company) do |ability|
@@ -294,6 +310,9 @@ module Engine
           daiki = @minors.find { |m| m.name == '大軌' }
           return city.tokened_by?(daiki)
         end
+        # if entity.name == 'メトロ'
+        #   return city.tokens.any? { |t| t&.corporation == entity }
+        # end
         super
       end
 
@@ -339,6 +358,13 @@ module Engine
           close_corporation(minor, quiet: false) 
           minor.close! 
         end
+
+        def tile_lays(entity)
+          return EXTRA_TILE_LAYS if abilities(entity, :extra_tile_lay)
+
+          super
+        end
+
 
         def transfer_minor_token!(token, corporation)
             minor = token.corporation
