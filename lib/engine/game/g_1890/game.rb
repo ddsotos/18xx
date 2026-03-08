@@ -24,28 +24,28 @@ module Engine
 
         CURRENCY_FORMAT_STR = '¥%s'
 
-        BANK_CASH = 7000
+        BANK_CASH = 12000
 
-        CERT_LIMIT = { 2 => 25, 3 => 19, 4 => 14, 5 => 12, 6 => 11 }.freeze
+        CERT_LIMIT = { 2 => 26, 3 => 18, 4 => 15, 5 => 13, 6 => 11, 7 => 10 }.freeze
 
-        STARTING_CASH = { 2 => 420, 3 => 420, 4 => 420, 5 => 390, 6 => 390 }.freeze
+        STARTING_CASH = { 2 => 1260, 3 => 840, 4 => 630, 5 => 504, 6 => 420, 7 => 360}.freeze
 
         CAPITALIZATION = :full
 
         MUST_SELL_IN_BLOCKS = true
 
         MARKET = [
-          %w[75 80 90 100p 110 125 140 155 175 200 225 255 285 315 350],
-          %w[70 75 80 90p 100 110 125 140 155 175 200 225 255 285 315],
-          %w[65 70 75 80p 90 100 110 125 140 155 175 200],
-          %w[60 65 70 75p 80 90 100 110 125 140],
-          %w[55 60 65 70p 75 80 90 100],
-          %w[50y 55 60 65p 70 75 80],
-          %w[45y 50y 55 60 65 70],
-          %w[40y 45y 50y 55 60],
-          %w[30o 40y 45y 50y],
-          %w[20o 30o 40y 45y],
-          %w[10o 20o 30o 40y],
+          %w[70 75 80 90 100p 110 125 150 175 200 225 250 275 300 325 350 375 400],
+          %w[65 70 75 80 90p 100 110 125 150 175 200 225 250 275 300 325 350 375],
+          %w[60 65 70 75 80p 90 100 110 125 150 175 200 225 250 275 300],
+          %w[55 60 65 70 75p 80 90 100 110 125 150 175 200 225],
+          %w[50y 55 60 65 70p 75 80 90 100 110 125 150],
+          %w[45y 50y 55 60 65p 70 75 80 90 100],
+          %w[40o 45y 50y 55 60 65 70 75],
+          %w[35o 40o 45y 50y 55 60],
+          %w[30o 35o 40o 45y 50y],
+          %w[0c 30o 35o 40o 45y],
+          %w[0c 0c 30o 35o 40o],
         ].freeze
 
         PHASES = [
@@ -103,11 +103,27 @@ module Engine
             num: 1,
           },
           {
+            name: '2+2',
+            distance: [{ 'nodes' => ['town'], 'pay' => 2, 'visit' => 2 },
+                       { 'nodes' => %w[city offboard town], 'pay' => 2, 'visit' => 2 }],
+            price: 120,
+            rusts_on: '5',
+            num: 1,
+          },
+          {
             name: '3',
             distance: 3,
-            price: 80,
+            price: 180,
             rusts_on: '6',
-            num: 5,
+            num: 1,
+          },
+          {
+            name: '3+3',
+            distance: [{ 'nodes' => ['town'], 'pay' => 3, 'visit' => 3 },
+                       { 'nodes' => %w[city offboard town], 'pay' => 3, 'visit' => 3 }],
+            price: 230,
+            rusts_on: '6',
+            num: 1,
             events: [{ 'type' => 'conversion_to_Kintetsu' }],
           },
           {
@@ -116,6 +132,7 @@ module Engine
             price: 300,
             rusts_on: 'D',
             num: 1,
+            # events: [{ 'type' => 'kanan_merge_to_Kintetsu' }],
           },
           {
             name: '5',
@@ -240,6 +257,7 @@ module Engine
 
         def place_home_token(corporation)
           return super unless corporation.name == "JR"
+          return if corporation.tokens.first&.used
           Array(corporation.coordinates).each do |coord|
             hex = hex_by_id(coord)
             tile = hex&.tile
@@ -281,12 +299,12 @@ module Engine
       def after_buy_company(player, company, _price)
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|
-            # if share.president
-            #   @round.companies_pending_par << company
-            #   @log << "share.president"
-            # else
+            if share.president
+              @round.companies_pending_par << company
+              @log << "share.president"
+            else
               share_pool.buy_shares(player, share, exchange: :free)
-            # end
+            end
           end
         end
         abilities(company, :acquire_company) do |ability|
