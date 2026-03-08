@@ -331,7 +331,7 @@ module Engine
           when "京福"
             keihan = @corporations.find{|c| c.name == '京阪'}
             if keihan.tokens.find{|t| t.hex&.location_name == '京都'}
-              bank.spend(40, keihan)
+              @bank.spend(40, keihan)
               @log << "#{keihan.name} have token in 京都, so collects 40 from 京福"
             end
           when "泉北"
@@ -341,7 +341,7 @@ module Engine
             end
           when "北急"
             if @Osaka_Expo_timing
-              bank.spend(40, c)
+              bank.spend(40, owner)
               @log << "#{owner.name} collects 40 from 北急 as Expo special revenue"
               @Osaka_Expo_timing = false
             end
@@ -471,6 +471,21 @@ module Engine
                        " train#{transferred.one? ? '' : 's'} from #{source.name}"
 
         end
+
+      def event_close_companies!
+        @log << '-- Event: Private companies close --'
+        @companies.each do |company|
+          if (ability = abilities(company, :close, on_phase: 'any')) &&
+              (ability.on_phase == 'never' || @phase.future.any? { |phase| ability.on_phase == phase[:name] })
+            next
+          end
+          if company.type == :latecomer
+            next
+          end
+
+          company.close!
+        end
+      end
 
         def transfer_treasury(source, destination)
           return unless source.cash.positive?
