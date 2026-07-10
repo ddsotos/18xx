@@ -24,10 +24,12 @@ module Engine
               case hex.location_name
               when "西宮"
                 return @game.tiles.select { |t| t.name == 'BNI' }
+              when "大阪西"
+                return @game.tiles.select { |t| t.name == 'BOS' }
               end
             end
             tiles = super
-            return tiles.reject! { |t| t.name == 'BNI' }
+            return tiles.reject { |t| t.name == 'BNI'}
           end
 
 
