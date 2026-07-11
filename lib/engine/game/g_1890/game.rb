@@ -368,6 +368,8 @@ module Engine
 
 
       def after_buy_company(player, company, _price)
+        company.value = 0 if company.id == '市電'
+
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|
             if share.president

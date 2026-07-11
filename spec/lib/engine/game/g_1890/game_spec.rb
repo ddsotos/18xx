@@ -14,6 +14,14 @@ module Engine
           %w[有馬鉄道 神戸市電 阪堺電鉄 阪神国道軌道 京津鉄道 大阪市電 河南鉄道 大阪電気軌道 大阪鉄道 奈良電鉄 神戸電鉄],
         )
       end
+
+      it 'changes Osaka City Tram face value to zero when a player buys it' do
+        company = game.company_by_id('市電')
+
+        game.after_buy_company(game.players.first, company, company.value)
+
+        expect(company.value).to eq(0)
+      end
     end
   end
 end
