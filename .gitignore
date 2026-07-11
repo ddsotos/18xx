@@ -38,3 +38,6 @@ validate/
 .vscode
 
 .rerun
+
+# Local Codex helper environments
+/.tools/
