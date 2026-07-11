@@ -304,6 +304,31 @@ module Engine
     end
 
     describe 'Kintetsu conversion' do
+      it 'allows optional Daiki conversion from phase 2' do
+        buy_all_initial_companies(game)
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minor_by_id('大軌')
+
+        expect(step.can_exchange?(daiki)).to be(false)
+
+        game.phase.next! until game.phase.name == '2'
+
+        expect(step.can_exchange?(daiki)).to be(true)
+
+        kintetsu = game.corporation_by_id('近鉄')
+        selected_share = kintetsu.treasury_shares.find(&:buyable)
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [selected_share]))
+
+        expect(daiki).to be_closed
+        expect(step.can_exchange?(game.minor_by_id('河南'))).to be(true)
+        expect(step.can_exchange?(game.minor_by_id('奈良'))).to be(false)
+
+        game.phase.next! until game.phase.name == '4'
+
+        expect(step.can_exchange?(game.minor_by_id('奈良'))).to be(true)
+      end
+
       it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do
         buy_all_initial_companies(game)
         daiki = game.minor_by_id('大軌')

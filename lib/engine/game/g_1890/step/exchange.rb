@@ -28,15 +28,32 @@ module Engine
             end
           end
 
-          def can_exchange?(entity, _bundle = nil)
-            super
+          def can_exchange?(entity, bundle = nil)
+            return super unless entity.minor?
+            return false unless entity.owner && !entity.closed?
+
+            kintetsu = @game.corporation_by_id('近鉄')
+            allowed =
+              case entity.id
+              when '大軌'
+                @game.phase.available?('2')
+              when '河南'
+                @game.phase.available?('2') && kintetsu.floatable
+              when '奈良'
+                @game.phase.available?('4') && kintetsu.floatable
+              else
+                false
+              end
+            return false unless allowed
+            return bundle.corporation == kintetsu if bundle
+
+            entity.id == '大軌' || @game.reserved_kintetsu_shares(kintetsu).any?
           end
 
           def process_buy_shares(action)
             entity = action.entity
             @game.log << "can_exchange? #{entity.name} "
-            minor = @game.minors.find { |m| m.name == entity.sym }
-            @game.exchange_minor(minor, action.bundle)
+            @game.exchange_minor(entity, action.bundle)
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
           end
 
