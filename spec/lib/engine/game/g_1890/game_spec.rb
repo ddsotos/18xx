@@ -153,6 +153,25 @@ module Engine
         expect(kobe_tram.owner).to be_nil
       end
 
+      it 'resolves multiple bids after the earlier company is bought' do
+        step = game.round.active_step
+        arima, kobe_tram = step.companies.first(2)
+        player_a, player_b, player_c = game.players
+
+        step.process_bid(Action::Bid.new(player_a, company: kobe_tram, price: 40))
+        step.process_bid(Action::Bid.new(player_b, company: kobe_tram, price: 45))
+        step.process_bid(Action::Bid.new(player_c, company: arima, price: 20))
+
+        expect(step.active_entities).to eq([player_a])
+        expect(step.min_bid(kobe_tram)).to eq(50)
+
+        step.process_pass(Action::Pass.new(player_a))
+
+        expect(kobe_tram.owner).to eq(player_b)
+        expect(player_b.cash).to eq(795)
+        expect(step.companies).not_to include(kobe_tram)
+      end
+
       it 'gives Arima Railway away when four rounds of passes reduce it to zero' do
         step = game.round.active_step
         arima = step.companies.first
