@@ -303,6 +303,24 @@ module Engine
       end
     end
 
+    describe 'Kita-Osaka Kyuko Railway' do
+      it 'adds 40 to its first payout after the Osaka Expo event only' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '北急' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        cash_before = player.cash
+
+        game.event_Osaka_Expo!
+        game.payout_companies
+        expect(player.cash).to eq(cash_before + 100)
+
+        game.payout_companies
+        expect(player.cash).to eq(cash_before + 160)
+      end
+    end
+
     describe 'Kintetsu conversion' do
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)
