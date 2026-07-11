@@ -7,6 +7,19 @@ module Engine
     let(:players) { %w[A B C] }
     subject(:game) { described_class.new(players) }
 
+    describe 'scenario C setup' do
+      it 'divides the initial player cash pool of 2520 yen equally' do
+        expect(described_class::STARTING_CASH).to eq(
+          2 => 1260,
+          3 => 840,
+          4 => 630,
+          5 => 504,
+          6 => 420,
+          7 => 360,
+        )
+      end
+    end
+
     describe 'initial auction' do
       it 'uses the companies in the scenario C prescribed order' do
         expect(game.round).to be_a(Round::Auction)
