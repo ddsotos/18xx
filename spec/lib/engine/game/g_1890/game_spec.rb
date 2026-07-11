@@ -7,6 +7,27 @@ module Engine
     let(:players) { %w[A B C] }
     subject(:game) { described_class.new(players) }
 
+    def buy_all_initial_companies(game)
+      while game.round.is_a?(Round::Auction)
+        auction = game.round.steps.find { |step| step.is_a?(Game::G1890::Step::WaterfallAuction) }
+        company = auction.companies.first
+        game.process_action(Action::Bid.new(game.current_entity, company: company, price: company.min_bid))
+        game.maybe_raise!
+
+        while game.round.is_a?(Round::Auction) && (pending_company = game.round.companies_pending_par.first)
+          president_share = game.abilities(pending_company, :shares).shares.find(&:president)
+          game.process_action(
+            Action::Par.new(
+              pending_company.owner,
+              corporation: president_share.corporation,
+              share_price: game.stock_market.par_prices.first,
+            ),
+          )
+          game.maybe_raise!
+        end
+      end
+    end
+
     describe 'scenario C setup' do
       it 'divides the initial player cash pool of 2520 yen equally' do
         expect(described_class::STARTING_CASH).to eq(
@@ -189,24 +210,7 @@ module Engine
       end
 
       it 'moves to a normal stock round after all eleven companies are bought' do
-        while game.round.is_a?(Round::Auction)
-          auction = game.round.steps.find { |step| step.is_a?(Game::G1890::Step::WaterfallAuction) }
-          company = auction.companies.first
-          game.process_action(Action::Bid.new(game.current_entity, company: company, price: company.min_bid))
-          game.maybe_raise!
-
-          while game.round.is_a?(Round::Auction) && (pending_company = game.round.companies_pending_par.first)
-            president_share = game.abilities(pending_company, :shares).shares.find(&:president)
-            game.process_action(
-              Action::Par.new(
-                pending_company.owner,
-                corporation: president_share.corporation,
-                share_price: game.stock_market.par_prices.first,
-              ),
-            )
-            game.maybe_raise!
-          end
-        end
+        buy_all_initial_companies(game)
 
         expect(game.round).to be_a(Round::Stock)
         expect(game.companies.count(&:owned_by_player?)).to eq(11)
@@ -296,6 +300,26 @@ module Engine
         game.payout_companies
 
         expect(corporation.cash).to eq(cash_before + 40)
+      end
+    end
+
+    describe 'Kintetsu conversion' do
+      it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do
+        buy_all_initial_companies(game)
+        daiki = game.minor_by_id('大軌')
+        hantetsu = game.minor_by_id('阪鉄')
+        kintetsu = game.corporation_by_id('近鉄')
+
+        %w[2-2 3 3-3].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(game.corporations.first, train, train.owner)
+        end
+
+        expect(game.phase.name).to eq('2.2')
+        expect(daiki).to be_closed
+        expect(hantetsu).to be_closed
+        expect(kintetsu.floatable).to be(true)
+        expect(kintetsu.cash).to eq(kintetsu.par_price.price * 4 + 300)
       end
     end
   end
