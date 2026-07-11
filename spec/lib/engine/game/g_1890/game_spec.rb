@@ -350,6 +350,19 @@ module Engine
       end
     end
 
+    describe 'Hankyu Railway' do
+      it 'receives 40 each OR when it has a token in Takarazuka' do
+        hankyu = game.corporation_by_id('阪急')
+        takarazuka = game.hex_by_id('D9').tile.cities.first
+        takarazuka.place_token(hankyu, hankyu.next_token, check_tokenable: false)
+        cash_before = hankyu.cash
+
+        game.payout_companies
+
+        expect(hankyu.cash).to eq(cash_before + 40)
+      end
+    end
+
     describe 'Kintetsu conversion' do
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)

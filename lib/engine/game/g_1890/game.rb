@@ -408,6 +408,12 @@ module Engine
           @bank.spend(revenue, owner)
           @log << "#{owner.name} collects #{format_currency(revenue)} from #{company.name}"
         end
+
+        hankyu = corporation_by_id('阪急')
+        return unless hankyu.tokens.any? { |token| token.hex&.location_name == '宝塚' }
+
+        @bank.spend(40, hankyu)
+        @log << "#{hankyu.name} collects #{format_currency(40)} for its Takarazuka token"
       end
 
 
