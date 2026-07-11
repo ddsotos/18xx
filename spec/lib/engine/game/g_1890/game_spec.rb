@@ -18,6 +18,21 @@ module Engine
           7 => 360,
         )
       end
+
+      it 'uses the prescribed train quantities' do
+        quantities = described_class::TRAINS.to_h { |train| [train[:name], train[:num]] }
+
+        expect(quantities).to eq(
+          '2' => 9,
+          '2-2' => 3,
+          '3' => 5,
+          '3-3' => 2,
+          '4' => 4,
+          '5' => 3,
+          '6' => 2,
+          'D' => 6,
+        )
+      end
     end
 
     describe 'initial auction' do
