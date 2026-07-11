@@ -321,6 +321,28 @@ module Engine
         expect(kintetsu.floatable).to be(true)
         expect(kintetsu.cash).to eq(kintetsu.par_price.price * 4 + 300)
       end
+
+      it 'splits Kanan cash between Kintetsu and its president on the 4 train' do
+        buy_all_initial_companies(game)
+        %w[2-2 3 3-3].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(game.corporations.first, train, train.owner)
+        end
+
+        kanan = game.minor_by_id('河南')
+        kintetsu = game.corporation_by_id('近鉄')
+        president = kanan.owner
+        game.bank.spend(1, kanan)
+        kintetsu_cash = kintetsu.cash
+        president_cash = president.cash
+
+        train = game.trains.find { |candidate| candidate.name == '4' }
+        game.phase.buying_train!(game.corporations.first, train, train.owner)
+
+        expect(kanan).to be_closed
+        expect(kintetsu.cash).to eq(kintetsu_cash + 51)
+        expect(president.cash).to eq(president_cash + 50)
+      end
     end
   end
 end

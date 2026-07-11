@@ -453,6 +453,11 @@ module Engine
               hantetsu_private.close!
             else
               exchange_share(minor, corporation, source)
+              if minor.name == '河南'
+                refund = minor.cash / 2
+                minor.spend(refund, minor.owner)
+                @log << "#{minor.owner.name} receives #{format_currency(refund)} from #{minor.name}"
+              end
               merge_minor!(minor, corporation, source)
             end
             privateOfMinor = @companies.find { |c| c.sym == minor.name }
