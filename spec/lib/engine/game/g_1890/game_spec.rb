@@ -171,6 +171,19 @@ module Engine
     end
 
     describe '5 train event' do
+      it 'removes private blocking abilities in phase 4 except Osaka City Tram' do
+        ordinary_blockers = %w[有電 神電 堺電 京津].map { |id| game.company_by_id(id) }
+        osaka_tram = game.company_by_id('市電')
+
+        expect(ordinary_blockers).to all(satisfy { |company| game.abilities(company, :blocks_hexes) })
+        expect(game.abilities(osaka_tram, :blocks_hexes)).not_to be_nil
+
+        game.phase.next! until game.phase.name == '4'
+
+        expect(ordinary_blockers).to all(satisfy { |company| game.abilities(company, :blocks_hexes).nil? })
+        expect(game.abilities(osaka_tram, :blocks_hexes)).not_to be_nil
+      end
+
       it 'reduces Kobe City Tram and Hankai revenue to 5 in phase 4' do
         companies = %w[神電 堺電].map { |id| game.company_by_id(id) }
         companies.each do |company|

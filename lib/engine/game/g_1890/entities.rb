@@ -12,7 +12,7 @@ module Engine
             desc: "配置制限:有馬(D7) \n 企業に売られたら有馬にタイル配置",
             sym: '有電',
             type: :private,
-            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['D7'] },
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', remove: '4', hexes: ['D7'] },
                         {
                           type: 'tile_lay',
                           hexes: ['D7'],
@@ -31,7 +31,7 @@ module Engine
             sym: '神電',
             type: :private,
             abilities: [
-              { type: 'blocks_hexes', owner_type: 'player', hexes: ['F5'] },
+              { type: 'blocks_hexes', owner_type: 'player', remove: '4', hexes: ['F5'] },
               { type: 'revenue_change', revenue: 5, on_phase: '4' },
             ],
             color: nil,
@@ -43,7 +43,7 @@ module Engine
             desc: '配置制限:堺(J11)大阪南(I12) \n 第4フェイズ(5列車購入時)に閉鎖しない　ただし収入は5になり、売却できず、株券枚数制限に含み続ける',
             sym: '堺電',
             type: :private,
-            abilities: [{ type: 'blocks_hexes', owner_type: 'player', remove: '5', hexes: %w[I12 J11] },
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', remove: '4', hexes: %w[I12 J11] },
                         { type: 'close', on_phase: 'never' },
                         {
                           type: 'revenue_change',
@@ -70,7 +70,7 @@ module Engine
             sym: '京津',
             type: :private,
             abilities: [
-              { type: 'blocks_hexes', owner_type: 'player', hexes: %w[B17 B19] },          
+              { type: 'blocks_hexes', owner_type: 'player', remove: '4', hexes: %w[B17 B19] },
               { type: 'shares', shares: '京阪_1' }
             ],
             color: nil,
