@@ -171,6 +171,18 @@ module Engine
     end
 
     describe '5 train event' do
+      it 'reduces Kobe City Tram and Hankai revenue to 5 in phase 4' do
+        companies = %w[神電 堺電].map { |id| game.company_by_id(id) }
+        companies.each do |company|
+          company.owner = game.players.first
+          game.players.first.companies << company
+        end
+
+        game.phase.next! until game.phase.name == '4'
+
+        expect(companies.map(&:revenue)).to eq([5, 5])
+      end
+
       it 'closes ordinary privates but keeps Hankai, Osaka City Tram, minors, and latecomers open' do
         game.event_close_companies!
 

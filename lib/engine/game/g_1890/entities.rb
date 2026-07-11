@@ -30,7 +30,10 @@ module Engine
             desc: '配置制限:神戸(F5)',
             sym: '神電',
             type: :private,
-            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['F5'] }],
+            abilities: [
+              { type: 'blocks_hexes', owner_type: 'player', hexes: ['F5'] },
+              { type: 'revenue_change', revenue: 5, on_phase: '4' },
+            ],
             color: nil,
           },
           {
@@ -45,7 +48,7 @@ module Engine
                         {
                           type: 'revenue_change',
                           revenue: 5,
-                          on_phase: '5',
+                          on_phase: '4',
                         }],
             color: nil,
           },
