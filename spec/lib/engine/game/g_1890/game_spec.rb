@@ -551,6 +551,16 @@ module Engine
         expect(kintetsu.treasury_shares.reject(&:buyable)).to be_empty
         expect(kintetsu.tokens.any? { |token| token.hex&.id == 'H19' }).to be(true)
       end
+
+      it 'releases unused Kintetsu reserved shares after the final merger' do
+        kintetsu = game.corporation_by_id('近鉄')
+        unused_share = kintetsu.treasury_shares.find(&:buyable)
+        unused_share.buyable = false
+
+        game.release_reserved_kintetsu_shares!(kintetsu)
+
+        expect(unused_share.buyable).to be(true)
+      end
     end
 
     describe 'train rusting' do

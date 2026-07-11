@@ -366,6 +366,7 @@ module Engine
         kintetsu = @corporations.find { |corporation| corporation.name == '近鉄' }
         bundle = Engine::ShareBundle.new(reserved_kintetsu_shares(kintetsu).first(2))
         exchange_minor(nara, bundle)
+        release_reserved_kintetsu_shares!(kintetsu)
       end
 
 
@@ -593,6 +594,10 @@ module Engine
 
         def reserved_kintetsu_shares(corporation)
           corporation.treasury_shares.reject(&:buyable)
+        end
+
+        def release_reserved_kintetsu_shares!(corporation)
+          reserved_kintetsu_shares(corporation).each { |share| share.buyable = true }
         end
 
 
