@@ -207,5 +207,21 @@ module Engine
         expect(game.company_by_id('河南')).not_to be_closed
       end
     end
+
+    describe 'Osaka City Tram' do
+      it 'closes when Osaka Metro buys its first train' do
+        company = game.company_by_id('市電')
+        company.owner = game.players.first
+        game.players.first.companies << company
+        metro = game.corporation_by_id('メトロ')
+        train = game.trains.find { |candidate| candidate.name == '2' }
+
+        expect(company).not_to be_closed
+
+        game.buy_train(metro, train, :free)
+
+        expect(company).to be_closed
+      end
+    end
   end
 end
