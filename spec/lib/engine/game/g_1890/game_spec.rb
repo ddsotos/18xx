@@ -69,6 +69,11 @@ module Engine
         expect(values).to eq('京福' => 200, '神高' => 240, '北急' => 280, '泉北' => 320)
       end
 
+      it 'floats Keihan and Hanshin at 40 percent because of their attached shares' do
+        expect(game.corporation_by_id('京阪').float_percent).to eq(40)
+        expect(game.corporation_by_id('阪神').float_percent).to eq(40)
+      end
+
       it 'uses the prescribed minor, public company, and JR train limits' do
         expect(described_class::PHASES.map { |phase| phase[:train_limit] }).to eq(
           [

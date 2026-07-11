@@ -224,7 +224,7 @@ module Engine
             color: '#006633',
           },
           {
-            float_percent: 50,
+            float_percent: 40,
             sym: '京阪',
             name: '京阪急行鉄道',
             type: 'major',
@@ -246,7 +246,7 @@ module Engine
             color: '#c51e2f',
           },
           {
-            float_percent: 50,
+            float_percent: 40,
             sym: '阪神',
             name: '阪神電気鉄道',
             type: 'major',
