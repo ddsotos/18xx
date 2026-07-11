@@ -159,7 +159,8 @@ module Engine
                      { 'type' => 'remove_extra_tile_lay_from_JR' },],
           },
           { name: '6', distance: 6, price: 630, num: 2,
-            events: [{ 'type' => 'Osaka_Expo' }],
+            events: [{ 'type' => 'Osaka_Expo' },
+                     { 'type' => 'nara_merge_to_Kintetsu' }],
           },
           {
             name: 'D',
@@ -184,6 +185,7 @@ module Engine
           'remove_extra_tile_lay_from_JR' => ['JRの2タイル配置終了', 'JRは、ここまでは2か所でタイル配置できる'],
           'kanan_merge_to_Kintetsu' => ['河南の強制合併', '近鉄開始以降合併可だが、このタイミングで強制合併'],
           'Osaka_Expo' => ['万博(1970)', '北大阪急行が一度だけ40の追加配当を行う'],
+          'nara_merge_to_Kintetsu' => ['奈良電鉄の強制合併', '奈良電鉄を近鉄20%株と交換して強制合併する'],
           ).freeze
 
 
@@ -295,6 +297,10 @@ module Engine
           companies.reject { |company| company.id == '神電' }
         end
 
+        def home_token_can_be_cheater
+          true
+        end
+
         def place_home_token(corporation)
           return super unless corporation.name == "JR"
           return if corporation.tokens.first&.used
@@ -333,7 +339,7 @@ module Engine
       def event_kanan_merge_to_Kintetsu!
         return unless kanan = @minors.find { |m| m.name == "河南" }
         kintetsu = @corporations.find{|c| c.name == '近鉄'}
-        exchange_minor(kanan,kintetsu.shares[6].to_bundle)
+        exchange_minor(kanan, reserved_kintetsu_shares(kintetsu).first.to_bundle)
       end
 
       def event_remove_extra_tile_lay_from_JR!
@@ -343,6 +349,15 @@ module Engine
 
       def event_Osaka_Expo!
         @Osaka_Expo_timing = true
+      end
+
+      def event_nara_merge_to_Kintetsu!
+        nara = @minors.find { |minor| minor.name == '奈良' }
+        return unless nara&.owner && !nara.closed?
+
+        kintetsu = @corporations.find { |corporation| corporation.name == '近鉄' }
+        bundle = Engine::ShareBundle.new(reserved_kintetsu_shares(kintetsu).first(2))
+        exchange_minor(nara, bundle)
       end
 
 
@@ -446,7 +461,7 @@ module Engine
               @log << "#{corporation.name} floats with #{initialCapital} (par_price *4)"
 
               hantetsu = @minors.find { |m| m.name == "阪鉄" }
-              exchange_share(hantetsu, corporation.shares[4].to_bundle)
+              exchange_share(hantetsu, reserved_kintetsu_shares(corporation).first.to_bundle)
               merge_minor!(hantetsu, corporation, source)
               @round.recalculate_order_when_merge_Kintetsu if @round.respond_to?(:recalculate_order_when_merge_Kintetsu)
               hantetsu_private = @companies.find { |c| c.sym == "阪鉄" }
@@ -548,6 +563,10 @@ module Engine
 
           @share_pool.buy_shares(minor.owner, bundle, exchange: true)
 
+        end
+
+        def reserved_kintetsu_shares(corporation)
+          corporation.treasury_shares.reject(&:buyable)
         end
 
 

@@ -346,6 +346,30 @@ module Engine
         expect(president.cash).to eq(president_cash + 50)
         expect(president.shares_of(kintetsu).map(&:buyable)).to include(false)
       end
+
+      it 'forces Nara to merge for two reserved shares on the 6 train' do
+        buy_all_initial_companies(game)
+        nara = game.minor_by_id('奈良')
+        kintetsu = game.corporation_by_id('近鉄')
+        president = nara.owner
+
+        %w[2-2 3 3-3 4 5].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(game.corporations.first, train, train.owner)
+        end
+        cash_before = kintetsu.cash
+        percent_before = president.percent_of(kintetsu)
+
+        train = game.trains.find { |candidate| candidate.name == '6' }
+        game.phase.buying_train!(game.corporations.first, train, train.owner)
+
+        expect(game.phase.name).to eq('5')
+        expect(nara).to be_closed
+        expect(kintetsu.cash).to eq(cash_before + 160)
+        expect(president.percent_of(kintetsu)).to eq(percent_before + 20)
+        expect(kintetsu.treasury_shares.reject(&:buyable)).to be_empty
+        expect(kintetsu.tokens.any? { |token| token.hex&.id == 'H19' }).to be(true)
+      end
     end
 
     describe 'train rusting' do
