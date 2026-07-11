@@ -76,6 +76,22 @@ module Engine
         expect(described_class::TRAINS.find { |train| train[:name] == 'D' }[:available_on]).to eq('5')
       end
 
+      it 'advances through the first lower half and second phase when trains are bought' do
+        corporation = game.corporations.first
+        buy_for_phase = lambda do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(corporation, train, train.owner)
+        end
+
+        expect(game.phase.name).to eq('1')
+        buy_for_phase.call('2')
+        expect(game.phase.name).to eq('1')
+        buy_for_phase.call('2-2')
+        expect(game.phase.name).to eq('1.2')
+        buy_for_phase.call('3')
+        expect(game.phase.name).to eq('2')
+      end
+
       it 'floats and places a minor home token only when its certificate is bought' do
         company = game.company_by_id('河南')
         minor = game.minor_by_id('河南')
