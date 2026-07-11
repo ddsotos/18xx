@@ -22,6 +22,18 @@ module Engine
 
         expect(company.value).to eq(0)
       end
+
+      it 'discounts only Arima Railway by 5 after every player passes' do
+        step = game.round.active_step
+        arima, kobe_tram = step.companies.first(2)
+
+        game.players.each do |player|
+          step.process_pass(Action::Pass.new(player))
+        end
+
+        expect(arima.min_bid).to eq(15)
+        expect(kobe_tram.min_bid).to eq(40)
+      end
     end
   end
 end
