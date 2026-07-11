@@ -153,5 +153,17 @@ module Engine
         expect(arima.min_bid).to eq(0)
       end
     end
+
+    describe '5 train event' do
+      it 'closes ordinary privates but keeps Hankai, Osaka City Tram, minors, and latecomers open' do
+        game.event_close_companies!
+
+        expect(game.company_by_id('有電')).to be_closed
+        expect(game.company_by_id('神電')).to be_closed
+        expect(game.company_by_id('堺電')).not_to be_closed
+        expect(game.company_by_id('市電')).not_to be_closed
+        expect(game.company_by_id('河南')).not_to be_closed
+      end
+    end
   end
 end
