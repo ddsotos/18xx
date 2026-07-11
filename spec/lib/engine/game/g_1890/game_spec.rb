@@ -168,6 +168,30 @@ module Engine
         expect(step.companies).not_to include(arima)
         expect(arima.min_bid).to eq(0)
       end
+
+      it 'moves to a normal stock round after all eleven companies are bought' do
+        while game.round.is_a?(Round::Auction)
+          auction = game.round.steps.find { |step| step.is_a?(Game::G1890::Step::WaterfallAuction) }
+          company = auction.companies.first
+          game.process_action(Action::Bid.new(game.current_entity, company: company, price: company.min_bid))
+          game.maybe_raise!
+
+          while game.round.is_a?(Round::Auction) && (pending_company = game.round.companies_pending_par.first)
+            president_share = game.abilities(pending_company, :shares).shares.find(&:president)
+            game.process_action(
+              Action::Par.new(
+                pending_company.owner,
+                corporation: president_share.corporation,
+                share_price: game.stock_market.par_prices.first,
+              ),
+            )
+            game.maybe_raise!
+          end
+        end
+
+        expect(game.round).to be_a(Round::Stock)
+        expect(game.companies.count(&:owned_by_player?)).to eq(11)
+      end
     end
 
     describe '5 train event' do
