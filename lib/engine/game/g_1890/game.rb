@@ -301,6 +301,14 @@ module Engine
           true
         end
 
+        def kintetsu_special_operating?
+          @kintetsu_special_operating == true
+        end
+
+        def finish_kintetsu_special_operating!
+          @kintetsu_special_operating = false
+        end
+
         def place_home_token(corporation)
           return super unless corporation.name == "JR"
           return if corporation.tokens.first&.used
@@ -455,6 +463,7 @@ module Engine
 
             if minor.name == "大軌"
               merge_minor!(minor, corporation, source)
+              @kintetsu_special_operating = true
               corporation.floatable = true #Kintetsu floats when president share is bought
               initialCapital = corporation.par_price.price * 4
               @bank.spend(initialCapital, corporation)

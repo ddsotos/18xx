@@ -27,6 +27,21 @@ module Engine
               per_share: payout_per_share(entity, shareholder_total),
             }
           end
+
+          def share_price_change(entity, revenue = 0)
+            if entity.id == '近鉄' && @game.kintetsu_special_operating? && !revenue.positive?
+              return {}
+            end
+
+            super
+          end
+
+          def process_dividend(action)
+            super
+            return unless action.entity.id == '近鉄' && @game.kintetsu_special_operating?
+
+            @game.finish_kintetsu_special_operating!
+          end
         end
       end
     end

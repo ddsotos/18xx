@@ -356,6 +356,20 @@ module Engine
         expect(kintetsu.floatable).to be(true)
         expect(kintetsu.cash).to eq(kintetsu.par_price.price * 4 + 300)
         expect(hantetsu_owner.shares_of(kintetsu).reject(&:president).map(&:buyable)).to include(false)
+        expect(game.kintetsu_special_operating?).to be(true)
+
+        round = game.operating_round(1)
+        dividend = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        expect(dividend.share_price_change(kintetsu, 0)).to eq({})
+        expect(dividend.share_price_change(kintetsu, 100)).to eq(share_direction: :right, share_times: 1)
+
+        round.instance_variable_set(:@entities, [kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        share_price = kintetsu.share_price
+        dividend.process_dividend(Action::Dividend.new(kintetsu, kind: 'withhold'))
+
+        expect(kintetsu.share_price).to eq(share_price)
+        expect(game.kintetsu_special_operating?).to be(false)
       end
 
       it 'splits Kanan cash between Kintetsu and its president on the 4 train' do
