@@ -379,6 +379,21 @@ module Engine
       end
     end
 
+    describe 'Hanshin Railway' do
+      it 'receives 10 once per OR when a route uses brown Nishinomiya' do
+        hanshin = game.corporation_by_id('阪神')
+        hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown))
+        stop = double('stop', hex: hex)
+        hanshin_train = instance_double(Train, owner: hanshin)
+        routes = Array.new(2) { instance_double(Route, visited_stops: [stop], train: hanshin_train) }
+
+        expect(game.routes_subsidy(routes)).to eq(10)
+
+        hankyu_train = instance_double(Train, owner: game.corporation_by_id('阪急'))
+        expect(game.routes_subsidy([instance_double(Route, visited_stops: [stop], train: hankyu_train)])).to eq(0)
+      end
+    end
+
     describe 'Kintetsu conversion' do
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)

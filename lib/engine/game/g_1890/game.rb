@@ -416,6 +416,17 @@ module Engine
         @log << "#{hankyu.name} collects #{format_currency(40)} for its Takarazuka token"
       end
 
+      def routes_subsidy(routes)
+        return super if routes.empty? || routes.first.train.owner&.id != '阪神'
+
+        uses_brown_nishinomiya = routes.any? do |route|
+          route.visited_stops.any? do |stop|
+            stop.hex.location_name == '西宮' && stop.hex.tile.color == :brown
+          end
+        end
+        uses_brown_nishinomiya ? 10 : 0
+      end
+
 
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'
