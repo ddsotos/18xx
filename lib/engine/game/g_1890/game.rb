@@ -446,13 +446,13 @@ module Engine
               @log << "#{corporation.name} floats with #{initialCapital} (par_price *4)"
 
               hantetsu = @minors.find { |m| m.name == "阪鉄" }
-              exchange_share(hantetsu, corporation, source)
+              exchange_share(hantetsu, corporation.shares[4].to_bundle)
               merge_minor!(hantetsu, corporation, source)
               @round.recalculate_order_when_merge_Kintetsu if @round.respond_to?(:recalculate_order_when_merge_Kintetsu)
               hantetsu_private = @companies.find { |c| c.sym == "阪鉄" }
               hantetsu_private.close!
             else
-              exchange_share(minor, corporation, source)
+              exchange_share(minor, bundle)
               if minor.name == '河南'
                 refund = minor.cash / 2
                 minor.spend(refund, minor.owner)
@@ -540,21 +540,13 @@ module Engine
         end
 
 
-        def exchange_share(minor, corporation, source)
-          return unless corporation
+        def exchange_share(minor, bundle)
+          corporation = bundle.corporation
 
           @log << "#{minor.owner.name} exchanges #{minor.name} for a "\
-                       "10% share of #{corporation.name}"
+                       "#{bundle.percent}% share of #{corporation.name}"
 
-          bundle = if source == corporation
-                     corporation.treasury_shares.first.to_bundle
-                   else
-                     @share_pool.shares_of(corporation).first.to_bundle
-                   end
-
-                  @share_pool.buy_shares(minor.owner,
-                                    bundle,
-                                    exchange: true)
+          @share_pool.buy_shares(minor.owner, bundle, exchange: true)
 
         end
 

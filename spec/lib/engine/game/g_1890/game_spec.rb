@@ -309,6 +309,7 @@ module Engine
         daiki = game.minor_by_id('大軌')
         hantetsu = game.minor_by_id('阪鉄')
         kintetsu = game.corporation_by_id('近鉄')
+        hantetsu_owner = hantetsu.owner
 
         %w[2-2 3 3-3].each do |name|
           train = game.trains.find { |candidate| candidate.name == name }
@@ -320,6 +321,7 @@ module Engine
         expect(hantetsu).to be_closed
         expect(kintetsu.floatable).to be(true)
         expect(kintetsu.cash).to eq(kintetsu.par_price.price * 4 + 300)
+        expect(hantetsu_owner.shares_of(kintetsu).reject(&:president).map(&:buyable)).to include(false)
       end
 
       it 'splits Kanan cash between Kintetsu and its president on the 4 train' do
@@ -342,6 +344,7 @@ module Engine
         expect(kanan).to be_closed
         expect(kintetsu.cash).to eq(kintetsu_cash + 51)
         expect(president.cash).to eq(president_cash + 50)
+        expect(president.shares_of(kintetsu).map(&:buyable)).to include(false)
       end
     end
 
