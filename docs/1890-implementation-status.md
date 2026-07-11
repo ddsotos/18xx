@@ -40,7 +40,7 @@
 | T-48 | 部分実装 | `payout_companies` の `泉北` 分岐 | 堺トークンを持つ各会社への40支払いとログ出力はテスト済み。後発会社の正確な登場時期は未検証。 |
 | T-51–T-53 | 部分実装 | 3-3／4 のイベント、`Game#exchange_minor`、`merge_minor!`、専用 OR | 大軌の転換、阪鉄の同時吸収、河南のイベント合併、資金・列車・トークン移動、近鉄の順番再計算を実装しようとしている。現金半額返金、予約株、例外処理が欠ける。 |
 | T-60（額面とタイル） | 部分実装 | `BuySellParShares#get_par_prices`、JR の `extra_tile_lay`、5 列車イベント | JR 額面を 100 に固定し、5 列車まで別ヘクスへ 2 回タイル操作する仕組みがある。 |
-| T-60（ホームトークン） | 実装あり（要検証） | `Game#place_home_token`、JR の `coordinates` と `reservation` | 神戸と予約都市を置く専用処理がある。実盤面の都市スロットとの整合は要テスト。 |
+| T-60（ホームトークン） | 実装・テスト済み | `Game#place_home_token`、JR の `coordinates` と `reservation` | 神戸、大阪北、京都、奈良の指定都市スロットへ4個のホームトークンを配置し、予約を解除する処理をテスト済み。 |
 | T-62, T-63（設立株） | 実装済み | 京津／阪神国道の `shares` 能力、`after_buy_company`、両社の `float_percent: 40`、`BuySellParShares#attached_share_locked?` | 初期競売で付属10%株を渡し、京阪・阪神を40%で設立する。社長株が会社保有中は付属株を売却できないことをテスト済み。 |
 | T-15 | 実装・テスト済み | 列車の `rusts_on`、5列車の `close_companies` イベント、`event_close_companies!` | 2→4、2-2→5、3/3-3→6、4→Dの廃車と、5列車で通常個人会社だけを閉鎖して阪堺・大阪市電・小会社を保持する処理をテスト済み。 |
 

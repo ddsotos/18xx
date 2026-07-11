@@ -144,6 +144,15 @@ module Engine
         expect(minor.tokens.first.used).to be(true)
         expect(minor.tokens.first.hex.id).to eq('J15')
       end
+
+      it 'places all four JR home tokens in their prescribed cities' do
+        jr = game.corporation_by_id('JR')
+
+        game.place_home_token(jr)
+
+        expect(jr.placed_tokens.map { |token| token.hex.id }).to contain_exactly('F5', 'G12', 'B17', 'H19')
+        expect(jr.all_abilities.select { |ability| ability.type == :reservation }).to be_empty
+      end
     end
 
     describe 'initial auction' do
