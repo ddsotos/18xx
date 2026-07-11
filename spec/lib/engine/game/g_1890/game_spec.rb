@@ -33,6 +33,12 @@ module Engine
           'D' => 6,
         )
       end
+
+      it 'creates an operating minor for each minor certificate' do
+        expect(game.minors.map(&:id)).to eq(
+          %w[河南 大軌 阪鉄 奈良 神戸],
+        )
+      end
     end
 
     describe 'initial auction' do

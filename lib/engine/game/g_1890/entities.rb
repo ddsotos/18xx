@@ -325,6 +325,24 @@ module Engine
             text_color: 'black',
             tokens: [],
           },
+          {
+            name: '奈良電鉄',
+            sym: '奈良',
+            logo: '1824/C4',
+            tokens: [0],
+            coordinates: 'H19',
+            color: '#8B4513',
+            text_color: 'white',
+          },
+          {
+            name: '神戸電鉄',
+            sym: '神戸',
+            logo: '1824/C4',
+            tokens: [0],
+            coordinates: 'F5',
+            color: '#4169E1',
+            text_color: 'white',
+          },
         ].freeze
       end
     end
