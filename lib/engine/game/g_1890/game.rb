@@ -51,13 +51,20 @@ module Engine
 
         PHASES = [
           {
-            name: '2',
+            name: '1',
             train_limit: { minor: 2, major: 4, national: 6 },
             tiles: [:yellow],
             operating_rounds: 1,
           },
           {
-            name: '3',
+            name: '1.2',
+            on: '2-2',
+            train_limit: { minor: 2, major: 4, national: 6 },
+            tiles: [:yellow],
+            operating_rounds: 1,
+          },
+          {
+            name: '2',
             on: '3',
             train_limit: { minor: 2, major: 4, national: 6 },
             tiles: %i[yellow green],
@@ -65,7 +72,15 @@ module Engine
             status: ['can_buy_companies'],
           },
           {
-            name: '4',
+            name: '2.2',
+            on: '3-3',
+            train_limit: { minor: 2, major: 4, national: 6 },
+            tiles: %i[yellow green],
+            operating_rounds: 2,
+            status: ['can_buy_companies'],
+          },
+          {
+            name: '3',
             on: '4',
             train_limit: { minor: 1, major: 3, national: 4 },
             tiles: %i[yellow green],
@@ -73,21 +88,21 @@ module Engine
             status: ['can_buy_companies'],
           },
           {
-            name: '5',
+            name: '4',
             on: '5',
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
             operating_rounds: 3,
           },
           {
-            name: '6',
+            name: '5',
             on: '6',
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
             operating_rounds: 3,
           },
           {
-            name: 'D',
+            name: '6',
             on: 'D',
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
@@ -151,7 +166,7 @@ module Engine
             distance: 999,
             price: 1100,
             num: 6,
-            available_on: '6',
+            available_on: '5',
             discount: { '4' => 300, '5' => 300, '6' => 300 },
           },
 ].freeze

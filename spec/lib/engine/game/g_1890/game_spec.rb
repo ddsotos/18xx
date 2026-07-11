@@ -45,6 +45,8 @@ module Engine
           [
             { minor: 2, major: 4, national: 6 },
             { minor: 2, major: 4, national: 6 },
+            { minor: 2, major: 4, national: 6 },
+            { minor: 2, major: 4, national: 6 },
             { minor: 1, major: 3, national: 4 },
             { minor: 1, major: 2, national: 3 },
             { minor: 1, major: 2, national: 3 },
@@ -55,6 +57,23 @@ module Engine
         expect(game.train_limit(game.minors.first)).to eq(2)
         expect(game.train_limit(game.corporation_by_id('南海'))).to eq(4)
         expect(game.train_limit(game.corporation_by_id('JR'))).to eq(6)
+      end
+
+      it 'models both halves of phases 1 and 2 and phases 3 through 6' do
+        expect(described_class::PHASES.map { |phase| [phase[:name], phase[:on]] }).to eq(
+          [
+            ['1', nil],
+            ['1.2', '2-2'],
+            ['2', '3'],
+            ['2.2', '3-3'],
+            ['3', '4'],
+            ['4', '5'],
+            ['5', '6'],
+            ['6', 'D'],
+          ],
+        )
+        expect(described_class::PHASES.map { |phase| phase[:operating_rounds] }).to eq([1, 1, 2, 2, 2, 3, 3, 3])
+        expect(described_class::TRAINS.find { |train| train[:name] == 'D' }[:available_on]).to eq('5')
       end
 
       it 'floats and places a minor home token only when its certificate is bought' do
