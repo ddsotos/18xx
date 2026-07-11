@@ -498,6 +498,8 @@ module Engine
         kanan = game.minor_by_id('河南')
         kintetsu = game.corporation_by_id('近鉄')
         president = kanan.owner
+        kanan_train = game.trains.find { |candidate| candidate.name == '3' && candidate.owner == game.depot }
+        game.buy_train(kanan, kanan_train, :free)
         game.bank.spend(1, kanan)
         kintetsu_cash = kintetsu.cash
         president_cash = president.cash
@@ -509,6 +511,8 @@ module Engine
         expect(kintetsu.cash).to eq(kintetsu_cash + 51)
         expect(president.cash).to eq(president_cash + 50)
         expect(president.shares_of(kintetsu).map(&:buyable)).to include(false)
+        expect(kanan_train.owner).to eq(kintetsu)
+        expect(kintetsu.trains).to include(kanan_train)
       end
 
       it 'forces Nara to merge for two reserved shares on the 6 train' do
