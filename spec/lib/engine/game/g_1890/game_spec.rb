@@ -460,6 +460,8 @@ module Engine
         hantetsu = game.minor_by_id('阪鉄')
         kintetsu = game.corporation_by_id('近鉄')
         hantetsu_owner = hantetsu.owner
+        hantetsu_train = game.trains.find { |candidate| candidate.name == '2' && candidate.owner == game.depot }
+        game.buy_train(hantetsu, hantetsu_train, :free)
 
         %w[2-2 3 3-3].each do |name|
           train = game.trains.find { |candidate| candidate.name == name }
@@ -472,6 +474,8 @@ module Engine
         expect(kintetsu.floatable).to be(true)
         expect(kintetsu.cash).to eq(kintetsu.par_price.price * 4 + 300)
         expect(hantetsu_owner.shares_of(kintetsu).reject(&:president).map(&:buyable)).to include(false)
+        expect(hantetsu_train.owner).to eq(kintetsu)
+        expect(kintetsu.trains).to include(hantetsu_train)
         expect(game.kintetsu_special_operating?).to be(true)
 
         round = game.operating_round(1)
