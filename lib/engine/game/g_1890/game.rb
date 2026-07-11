@@ -372,7 +372,7 @@ module Engine
           when "泉北"
             @corporations.select{|c| c.tokens.find{|t| t.hex&.location_name == '堺'}}.each do |c| 
               bank.spend(40, c)
-              @log << "#{keihan.name} have token in 堺, so collects 40 from 泉北"
+              @log << "#{c.name} have token in 堺, so collects 40 from 泉北"
             end
           when "北急"
             if @Osaka_Expo_timing

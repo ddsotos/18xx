@@ -236,5 +236,24 @@ module Engine
         expect(company).to be_closed
       end
     end
+
+    describe 'Semboku Rapid Railway' do
+      it 'pays 40 to each corporation tokened in Sakai without crashing' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '泉北' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        corporation = game.corporations.first
+        city = game.hex_by_id('J11').tile.cities.first
+        city.place_token(corporation, corporation.next_token, check_tokenable: false)
+        cash_before = corporation.cash
+
+        game.payout_companies
+
+        expect(corporation.cash).to eq(cash_before + 40)
+      end
+    end
   end
 end
