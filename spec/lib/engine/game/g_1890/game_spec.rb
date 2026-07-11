@@ -321,12 +321,21 @@ module Engine
         step.process_buy_shares(Action::BuyShares.new(daiki, shares: [selected_share]))
 
         expect(daiki).to be_closed
-        expect(step.can_exchange?(game.minor_by_id('河南'))).to be(true)
-        expect(step.can_exchange?(game.minor_by_id('奈良'))).to be(false)
+        kanan = game.minor_by_id('河南')
+        nara = game.minor_by_id('奈良')
+        expect(step.can_exchange?(kanan)).to be(true)
+        expect(step.can_exchange?(nara)).to be(false)
+
+        kanan_share = game.reserved_kintetsu_shares(kintetsu).first
+        step.process_buy_shares(Action::BuyShares.new(kanan, shares: [kanan_share]))
+        expect(kanan).to be_closed
 
         game.phase.next! until game.phase.name == '4'
 
-        expect(step.can_exchange?(game.minor_by_id('奈良'))).to be(true)
+        expect(step.can_exchange?(nara)).to be(true)
+        nara_shares = game.reserved_kintetsu_shares(kintetsu).first(2)
+        step.process_buy_shares(Action::BuyShares.new(nara, shares: nara_shares))
+        expect(nara).to be_closed
       end
 
       it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do
