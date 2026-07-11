@@ -117,6 +117,22 @@ module Engine
         expect(step.committed_cash(game.players.first)).to eq(40)
         expect(kobe_tram.owner).to be_nil
       end
+
+      it 'gives Arima Railway away when four rounds of passes reduce it to zero' do
+        step = game.round.active_step
+        arima = step.companies.first
+
+        4.times do
+          game.players.size.times do
+            step.process_pass(Action::Pass.new(game.current_entity))
+          end
+        end
+
+        expect(arima.owner).to be_player
+        expect(arima.owner.companies).to include(arima)
+        expect(step.companies).not_to include(arima)
+        expect(arima.min_bid).to eq(0)
+      end
     end
   end
 end
