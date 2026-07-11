@@ -584,6 +584,42 @@ module Engine
           expect(owned_trains.map(&:rusted)).to all(be(true))
         end
       end
+
+      it 'allows a 4, 5, or 6 train to be traded in for a D train at 800' do
+        d_train = game.trains.find { |train| train.name == 'D' }
+
+        %w[4 5 6].each do |name|
+          exchange_train = game.trains.find { |train| train.name == name }
+          expect(d_train.price(exchange_train)).to eq(800)
+        end
+      end
+
+      it 'reclaims the traded train when a corporation buys a discounted D train' do
+        buy_all_initial_companies(game)
+        corporation = game.corporations.first
+        game.bank.spend(2000, corporation)
+        exchange_train = game.trains.find { |train| train.name == '5' }
+        game.buy_train(corporation, exchange_train, :free)
+        %w[2-2 3 3-3 4 5 6].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(corporation, train, train.owner)
+        end
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::BuyTrain) }
+        d_train = game.depot.available(corporation).find { |train| train.name == 'D' }
+        cash_before = corporation.cash
+
+        step.process_buy_train(
+          Action::BuyTrain.new(corporation, train: d_train, price: 800, exchange: exchange_train),
+        )
+
+        expect(corporation.cash).to eq(cash_before - 800)
+        expect(d_train.owner).to eq(corporation)
+        expect(exchange_train.owner).to eq(game.depot)
+      end
     end
 
     describe 'JR dividends' do
