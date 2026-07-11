@@ -61,6 +61,14 @@ module Engine
         )
       end
 
+      it 'uses the prescribed latecomer company face values' do
+        values = game
+                 .instance_variable_get(:@latecomer_companies)
+                 .to_h { |company| [company.id, company.value] }
+
+        expect(values).to eq('京福' => 200, '神高' => 240, '北急' => 280, '泉北' => 320)
+      end
+
       it 'uses the prescribed minor, public company, and JR train limits' do
         expect(described_class::PHASES.map { |phase| phase[:train_limit] }).to eq(
           [

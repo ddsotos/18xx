@@ -108,7 +108,7 @@ module Engine
           },
           {
             name: '神戸高速鉄道',#TODO 
-            value: 200,
+            value: 240,
             revenue: 0,
             desc: '京阪が京都に駅トークンを置いたとき、京阪の金庫にも毎運営時に¥40入ります。',
             sym: '神高',
