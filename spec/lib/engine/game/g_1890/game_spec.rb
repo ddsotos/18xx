@@ -39,6 +39,23 @@ module Engine
           %w[河南 大軌 阪鉄 奈良 神戸],
         )
       end
+
+      it 'uses the prescribed minor, public company, and JR train limits' do
+        expect(described_class::PHASES.map { |phase| phase[:train_limit] }).to eq(
+          [
+            { minor: 2, major: 4, national: 6 },
+            { minor: 2, major: 4, national: 6 },
+            { minor: 1, major: 3, national: 4 },
+            { minor: 1, major: 2, national: 3 },
+            { minor: 1, major: 2, national: 3 },
+            { minor: 1, major: 2, national: 3 },
+          ],
+        )
+
+        expect(game.train_limit(game.minors.first)).to eq(2)
+        expect(game.train_limit(game.corporation_by_id('南海'))).to eq(4)
+        expect(game.train_limit(game.corporation_by_id('JR'))).to eq(6)
+      end
     end
 
     describe 'initial auction' do
