@@ -104,6 +104,19 @@ module Engine
         expect(arima.min_bid).to eq(15)
         expect(kobe_tram.min_bid).to eq(40)
       end
+
+      it 'allows the first bid on a later company at face value, then requires 5 more' do
+        step = game.round.active_step
+        kobe_tram = step.companies[1]
+
+        expect(step.min_bid(kobe_tram)).to eq(40)
+
+        step.process_bid(Action::Bid.new(game.current_entity, company: kobe_tram, price: 40))
+
+        expect(step.min_bid(kobe_tram)).to eq(45)
+        expect(step.committed_cash(game.players.first)).to eq(40)
+        expect(kobe_tram.owner).to be_nil
+      end
     end
   end
 end
