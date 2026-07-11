@@ -329,6 +329,27 @@ module Engine
       end
     end
 
+    describe 'Keifuku Railway' do
+      it 'pays 40 to Keihan when it has a token in Kyoto' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        keihan = game.corporation_by_id('京阪')
+        kyoto = game.hex_by_id('B17').tile.cities.first
+        kyoto.place_token(keihan, keihan.next_token, check_tokenable: false)
+        corporation_cash = keihan.cash
+        player_cash = player.cash
+
+        game.payout_companies
+
+        expect(keihan.cash).to eq(corporation_cash + 40)
+        expect(player.cash).to eq(player_cash + 40)
+      end
+    end
+
     describe 'Kintetsu conversion' do
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)
