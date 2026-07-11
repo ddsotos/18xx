@@ -399,6 +399,26 @@ module Engine
       end
     end
 
+    describe 'attached shares' do
+      it 'cannot sell the Keihan or Hanshin share before the president share is bought' do
+        buy_all_initial_companies(game)
+        step = game.round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::BuySellParShares) }
+
+        %w[京阪 阪神].each do |id|
+          corporation = game.corporation_by_id(id)
+          attached_share = game.players.flat_map { |player| player.shares_of(corporation) }.first
+          game.stock_market.set_par(corporation, game.stock_market.par_prices.first)
+
+          expect(step.attached_share_locked?(attached_share.to_bundle)).to be(true)
+          expect(step.can_sell?(attached_share.owner, attached_share.to_bundle)).to be(false)
+
+          president = (game.players - [attached_share.owner]).first
+          game.share_pool.buy_shares(president, corporation.presidents_share.to_bundle, exchange: :free)
+          expect(step.attached_share_locked?(attached_share.to_bundle)).to be(false)
+        end
+      end
+    end
+
     describe 'Kintetsu conversion' do
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)
