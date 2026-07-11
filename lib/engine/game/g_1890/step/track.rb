@@ -7,6 +7,14 @@ module Engine
     module G1890
       module Step
         class Track < Engine::Step::Track
+          def process_lay_tile(action)
+            super
+            return unless action.entity.id == '阪急' && action.tile.color == :yellow
+
+            @game.bank.spend(10, action.entity)
+            @log << "#{action.entity.name} receives #{@game.format_currency(10)} for laying a yellow tile"
+          end
+
           def can_lay_tile?(entity)
             return true if tile_lay_abilities_should_block?(entity)
             return true if can_buy_tile_laying_company?(entity, time: type)

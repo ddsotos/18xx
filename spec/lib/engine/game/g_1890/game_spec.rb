@@ -361,6 +361,22 @@ module Engine
 
         expect(hankyu.cash).to eq(cash_before + 40)
       end
+
+      it 'receives 10 whenever it lays a yellow tile' do
+        hankyu = game.corporation_by_id('阪急')
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Track) }
+        tile = instance_double(Tile, color: :yellow)
+        action = instance_double(Action::LayTile, entity: hankyu, tile: tile)
+        allow(step).to receive(:lay_tile_action)
+        allow(step).to receive(:can_lay_tile?).and_return(false)
+        allow(step).to receive(:pass!)
+        cash_before = hankyu.cash
+
+        step.process_lay_tile(action)
+
+        expect(hankyu.cash).to eq(cash_before + 10)
+      end
     end
 
     describe 'Kintetsu conversion' do
