@@ -367,5 +367,19 @@ module Engine
         end
       end
     end
+
+    describe 'JR dividends' do
+      it 'pays half rounded down to 20 yen units and keeps the remainder' do
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        jr = game.corporation_by_id('JR')
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+
+        expect(step.dividend_types).to eq([:half])
+        expect(step.half(jr, 100)).to eq(corporation: 50, per_share: 5.0)
+        expect(step.half(jr, 110)).to eq(corporation: 60, per_share: 5.0)
+      end
+    end
   end
 end
