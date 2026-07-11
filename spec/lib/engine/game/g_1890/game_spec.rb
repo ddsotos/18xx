@@ -595,5 +595,30 @@ module Engine
         expect(jr.share_price.price).to be > share_price.price
       end
     end
+
+    describe 'minor dividends' do
+      it 'always splits revenue equally between the treasury and president without a price move' do
+        minor = game.minors.first
+        president = game.players.first
+        minor.owner = president
+        minor.float!
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [minor])
+        round.instance_variable_set(:@entity_index, 0)
+        round.extra_revenue = 100
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        minor_cash = minor.cash
+        president_cash = president.cash
+
+        expect(step.actions(minor)).to be_empty
+        expect(step.share_price_change(minor, 100)).to be_empty
+
+        step.process_dividend(Action::Dividend.new(minor, kind: 'payout'))
+
+        expect(minor.cash).to eq(minor_cash + 50)
+        expect(president.cash).to eq(president_cash + 50)
+      end
+    end
   end
 end
