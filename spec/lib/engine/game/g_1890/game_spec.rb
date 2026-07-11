@@ -344,5 +344,28 @@ module Engine
         expect(president.cash).to eq(president_cash + 50)
       end
     end
+
+    describe 'train rusting' do
+      {
+        '4' => %w[2],
+        '5' => %w[2-2],
+        '6' => %w[3 3-3],
+        'D' => %w[4],
+      }.each do |trigger_name, rusting_names|
+        it "rusts #{rusting_names.join(' and ')} when #{trigger_name} is bought" do
+          corporation = game.corporations.first
+          owned_trains = rusting_names.map do |name|
+            train = game.trains.find { |candidate| candidate.name == name }
+            game.buy_train(corporation, train, :free)
+            train
+          end
+          trigger = game.trains.find { |candidate| candidate.name == trigger_name }
+
+          game.rust_trains!(trigger, corporation)
+
+          expect(owned_trains.map(&:rusted)).to all(be(true))
+        end
+      end
+    end
   end
 end
