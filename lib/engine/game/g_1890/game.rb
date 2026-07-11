@@ -183,7 +183,6 @@ module Engine
 
         def setup
           super
-          @minors.each {|m| place_home_token(m)}
           jr = @corporations.find{|c| c.name == 'JR'}
           jr.add_ability(Engine::Ability::Base.new(
             type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
@@ -395,6 +394,7 @@ module Engine
           minor.owner = company.player
           @bank.spend(company.treasury, minor)
           minor.float!
+          place_home_token(minor)
         end
       def city_tokened_by?(city, entity)
         if entity.name == '阪鉄'

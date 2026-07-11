@@ -56,6 +56,25 @@ module Engine
         expect(game.train_limit(game.corporation_by_id('南海'))).to eq(4)
         expect(game.train_limit(game.corporation_by_id('JR'))).to eq(6)
       end
+
+      it 'floats and places a minor home token only when its certificate is bought' do
+        company = game.company_by_id('河南')
+        minor = game.minor_by_id('河南')
+        player = game.players.first
+
+        expect(minor).not_to be_floated
+        expect(minor.tokens.first.used).to be(false)
+
+        company.owner = player
+        player.companies << company
+        game.after_buy_company(player, company, company.value)
+
+        expect(minor.owner).to eq(player)
+        expect(minor).to be_floated
+        expect(minor.cash).to eq(100)
+        expect(minor.tokens.first.used).to be(true)
+        expect(minor.tokens.first.hex.id).to eq('J15')
+      end
     end
 
     describe 'initial auction' do
