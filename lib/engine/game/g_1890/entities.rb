@@ -5,62 +5,60 @@ module Engine
     module G1890
       module Entities
         COMPANIES = [
-          # {
-          #   name: '有馬鉄道',
-          #   value: 20,
-          #   revenue: 5,
-          #   desc: "配置制限:有馬(D7) \n 企業に売られたら有馬にタイル配置",
-          #   sym: '有電',
-          #   type: :private,
-          #   abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['D7'] },
-          #               {
-          #                 type: 'tile_lay',
-          #                 hexes: ['D7'],
-          #                 tiles: %w[3 4 58],
-          #                 when: 'sold',
-          #                 owner_type: 'corporation',
-          #                 count: 1,
-          #               }],
-          #   color: nil,
-          # },
-          # {
-          #   name: '神戸市電',
-          #   value: 40,
-          #   revenue: 10,
-          #   desc: '配置制限:神戸(F5)',
-          #   sym: '神電',
-          #   type: :private,
-          #   abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['F5'] }],
-          #   color: nil,
-          # },
-          # {
-          #   name: '阪堺電鉄',#TODO 4フェイズにプレイヤー持ちでも封鎖が消えるかどうか
-          #   value: 70,
-          #   revenue: 15,
-          #   desc: '配置制限:堺(J11)大阪南(I10) \n 第4フェイズ(5列車購入時)に閉鎖しない　ただし収入は5になり、売却できず、株券枚数制限に含み続ける',
-          #   sym: '堺電',
-          #   type: :private,
-          #   abilities: [{ type: 'blocks_hexes', owner_type: 'player', remove: '5',hexes: %w[I12 J11] },
-          #               { type: 'close', on_phase: 'never'},
-          #               {
-          #                 type: 'revenue_change',
-          #                 revenue: 5,
-          #                 on_phase: '5',
-          #               }],
-          #   color: nil,
-          # },
-          # {
-          #   name: '阪神国道軌道',
-          #   value: 110,
-          #   revenue: 20,
-          #   desc: '配置制限なし　阪神電鉄の株券1株が付属',
-          #   sym: '阪国',
-          #   type: :private,
-          #   abilities: [
-          #     { type: 'shares', shares: '阪神_1' }
-          #   ],
-          #   color: nil,
-          # },
+          {
+            name: '有馬鉄道',
+            value: 20,
+            revenue: 5,
+            desc: "配置制限:有馬(D7) \n 企業に売られたら有馬にタイル配置",
+            sym: '有電',
+            type: :private,
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['D7'] },
+                        {
+                          type: 'tile_lay',
+                          hexes: ['D7'],
+                          tiles: %w[3 4 58],
+                          when: 'sold',
+                          owner_type: 'corporation',
+                          count: 1,
+                        }],
+            color: nil,
+          },
+          {
+            name: '神戸市電',
+            value: 40,
+            revenue: 10,
+            desc: '配置制限:神戸(F5)',
+            sym: '神電',
+            type: :private,
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', hexes: ['F5'] }],
+            color: nil,
+          },
+          {
+            name: '阪堺電鉄', # TODO: Confirm whether player ownership continues blocking in phase 4
+            value: 70,
+            revenue: 15,
+            desc: '配置制限:堺(J11)大阪南(I12) \n 第4フェイズ(5列車購入時)に閉鎖しない　ただし収入は5になり、売却できず、株券枚数制限に含み続ける',
+            sym: '堺電',
+            type: :private,
+            abilities: [{ type: 'blocks_hexes', owner_type: 'player', remove: '5', hexes: %w[I12 J11] },
+                        { type: 'close', on_phase: 'never' },
+                        {
+                          type: 'revenue_change',
+                          revenue: 5,
+                          on_phase: '5',
+                        }],
+            color: nil,
+          },
+          {
+            name: '阪神国道軌道',
+            value: 110,
+            revenue: 20,
+            desc: '配置制限なし　阪神電鉄の株券1株が付属',
+            sym: '阪国',
+            type: :private,
+            abilities: [{ type: 'shares', shares: '阪神_1' }],
+            color: nil,
+          },
           {
             name: '京津鉄道',
             value: 160,
@@ -186,6 +184,26 @@ module Engine
             abilities: [{ type: 'no_buy', owner_type: 'player' }                       ],
             color: nil,
           },
+          {
+            name: '奈良電鉄',
+            value: 160,
+            revenue: 0,
+            desc: '第4フェイズから近鉄への合併が可能になり、第5フェイズに強制合併します。',
+            sym: '奈良',
+            type: :minor,
+            abilities: [{ type: 'no_buy', owner_type: 'player' }],
+            color: nil,
+          },
+          {
+            name: '神戸電鉄',
+            value: 100,
+            revenue: 0,
+            desc: '運営ラウンド中に後発会社へ転換できます。',
+            sym: '神戸',
+            type: :minor,
+            abilities: [{ type: 'no_buy', owner_type: 'player' }],
+            color: nil,
+          },
 
 
         ].freeze
@@ -307,7 +325,6 @@ module Engine
             text_color: 'black',
             tokens: [],
           },
-
         ].freeze
       end
     end

@@ -4,6 +4,7 @@ require_relative 'entities'
 require_relative 'map'
 require_relative 'meta'
 require_relative 'step/special_track'
+require_relative 'step/waterfall_auction'
 require_relative '../base'
 
 module Engine
@@ -161,6 +162,8 @@ module Engine
         EXTRA_TILE_LAYS = [{ lay: true, upgrade: true },
                            { lay: true, upgrade: true, cannot_reuse_same_hex: true },].freeze
 
+        INITIAL_AUCTION_ORDER = %w[有電 神電 堺電 阪国 京津 市電 河南 大軌 阪鉄 奈良 神戸].freeze
+
         EVENTS_TEXT = Base::EVENTS_TEXT.dup.merge(
           'conversion_to_Kintetsu' => ['近鉄への強制転換', '大阪電気軌道がまだ近鉄に転換していなければ、強制転換（大阪鉄道も合併）'],
           'remove_extra_tile_lay_from_JR' => ['JRの2タイル配置終了', 'JRは、ここまでは2か所でタイル配置できる'],
@@ -186,6 +189,17 @@ module Engine
             type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
           ))
 
+        end
+
+        def initial_auction_companies
+          INITIAL_AUCTION_ORDER.map { |id| @companies.find { |company| company.id == id } }
+        end
+
+        def new_auction_round
+          Engine::Round::Auction.new(self, [
+            Engine::Step::CompanyPendingPar,
+            G1890::Step::WaterfallAuction,
+          ])
         end
 
       def stock_round

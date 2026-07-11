@@ -8,7 +8,7 @@ module Engine
       module Meta
         include Game::Meta
 
-        DEV_STAGE = :production
+        DEV_STAGE = :prealpha
 
         GAME_DISPLAY_TITLE = '1890'
 

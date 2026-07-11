@@ -2,6 +2,18 @@ services:
   db:
     volumes:
       - db-data:/var/lib/postgresql/data
+  rack:
+    command: >-
+      sh -c "bundle exec rake dev_up &&
+      bundle exec rerun --background -i 'build/*' -i 'public/*' -i '.tools/*'
+      'unicorn -c config/unicorn.rb'"
+    volumes:
+      - ./public/fixtures:/18xx/spec/fixtures
+      - /18xx/.tools
+  queue:
+    volumes:
+      - ./public/fixtures:/18xx/spec/fixtures
+      - /18xx/.tools
 
 volumes:
   db-data:

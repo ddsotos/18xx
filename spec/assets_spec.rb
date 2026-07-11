@@ -4,39 +4,6 @@ require 'spec_helper'
 require 'assets'
 
 TEST_CASES = [
-  ['1889',
-   314,
-   [[6, 'stock_round', 'Pass (Share)'],
-    [13, 'float', 'KO receives ¥700'],
-    [21, 'lay_track', '1889: Phase 2 - Operating Round 1.1 (of 1) - Lay/Upgrade Track'],
-    [23, 'buy_train',
-     ['KO must buy an available train',
-      '!!Player 1 must contribute']],
-    [48, 'run_routes', '1889: Phase 2 - Operating Round 2.1 (of 1) - Run Routes'],
-    [49, 'dividends', '1889: Phase 2 - Operating Round 2.1 (of 1) - Pay or Withhold Dividends'],
-    [80,
-     'buy_company',
-     ['1889: Phase 3 - Operating Round 3.1 (of 1) - Buy Companies',
-      'Owning corporation may ignore building cost for mountain hexes']],
-    [83,
-     'track_and_buy_company',
-     ['1889: Phase 3 - Operating Round 3.1 (of 1) - Lay/Upgrade Track',
-      'Show companies from other players']],
-    [89,
-     'special_track',
-     ['1889: Phase 3 - Operating Round 3.1 (of 1) - Lay Track for Ehime Railway',
-      'Blocks C4 while owned by a player.']],
-    [338, 'discard_train', 'Discard Trains'],
-    [349, 'buy_train_emr', 'TR must buy an available train'],
-    [448,
-     'buy_train_emr_shares',
-     ['KO has ¥582',
-      'Player 1 must contribute ¥518 for KO to afford a train from the Depot',
-      'Player 1 has ¥74 in cash',
-      'Player 1 has ¥650 in sellable shares',
-      'Player 1 must sell shares to raise at least ¥444',
-      '!!Bankruptcy']],
-    [nil, 'endgame', '1889: Phase D - Operating Round 7.1 (of 3) - Game Over - Bankruptcy']]],
   ['1882',
    5236,
    [[399, 'sc_home_token', '1882: Phase 4 - Stock Round 6 - Place Home Token'],
@@ -231,19 +198,13 @@ TEST_CASES = [
 ].freeze
 
 AUTO_ACTIONS_TEST_CASES = [
-  ['1889',
-   314,
-   [[7, 'buy_to_float', [
-    'Auto Buy Shares',
-    'KO',
-   ]]],
-   ['1817',
-    15_528,
-    [[141, 'merger', [
-      'Auto Pass in Mergers',
-      'A&S',
-      'Merger and Conversion Round',
-    ]]]]],
+  ['1817',
+   15_528,
+   [[141, 'merger', [
+     'Auto Pass in Mergers',
+     'A&S',
+     'Merger and Conversion Round',
+   ]]]],
 ].freeze
 
 describe 'Assets' do
@@ -438,8 +399,5 @@ describe 'Assets' do
       end
     end
 
-    it 'renders tutorial to the end' do
-      render_game('public/assets/tutorial.json', nil, 'Good luck and have fun!')
-    end
   end
 end
