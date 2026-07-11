@@ -455,6 +455,29 @@ module Engine
         expect(step.half(jr, 100)).to eq(corporation: 50, per_share: 5.0)
         expect(step.half(jr, 110)).to eq(corporation: 60, per_share: 5.0)
       end
+
+      it 'pays the corporation and president and moves the share price right' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.extra_revenue = 110
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        corporation_cash = jr.cash
+        president_cash = president.cash
+        share_price = jr.share_price
+
+        step.process_dividend(Action::Dividend.new(jr, kind: 'half'))
+
+        expect(jr.cash).to eq(corporation_cash + 60)
+        expect(president.cash).to eq(president_cash + 10)
+        expect(jr.share_price.price).to be > share_price.price
+      end
     end
   end
 end
