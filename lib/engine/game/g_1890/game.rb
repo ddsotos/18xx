@@ -288,6 +288,13 @@ module Engine
           @companies.select { |c| !c.owned_by_player? }
         end
 
+        def purchasable_companies(entity = nil)
+          companies = super
+          return companies unless @phase.available?('4')
+
+          companies.reject { |company| company.id == '神電' }
+        end
+
         def place_home_token(corporation)
           return super unless corporation.name == "JR"
           return if corporation.tokens.first&.used

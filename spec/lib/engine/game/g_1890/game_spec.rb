@@ -183,6 +183,20 @@ module Engine
         expect(companies.map(&:revenue)).to eq([5, 5])
       end
 
+      it 'prevents corporations from buying Kobe City Tram from phase 4' do
+        company = game.company_by_id('神電')
+        company.owner = game.players.first
+        game.players.first.companies << company
+        corporation = game.corporations.first
+
+        game.phase.next! until game.phase.name == '3'
+        expect(game.purchasable_companies(corporation)).to include(company)
+
+        game.phase.next!
+        expect(game.phase.name).to eq('4')
+        expect(game.purchasable_companies(corporation)).not_to include(company)
+      end
+
       it 'closes ordinary privates but keeps Hankai, Osaka City Tram, minors, and latecomers open' do
         game.event_close_companies!
 
