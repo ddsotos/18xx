@@ -9,10 +9,16 @@ module Engine
       module Round
         class Operating < Engine::Round::Operating
           def recalculate_order_when_merge_Kintetsu
-            unsorted_corps = @entities.pop(@entities.size - @entity_index - 1)
-            @log << "recalculate_order" 
-            @entities.concat(@game.operating_order.select { |e| e.name == '近鉄' })
-            @entities.concat(@game.operating_order.select { |e| unsorted_corps.include?(e) && e.name != '近鉄' })
+            remaining_entities = @entities.pop(@entities.size - @entity_index)
+            kintetsu = @game.corporation_by_id('近鉄')
+            remaining_entities.delete(kintetsu)
+            @entities << kintetsu
+            @entities.concat(remaining_entities)
+            @log << '近鉄 begins its special operation immediately'
+
+            @steps.each(&:unpass!)
+            @steps.each(&:setup)
+            start_operating
           end
           def after_process(action)
             return if action.type == 'message'

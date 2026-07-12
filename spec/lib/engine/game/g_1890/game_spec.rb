@@ -433,6 +433,25 @@ module Engine
     end
 
     describe 'Kintetsu conversion' do
+      %w[奈良 河南 神戸 南海].each do |current_id|
+        it "starts the Kintetsu special operation before #{current_id} and then resumes the original order" do
+          round = game.operating_round(1)
+          kintetsu = game.corporation_by_id('近鉄')
+          kintetsu.owner = game.players.first
+          current = game.minor_by_id(current_id) || game.corporation_by_id(current_id)
+          remaining = (game.minors + game.corporations).reject { |entity| [current, kintetsu].include?(entity) }.first(2)
+          original_order = [current, *remaining]
+          round.instance_variable_set(:@entities, original_order.dup)
+          round.instance_variable_set(:@entity_index, 0)
+
+          round.recalculate_order_when_merge_Kintetsu
+
+          expect(round.current_entity).to eq(kintetsu)
+          expect(round.current_operator).to eq(kintetsu)
+          expect(round.entities).to eq([kintetsu, *original_order])
+        end
+      end
+
       it 'allows optional Daiki conversion from phase 2' do
         buy_all_initial_companies(game)
         round = game.operating_round(1)
@@ -473,12 +492,14 @@ module Engine
         round = game.operating_round(1)
         game.instance_variable_set(:@round, round)
         other_corporation = game.corporations.find { |corporation| corporation.id != '近鉄' }
-        round.instance_variable_set(:@entities, [other_corporation])
-        round.instance_variable_set(:@entity_index, 0)
         step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
         daiki = game.minor_by_id('大軌')
         kintetsu = game.corporation_by_id('近鉄')
         step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.finish_kintetsu_special_operating!
+        round.instance_variable_set(:@entities, [other_corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, other_corporation)
         kanan = game.minor_by_id('河南')
         kanan_company = game.company_by_id('河南')
         share = game.reserved_kintetsu_shares(kintetsu).first
