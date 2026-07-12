@@ -29,7 +29,6 @@ module Engine
           end
 
           def can_exchange?(entity, bundle = nil)
-            entity = exchange_minor_entity(entity)
             return super unless entity.minor?
             return false unless entity.owner && !entity.closed?
 

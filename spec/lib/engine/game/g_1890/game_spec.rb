@@ -485,6 +485,9 @@ module Engine
 
         expect(round.current_entity).to eq(other_corporation)
         expect(round.actions_for(kanan_company)).to include('buy_shares')
+        expect(round.active_step(kanan_company)).to eq(step)
+        expect(kintetsu.reserved_shares.first).to eq(share)
+        expect(step.can_gain?(kanan_company.owner, share, exchange: true)).to be(true)
         expect { game.process_action(Action::BuyShares.new(kanan_company, shares: [share])) }.not_to raise_error
         expect(kanan).to be_closed
       end
