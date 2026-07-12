@@ -243,6 +243,22 @@ module Engine
       end
     end
 
+    describe 'latecomer availability' do
+      it 'keeps latecomers unavailable throughout game turn 1 and adds them for game turn 2' do
+        buy_all_initial_companies(game)
+        latecomers = game.instance_variable_get(:@latecomer_companies)
+
+        expect(game.turn).to eq(1)
+        expect(game.companies & latecomers).to be_empty
+
+        game.instance_variable_set(:@turn, 2)
+        game.new_stock_round
+
+        expect(game.companies).to include(*latecomers)
+        expect(game.buyable_bank_owned_companies).to include(*latecomers)
+      end
+    end
+
     describe '5 train event' do
       it 'removes private blocking abilities in phase 4 except Osaka City Tram' do
         ordinary_blockers = %w[有電 神電 堺電 京津].map { |id| game.company_by_id(id) }

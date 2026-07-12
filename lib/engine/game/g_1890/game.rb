@@ -271,8 +271,7 @@ module Engine
 
               end
             }
-
-            @companies.each { |c| @log << "is #{c.type} " }
+          when 2
             @log << "add latecomercompany. size: #{@latecomer_companies.size} "
             @companies += @latecomer_companies
             @log << "added latecomercompany. size: #{@companies.size} "
