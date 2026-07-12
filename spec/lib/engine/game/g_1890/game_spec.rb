@@ -449,6 +449,21 @@ module Engine
     end
 
     describe 'Kintetsu conversion' do
+      %w[大軌 阪鉄 河南 奈良].each do |minor_id|
+        it "makes an operated train received from #{minor_id} available to Kintetsu" do
+          minor = game.minor_by_id(minor_id)
+          kintetsu = game.corporation_by_id('近鉄')
+          train = game.trains.find { |candidate| candidate.name == '3' && candidate.owner == game.depot }
+          game.buy_train(minor, train, :free)
+          train.operated = true
+
+          game.transfer_trains(minor, kintetsu)
+
+          expect(train.owner).to eq(kintetsu)
+          expect(train.operated).to be(false)
+        end
+      end
+
       %w[奈良 河南 神戸 南海].each do |current_id|
         it "starts the Kintetsu special operation before #{current_id} and then resumes the original order" do
           round = game.operating_round(1)
@@ -500,6 +515,32 @@ module Engine
         nara_shares = game.reserved_kintetsu_shares(kintetsu).first(2)
         step.process_buy_shares(Action::BuyShares.new(nara, shares: nara_shares))
         expect(nara).to be_closed
+      end
+
+      it 'may run trains received from minors during the Kintetsu special operation' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minor_by_id('大軌')
+        kanan = game.minor_by_id('河南')
+        kintetsu = game.corporation_by_id('近鉄')
+        daiki_train = game.trains.find { |train| train.name == '2' && train.owner == game.depot }
+        kanan_train = game.trains.find { |train| train.name == '3' && train.owner == game.depot }
+        game.buy_train(daiki, daiki_train, :free)
+        game.buy_train(kanan, kanan_train, :free)
+        daiki_train.operated = true
+        kanan_train.operated = true
+
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        step.process_buy_shares(
+          Action::BuyShares.new(kanan, shares: [game.reserved_kintetsu_shares(kintetsu).first]),
+        )
+
+        expect(daiki_train.owner).to eq(kintetsu)
+        expect(kanan_train.owner).to eq(kintetsu)
+        expect(daiki_train.operated).to be(false)
+        expect(kanan_train.operated).to be(false)
       end
 
       it 'allows Kanan to exchange from Show Others during another corporation turn' do

@@ -551,6 +551,10 @@ module Engine
             transferred = transfer(:trains, source, destination)
           end
 
+          if destination.respond_to?(:id) && destination.id == '近鉄'
+            transferred.each { |train| train.operated = false }
+          end
+
           @log << "#{destination.name} takes #{transferred.map(&:name).join(', ')}"\
                        " train#{transferred.one? ? '' : 's'} from #{source.name}"
 
