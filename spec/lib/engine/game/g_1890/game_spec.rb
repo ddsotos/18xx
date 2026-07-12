@@ -29,6 +29,10 @@ module Engine
     end
 
     describe 'scenario C setup' do
+      it 'is listed as a beta game for local playtesting' do
+        expect(described_class::DEV_STAGE).to eq(:beta)
+      end
+
       it 'divides the initial player cash pool of 2520 yen equally' do
         expect(described_class::STARTING_CASH).to eq(
           2 => 1260,
@@ -461,6 +465,28 @@ module Engine
         nara_shares = game.reserved_kintetsu_shares(kintetsu).first(2)
         step.process_buy_shares(Action::BuyShares.new(nara, shares: nara_shares))
         expect(nara).to be_closed
+      end
+
+      it 'allows Kanan to exchange from Show Others during another corporation turn' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        other_corporation = game.corporations.find { |corporation| corporation.id != '近鉄' }
+        round.instance_variable_set(:@entities, [other_corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minor_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        kanan = game.minor_by_id('河南')
+        kanan_company = game.company_by_id('河南')
+        share = game.reserved_kintetsu_shares(kintetsu).first
+
+        expect(round.current_entity).to eq(other_corporation)
+        expect(round.actions_for(kanan_company)).to include('buy_shares')
+        expect { game.process_action(Action::BuyShares.new(kanan_company, shares: [share])) }.not_to raise_error
+        expect(kanan).to be_closed
       end
 
       it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do

@@ -29,6 +29,7 @@ module Engine
           end
 
           def can_exchange?(entity, bundle = nil)
+            entity = exchange_minor_entity(entity)
             return super unless entity.minor?
             return false unless entity.owner && !entity.closed?
 
@@ -51,7 +52,7 @@ module Engine
           end
 
           def process_buy_shares(action)
-            entity = action.entity
+            entity = exchange_minor_entity(action.entity)
             @game.log << "can_exchange? #{entity.name} "
             @game.exchange_minor(entity, action.bundle)
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
@@ -65,6 +66,12 @@ module Engine
             end
 
             super
+          end
+
+          def exchange_minor_entity(entity)
+            return entity unless entity.company? && entity.type == :minor
+
+            @game.minor_by_id(entity.id) || entity
           end
 
         end
