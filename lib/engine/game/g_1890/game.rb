@@ -309,30 +309,26 @@ module Engine
         end
 
         def place_home_token(corporation)
-          return super unless corporation.name == "JR"
+          return super unless %w[JR 奈良].include?(corporation.id)
           return if corporation.tokens.first&.used
-          Array(corporation.coordinates).each do |coord|
+
+          reservations = corporation.all_abilities.select { |ability| ability.type == :reservation }
+          locations = Array(corporation.coordinates).to_h { |coord| [coord, nil] }
+          reservations.each { |reservation| locations[reservation.hex] = reservation.city }
+
+          locations.each do |coord, city_index|
             hex = hex_by_id(coord)
             tile = hex&.tile
             cities = tile.cities
-            city = cities.find { |c| c.reserved_by?(corporation) } || cities.first
+            city = city_index.nil? ? cities.find { |candidate| candidate.reserved_by?(corporation) } : cities[city_index]
+            city ||= cities.first
             token = corporation.find_token_by_type
 
             @log << "#{corporation.name} places a token on #{hex.name}"
             city.place_token(corporation, token)
           end
-            abilities = corporation.all_abilities.select { |ability| ability.type == :reservation}
-            abilities.each { |r| 
-            hex = hex_by_id(r.hex)
-            @log << "#{corporation.name} places a token on #{hex.name}"
 
-            tile = hex&.tile
-            cities = tile.cities
-            city = cities[r.city]
-            token = corporation.find_token_by_type
-            city.place_token(corporation, token)
-            corporation.remove_ability(r) 
-          }
+          reservations.each { |reservation| corporation.remove_ability(reservation) }
 
           @graph.clear
         end

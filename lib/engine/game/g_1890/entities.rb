@@ -289,7 +289,7 @@ module Engine
             coordinates: %w[F5],
             abilities: [
               { type: 'reservation', hex: 'G12', city: 0 },
-              { type: 'reservation', hex: 'B17', city: 2 },
+              { type: 'reservation', hex: 'B17', city: 0 },
               { type: 'reservation', hex: 'H19', city: 0 },
             ],
 
@@ -344,8 +344,12 @@ module Engine
             sym: '奈良',
             type: 'minor',
             logo: '1824/C4',
-            tokens: [0],
-            coordinates: 'H19',
+            tokens: [0, 0],
+            coordinates: %w[B17 H19],
+            abilities: [
+              { type: 'reservation', hex: 'B17', city: 1 },
+              { type: 'reservation', hex: 'H19', city: 1 },
+            ],
             color: '#8B4513',
             text_color: 'white',
           },
@@ -355,7 +359,7 @@ module Engine
             type: 'minor',
             logo: '1824/C4',
             tokens: [0],
-            coordinates: 'F5',
+            coordinates: 'D5',
             color: '#4169E1',
             text_color: 'white',
           },

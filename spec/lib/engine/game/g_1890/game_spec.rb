@@ -155,7 +155,31 @@ module Engine
         game.place_home_token(jr)
 
         expect(jr.placed_tokens.map { |token| token.hex.id }).to contain_exactly('F5', 'G12', 'B17', 'H19')
+        expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(jr) }).to eq([true, false, false])
+        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(jr) }).to eq([true, false])
         expect(jr.all_abilities.select { |ability| ability.type == :reservation }).to be_empty
+      end
+
+      it 'places Kobe Electric Railway at D5' do
+        kobe = game.minor_by_id('神戸')
+        kobe.owner = game.players.first
+        kobe.float!
+
+        game.place_home_token(kobe)
+
+        expect(kobe.placed_tokens.map { |token| token.hex.id }).to eq(['D5'])
+      end
+
+      it 'places Nara Electric Railway in the prescribed Kyoto and Nara cities' do
+        nara = game.minor_by_id('奈良')
+        nara.owner = game.players.first
+        nara.float!
+
+        game.place_home_token(nara)
+
+        expect(nara.placed_tokens.map { |token| token.hex.id }).to contain_exactly('B17', 'H19')
+        expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, true, false])
+        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, true])
       end
     end
 
@@ -372,7 +396,7 @@ module Engine
         game.companies << company
 
         keihan = game.corporation_by_id('京阪')
-        kyoto = game.hex_by_id('B17').tile.cities.first
+        kyoto = game.hex_by_id('B17').tile.cities.last
         kyoto.place_token(keihan, keihan.next_token, check_tokenable: false)
         corporation_cash = keihan.cash
         player_cash = player.cash
