@@ -290,7 +290,7 @@ module Engine
             abilities: [
               { type: 'reservation', hex: 'G12', city: 0 },
               { type: 'reservation', hex: 'B17', city: 0 },
-              { type: 'reservation', hex: 'H19', city: 0 },
+              { type: 'reservation', hex: 'H19', city: 1 },
             ],
 
             color: '#6A3437',
@@ -348,7 +348,7 @@ module Engine
             coordinates: %w[B17 H19],
             abilities: [
               { type: 'reservation', hex: 'B17', city: 1 },
-              { type: 'reservation', hex: 'H19', city: 1 },
+              { type: 'reservation', hex: 'H19', city: 0 },
             ],
             color: '#8B4513',
             text_color: 'white',

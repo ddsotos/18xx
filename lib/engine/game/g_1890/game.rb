@@ -465,6 +465,10 @@ module Engine
         super
       end
 
+      def upgrade_ignore_num_cities(from)
+        from.hex.id == 'H19' && from.color == :yellow
+      end
+
           def exchange_minor(minor, bundle)
             corporation = bundle.corporation
             source = bundle.owner

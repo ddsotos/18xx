@@ -156,7 +156,7 @@ module Engine
 
         expect(jr.placed_tokens.map { |token| token.hex.id }).to contain_exactly('F5', 'G12', 'B17', 'H19')
         expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(jr) }).to eq([true, false, false])
-        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(jr) }).to eq([true, false])
+        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(jr) }).to eq([false, true])
         expect(jr.all_abilities.select { |ability| ability.type == :reservation }).to be_empty
       end
 
@@ -179,7 +179,19 @@ module Engine
 
         expect(nara.placed_tokens.map { |token| token.hex.id }).to contain_exactly('B17', 'H19')
         expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, true, false])
-        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, true])
+        expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([true, false])
+      end
+
+      it 'allows Nara to upgrade H19 to tile 205' do
+        nara = game.minor_by_id('奈良')
+        nara.owner = game.players.first
+        nara.float!
+        game.place_home_token(nara)
+
+        h19 = game.hex_by_id('H19')
+        upgrade = game.tiles.find { |tile| tile.name == '205' }
+
+        expect(game.upgrades_to?(h19.tile, upgrade)).to be(true)
       end
     end
 
