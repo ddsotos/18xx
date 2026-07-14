@@ -299,6 +299,20 @@ module Engine
       end
     end
 
+    describe 'operating order' do
+      it 'runs floated minors first in company order, then floated corporations by share price' do
+        game.minors.each(&:float!)
+        nankai = game.corporation_by_id('南海')
+        hankyu = game.corporation_by_id('阪急')
+        game.stock_market.set_par(nankai, game.stock_market.par_prices.find { |price| price.price == 70 })
+        game.stock_market.set_par(hankyu, game.stock_market.par_prices.find { |price| price.price == 100 })
+        nankai.floated = true
+        hankyu.floated = true
+
+        expect(game.operating_order).to eq([*game.minors, hankyu, nankai])
+      end
+    end
+
     describe 'Arima Railway' do
       it 'lays a permitted tile on Arima when sold to a corporation' do
         company = game.company_by_id('有電')
