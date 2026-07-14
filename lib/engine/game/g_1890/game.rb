@@ -33,6 +33,8 @@ module Engine
 
         CAPITALIZATION = :full
 
+        MARKET_SHARE_LIMIT = 60
+
         MUST_SELL_IN_BLOCKS = true
 
         MARKET = [
@@ -294,6 +296,12 @@ module Engine
           return companies unless @phase.available?('4')
 
           companies.reject { |company| company.id == '神電' }
+        end
+
+        def market_share_limit(corporation = nil)
+          return 100 if corporation&.share_price&.type == :unlimited
+
+          super
         end
 
         def home_token_can_be_cheater

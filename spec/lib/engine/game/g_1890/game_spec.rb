@@ -215,6 +215,22 @@ module Engine
         expect(company.value).to eq(0)
       end
 
+      it 'gives the Osaka Metro president share when Osaka City Tram is bought' do
+        company = game.company_by_id('市電')
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+
+        game.after_buy_company(player, company, company.value)
+
+        metro = game.corporation_by_id('メトロ')
+        expect(game.round.companies_pending_par).to include(company)
+
+        game.process_action(Action::Par.new(player, corporation: metro, share_price: game.stock_market.par_prices.first))
+
+        expect(player.shares_of(metro).map(&:president)).to include(true)
+      end
+
       it 'discounts only Arima Railway by 5 after every player passes' do
         step = game.round.active_step
         arima, kobe_tram = step.companies.first(2)
@@ -297,6 +313,16 @@ module Engine
         expect(game.companies).to include(*latecomers)
         expect(game.buyable_bank_owned_companies).to include(*latecomers)
       end
+
+      it 'prevents corporations from buying a latecomer from a player' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
+      end
     end
 
     describe 'operating order' do
@@ -376,6 +402,18 @@ module Engine
         expect(game.purchasable_companies(corporation)).not_to include(company)
       end
 
+      it 'keeps Hankai in the certificate count after phase 4' do
+        company = game.company_by_id('堺電')
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+
+        game.phase.next! until game.phase.name == '4'
+
+        expect(company.revenue).to eq(5)
+        expect(game.num_certs(player)).to eq(1)
+      end
+
       it 'closes ordinary privates but keeps Hankai, Osaka City Tram, minors, and latecomers open' do
         game.event_close_companies!
 
@@ -388,6 +426,14 @@ module Engine
     end
 
     describe 'Osaka City Tram' do
+      it 'cannot be purchased by a corporation' do
+        company = game.company_by_id('市電')
+        company.owner = game.players.first
+        game.players.first.companies << company
+
+        expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
+      end
+
       it 'closes when Osaka Metro buys its first train' do
         company = game.company_by_id('市電')
         company.owner = game.players.first
@@ -411,14 +457,17 @@ module Engine
         player.companies << company
         game.companies << company
 
-        corporation = game.corporations.first
-        city = game.hex_by_id('J11').tile.cities.first
+        corporation, other_corporation = game.corporations.first(2)
+        city, other_city = game.hex_by_id('J11').tile.cities
         city.place_token(corporation, corporation.next_token, check_tokenable: false)
+        other_city.place_token(other_corporation, other_corporation.next_token, check_tokenable: false)
         cash_before = corporation.cash
+        other_cash_before = other_corporation.cash
 
         game.payout_companies
 
         expect(corporation.cash).to eq(cash_before + 40)
+        expect(other_corporation.cash).to eq(other_cash_before + 40)
       end
     end
 
@@ -441,6 +490,22 @@ module Engine
     end
 
     describe 'Keifuku Railway' do
+      it 'does not pay Keihan when Keihan has no Kyoto token' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        keihan = game.corporation_by_id('京阪')
+        corporation_cash = keihan.cash
+        player_cash = player.cash
+
+        game.payout_companies
+
+        expect(keihan.cash).to eq(corporation_cash)
+        expect(player.cash).to eq(player_cash + 40)
+      end
+
       it 'pays 40 to Keihan when it has a token in Kyoto' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
         player = game.players.first
@@ -506,6 +571,20 @@ module Engine
     end
 
     describe 'attached shares' do
+      it 'gives Keihan and Hanshin shares when their privates are bought' do
+        player = game.players.first
+
+        { '京津' => '京阪', '阪国' => '阪神' }.each do |company_id, corporation_id|
+          company = game.company_by_id(company_id)
+          company.owner = player
+          player.companies << company
+
+          game.after_buy_company(player, company, company.value)
+
+          expect(player.percent_of(game.corporation_by_id(corporation_id))).to eq(10)
+        end
+      end
+
       it 'cannot sell the Keihan or Hanshin share before the president share is bought' do
         buy_all_initial_companies(game)
         step = game.round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::BuySellParShares) }
@@ -522,6 +601,32 @@ module Engine
           game.share_pool.buy_shares(president, corporation.presidents_share.to_bundle, exchange: :free)
           expect(step.attached_share_locked?(attached_share.to_bundle)).to be(false)
         end
+      end
+    end
+
+    describe 'market limits' do
+      it 'excludes yellow-market corporations from the certificate count' do
+        player = game.players.first
+        corporation = game.corporation_by_id('南海')
+        yellow_price = game.stock_market.market.flatten.compact.find { |price| price.price == 50 && price.type == :no_cert_limit }
+        game.stock_market.set_par(corporation, yellow_price)
+        game.share_pool.buy_shares(player, corporation.presidents_share.to_bundle, exchange: :free)
+
+        expect(corporation.counts_for_limit).to be(false)
+        expect(game.num_certs(player)).to eq(0)
+      end
+
+      it 'allows more than 60 percent ownership for brown-market corporations' do
+        corporation = game.corporation_by_id('南海')
+        game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 70 })
+
+        expect(game.market_share_limit(corporation)).to eq(60)
+
+        brown_price = game.stock_market.market.flatten.compact.find { |price| price.price == 40 && price.type == :unlimited }
+        corporation.share_price.corporations.delete(corporation)
+        corporation.share_price = brown_price
+
+        expect(game.market_share_limit(corporation)).to eq(100)
       end
     end
 
