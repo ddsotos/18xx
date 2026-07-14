@@ -299,6 +299,29 @@ module Engine
       end
     end
 
+    describe 'Arima Railway' do
+      it 'lays a permitted tile on Arima when sold to a corporation' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = buyer
+        buyer.companies << company
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::SpecialTrack) }
+        round.just_sold_company = company
+        round.company_sellers[company] = seller
+        hex = game.hex_by_id('D7')
+        tile = game.tile_by_id('3-0')
+
+        expect(step.actions(company)).to include('lay_tile')
+
+        step.process_lay_tile(Action::LayTile.new(company, hex: hex, tile: tile, rotation: 0))
+
+        expect(hex.tile.name).to eq('3')
+        expect(game.abilities(company, :tile_lay, time: 'sold')).to be_nil
+      end
+    end
+
     describe '5 train event' do
       it 'removes private blocking abilities in phase 4 except Osaka City Tram' do
         ordinary_blockers = %w[有電 神電 堺電 京津].map { |id| game.company_by_id(id) }
