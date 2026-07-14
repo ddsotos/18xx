@@ -555,6 +555,40 @@ module Engine
 
         expect(player.cash).to eq(cash_before)
       end
+
+      it 'pays through the dividend step after a route uses Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.first
+        kobe_hex = instance_double(Hex, location_name: '神戸')
+        kobe_stop = double('Kobe stop', hex: kobe_hex)
+        allow(kobe_stop).to receive(:route_revenue).and_return(30)
+        train = instance_double(Train, owner: corporation)
+        route = instance_double(
+          Route,
+          visited_stops: [kobe_stop],
+          phase: game.phase,
+          train: train,
+          connection_hexes: [],
+          halts: [],
+          node_signatures: [],
+        )
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        round.routes = [route]
+        round.extra_revenue = 100
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        allow(game).to receive(:routes_revenue).and_return(0)
+        cash_before = player.cash
+
+        step.process_dividend(Action::Dividend.new(corporation, kind: 'withhold'))
+
+        expect(player.cash).to eq(cash_before + 15)
+      end
     end
 
     describe 'Keifuku Railway' do
