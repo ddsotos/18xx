@@ -110,7 +110,7 @@ module Engine
             name: '神戸高速鉄道',#TODO 
             value: 240,
             revenue: 0,
-            desc: '京阪が京都に駅トークンを置いたとき、京阪の金庫にも毎運営時に¥40入ります。',
+            desc: '神戸を収益に使う会社ごとに、神戸高速鉄道はその神戸収益の半額を受け取ります。',
             sym: '神高',
             type: :latecomer,
             abilities: [{ type: 'close', on_phase: 'never', owner_type: 'player' },

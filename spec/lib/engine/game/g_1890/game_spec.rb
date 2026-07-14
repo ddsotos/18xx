@@ -510,6 +510,53 @@ module Engine
       end
     end
 
+    describe 'Kobe Rapid Railway' do
+      it 'describes the half-Kobe-revenue ability' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+
+        expect(company.value).to eq(240)
+        expect(company.revenue).to eq(0)
+        expect(company.desc).to include('神戸収益の半額')
+      end
+
+      it 'pays its owner half of Kobe revenue once for a corporation using Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        kobe_hex = instance_double(Hex, location_name: '神戸')
+        kobe_stop = double('Kobe stop', hex: kobe_hex)
+        allow(kobe_stop).to receive(:route_revenue).and_return(30)
+        other_stop = double('Other stop', hex: instance_double(Hex, location_name: '大阪'))
+        train = instance_double(Train)
+        routes = [
+          instance_double(Route, visited_stops: [other_stop, kobe_stop], phase: game.phase, train: train),
+          instance_double(Route, visited_stops: [kobe_stop], phase: game.phase, train: train),
+        ]
+        cash_before = player.cash
+
+        game.pay_kobe_rapid_revenue!(routes)
+
+        expect(player.cash).to eq(cash_before + 15)
+      end
+
+      it 'does not pay when no route uses Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        osaka_stop = double('Osaka stop', hex: instance_double(Hex, location_name: '大阪'))
+        route = instance_double(Route, visited_stops: [osaka_stop])
+        cash_before = player.cash
+
+        game.pay_kobe_rapid_revenue!([route])
+
+        expect(player.cash).to eq(cash_before)
+      end
+    end
+
     describe 'Keifuku Railway' do
       it 'does not pay Keihan when Keihan has no Kyoto token' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }

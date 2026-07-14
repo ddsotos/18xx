@@ -37,7 +37,9 @@ module Engine
           end
 
           def process_dividend(action)
+            routes_for_kobe_rapid = routes.dup
             super
+            @game.pay_kobe_rapid_revenue!(routes_for_kobe_rapid)
             return unless action.entity.id == '近鉄' && @game.kintetsu_special_operating?
 
             @game.finish_kintetsu_special_operating!

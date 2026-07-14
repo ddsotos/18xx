@@ -437,6 +437,26 @@ module Engine
         uses_brown_nishinomiya ? 10 : 0
       end
 
+      def kobe_rapid_revenue(routes)
+        routes.each do |route|
+          kobe_stop = route.visited_stops.find { |stop| stop.hex.location_name == '神戸' }
+          return kobe_stop.route_revenue(route.phase, route.train) / 2 if kobe_stop
+        end
+
+        0
+      end
+
+      def pay_kobe_rapid_revenue!(routes)
+        company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
+        return unless company&.owned_by_player?
+
+        revenue = kobe_rapid_revenue(routes)
+        return unless revenue.positive?
+
+        bank.spend(revenue, company.owner)
+        @log << "#{company.owner.name} collects #{format_currency(revenue)} from #{company.name} for Kobe revenue"
+      end
+
 
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'
