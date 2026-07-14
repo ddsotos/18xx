@@ -187,11 +187,15 @@ module Engine
         nara.owner = game.players.first
         nara.float!
         game.place_home_token(nara)
+        game.phase.next! until game.phase.name == '2'
 
         h19 = game.hex_by_id('H19')
+        round = game.operating_round(1)
+        track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
         upgrade = game.tiles.find { |tile| tile.name == '205' }
 
         expect(game.upgrades_to?(h19.tile, upgrade)).to be(true)
+        expect(track_step.upgradeable_tiles(nara, h19).map(&:name)).to include('205')
       end
     end
 
