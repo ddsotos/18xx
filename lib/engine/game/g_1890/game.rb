@@ -316,6 +316,12 @@ module Engine
           @kintetsu_special_operating = false
         end
 
+        def release_osaka_city_tram_blocks!
+          osaka_tram = company_by_id('市電')
+          ability = abilities(osaka_tram, :blocks_hexes)
+          osaka_tram.remove_ability(ability) if ability
+        end
+
         def place_home_token(corporation)
           return super unless %w[JR 奈良].include?(corporation.id)
           return if corporation.tokens.first&.used

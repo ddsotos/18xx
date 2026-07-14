@@ -8,6 +8,13 @@ module Engine
     module G1890
       module Round
         class Operating < Engine::Round::Operating
+          def start_operating
+            entity = @entities[@entity_index]
+            @game.release_osaka_city_tram_blocks! if entity&.id == 'メトロ'
+
+            super
+          end
+
           def recalculate_order_when_merge_Kintetsu
             remaining_entities = @entities.pop(@entities.size - @entity_index)
             kintetsu = @game.corporation_by_id('近鉄')

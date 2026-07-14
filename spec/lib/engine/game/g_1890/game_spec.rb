@@ -434,6 +434,27 @@ module Engine
         expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
       end
 
+      it 'keeps blocking Osaka city hexes until Osaka Metro starts operating' do
+        company = game.company_by_id('市電')
+        metro = game.corporation_by_id('メトロ')
+        nankai = game.corporation_by_id('南海')
+        metro.owner = game.players.first
+        nankai.owner = game.players.first
+        round = game.operating_round(1)
+
+        expect(game.abilities(company, :blocks_hexes).hexes.map(&:id)).to contain_exactly('G12', 'H11', 'H13')
+
+        round.instance_variable_set(:@entities, [nankai])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        expect(game.abilities(company, :blocks_hexes)).not_to be_nil
+
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        expect(game.abilities(company, :blocks_hexes)).to be_nil
+      end
+
       it 'closes when Osaka Metro buys its first train' do
         company = game.company_by_id('市電')
         company.owner = game.players.first
