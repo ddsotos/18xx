@@ -423,11 +423,26 @@ module Engine
         expect(game.num_certs(player)).to eq(1)
       end
 
+      it 'keeps Kobe City Tram open and in the certificate count after phase 4' do
+        company = game.company_by_id('神電')
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+
+        game.phase.next! until game.phase.name == '4'
+        game.event_close_companies!
+
+        expect(company).not_to be_closed
+        expect(company.revenue).to eq(5)
+        expect(game.num_certs(player)).to eq(1)
+        expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
+      end
+
       it 'closes ordinary privates but keeps Hankai, Osaka City Tram, minors, and latecomers open' do
         game.event_close_companies!
 
         expect(game.company_by_id('有電')).to be_closed
-        expect(game.company_by_id('神電')).to be_closed
+        expect(game.company_by_id('神電')).not_to be_closed
         expect(game.company_by_id('堺電')).not_to be_closed
         expect(game.company_by_id('市電')).not_to be_closed
         expect(game.company_by_id('河南')).not_to be_closed

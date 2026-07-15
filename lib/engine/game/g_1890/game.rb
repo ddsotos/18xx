@@ -638,7 +638,7 @@ module Engine
         @log << '-- Event: Private companies close --'
         @companies.each do |company|
           next unless company.type == :private
-          next if company.id == '市電'
+          next if %w[市電 神電].include?(company.id)
 
           if (ability = abilities(company, :close, on_phase: 'any')) &&
               (ability.on_phase == 'never' || @phase.future.any? { |phase| ability.on_phase == phase[:name] })
