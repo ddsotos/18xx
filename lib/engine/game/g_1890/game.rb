@@ -572,6 +572,15 @@ module Engine
         acquire_minor(company)
       end
 
+      def after_sell_company(buyer, company, _price, _seller)
+        return unless buyer&.corporation?
+
+        company.all_abilities.dup.each do |ability|
+          company.remove_ability(ability) if ability.type == :blocks_hexes
+        end
+        clear_graph
+      end
+
         def acquire_minor(company)
           return unless (minor = @minors.find { |m| m.name == company.sym })
           minor.owner = company.player

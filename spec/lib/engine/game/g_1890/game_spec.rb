@@ -349,6 +349,25 @@ module Engine
     end
 
     describe 'Arima Railway' do
+      it 'removes its Arima block when sold to a corporation' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = seller
+        seller.companies << company
+        game.bank.spend(company.min_price, buyer)
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Engine::Step::BuyCompany) }
+        hex = game.hex_by_id('D7')
+
+        expect(hex.tile.blockers).to include(company)
+
+        step.buy_company(buyer, company, company.min_price, seller)
+
+        expect(game.abilities(company, :blocks_hexes)).to be_nil
+        expect(hex.tile.blockers).not_to include(company)
+      end
+
       it 'lays a permitted tile on Arima when sold to a corporation' do
         company = game.company_by_id('有電')
         seller = game.players.first
