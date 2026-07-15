@@ -725,6 +725,17 @@ module Engine
         expect(company.desc).to include('神戸収益の半額')
       end
 
+      it 'does not operate or have to buy trains' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        expect(game.operating_order).not_to include(company)
+        expect(game.must_buy_train?(company)).to be(false)
+      end
+
       it 'pays its owner half of Kobe revenue once for a corporation using Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first

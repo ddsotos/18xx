@@ -253,6 +253,12 @@ module Engine
           ], round_num: round_num)
         end
 
+        def must_buy_train?(entity)
+          return false unless entity&.operator?
+
+          super
+        end
+
         def active_players
           return super if @finished
 
