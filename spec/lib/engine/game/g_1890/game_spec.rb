@@ -601,6 +601,31 @@ module Engine
 
         expect(city.blocks?(minor)).to be(true)
       end
+
+      it 'lets Osaka Metro graph walk through tokened brown Osaka city hexes' do
+        metro = game.corporation_by_id('メトロ')
+        game.hex_by_id('H11').tile.cities.first.place_token(metro, metro.next_token, check_tokenable: false)
+        osaka_north = game.hex_by_id('G12')
+        osaka_north.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        fully_token_city(osaka_north.tile.cities.first, game.corporations.reject { |corporation| corporation == metro })
+
+        graph = game.graph_for_entity(metro)
+
+        expect(graph.connected_nodes(metro).keys.map { |node| node.hex&.id }).to include('G12')
+        expect(graph.connected_hexes(metro).keys.compact.map(&:id)).to include('F13', 'G14')
+      end
+
+      it 'does not let Osaka Metro graph walk through tokened non-brown Osaka city hexes' do
+        metro = game.corporation_by_id('メトロ')
+        game.hex_by_id('H11').tile.cities.first.place_token(metro, metro.next_token, check_tokenable: false)
+        osaka_north = game.hex_by_id('G12')
+        fully_token_city(osaka_north.tile.cities.first, game.corporations.reject { |corporation| corporation == metro })
+
+        graph = game.graph_for_entity(metro)
+
+        expect(graph.connected_nodes(metro).keys.map { |node| node.hex&.id }).not_to include('G12')
+        expect(graph.connected_hexes(metro).keys.compact.map(&:id)).not_to include('F13', 'G14')
+      end
     end
 
     describe 'Semboku Rapid Railway' do
