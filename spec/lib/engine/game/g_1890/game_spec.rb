@@ -1205,6 +1205,16 @@ module Engine
     end
 
     describe 'JR dividends' do
+      it 'can lay two tiles before the 5 train event and only one tile after it' do
+        jr = game.corporation_by_id('JR')
+
+        expect(game.tile_lays(jr).size).to eq(2)
+
+        game.event_remove_extra_tile_lay_from_JR!
+
+        expect(game.tile_lays(jr).size).to eq(1)
+      end
+
       it 'pays half rounded down to 20 yen units and keeps the remainder' do
         round = game.operating_round(1)
         step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
