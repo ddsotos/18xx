@@ -468,6 +468,46 @@ module Engine
 
         expect(company).to be_closed
       end
+
+      it 'gives Osaka Metro one free special tile lay in Osaka city on its first operation' do
+        metro = game.corporation_by_id('メトロ')
+        metro.owner = game.players.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+
+        round.start_operating
+        ability = game.abilities(metro, :tile_lay, time: 'track')
+
+        expect(ability).not_to be_nil
+        expect(ability.free).to be(true)
+        expect(ability.hexes).to contain_exactly('G12', 'H11', 'H13')
+      end
+
+      it 'limits Osaka Metro special tile lay to Osaka city and leaves its normal tile lay after use' do
+        2.times { game.phase.next! }
+        metro = game.corporation_by_id('メトロ')
+        metro.owner = game.players.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Track) }
+        osaka_north = game.hex_by_id('G12')
+        non_osaka = game.hex_by_id('F5')
+        tile = game.tiles.find { |candidate| candidate.name == 'GON' }
+        cash_before = metro.cash
+
+        expect(step.available_hex(metro, osaka_north)).not_to be_nil
+        expect(step.available_hex(metro, non_osaka)).to be_nil
+
+        step.process_lay_tile(Action::LayTile.new(metro, hex: osaka_north, tile: tile, rotation: 2))
+
+        expect(metro.cash).to eq(cash_before)
+        expect(game.abilities(metro, :tile_lay, time: 'track')).to be_nil
+        expect(round.num_laid_track).to eq(0)
+        expect(step.can_lay_tile?(metro)).to be(true)
+      end
     end
 
     describe 'Semboku Rapid Railway' do

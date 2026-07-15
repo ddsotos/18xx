@@ -179,6 +179,7 @@ module Engine
         HOME_TOKEN_TIMING = :operating_round
         EXTRA_TILE_LAYS = [{ lay: true, upgrade: true },
                            { lay: true, upgrade: true, cannot_reuse_same_hex: true },].freeze
+        OSAKA_METRO_SPECIAL_TILE_HEXES = %w[G12 H11 H13].freeze
 
         INITIAL_AUCTION_ORDER = %w[有電 神電 堺電 阪国 京津 市電 河南 大軌 阪鉄 奈良 神戸].freeze
 
@@ -206,6 +207,7 @@ module Engine
           jr.add_ability(Engine::Ability::Base.new(
             type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
           ))
+          @osaka_metro_special_tile_lay_used = false
 
         end
 
@@ -320,6 +322,39 @@ module Engine
           osaka_tram = company_by_id('市電')
           ability = abilities(osaka_tram, :blocks_hexes)
           osaka_tram.remove_ability(ability) if ability
+        end
+
+        def activate_osaka_metro_special_tile_lay!
+          return if @osaka_metro_special_tile_lay_used
+
+          metro = corporation_by_id('メトロ')
+          return if abilities(metro, :tile_lay, time: 'track')
+
+          metro.add_ability(Engine::Ability::TileLay.new(
+            type: 'tile_lay',
+            when: 'track',
+            tiles: [],
+            hexes: OSAKA_METRO_SPECIAL_TILE_HEXES,
+            free: true,
+            count: 1,
+            consume_tile_lay: true,
+          ))
+        end
+
+        def osaka_metro_special_tile_lay?(entity, hex = nil)
+          return false unless entity&.id == 'メトロ'
+
+          ability = abilities(entity, :tile_lay, time: 'track')
+          return false unless ability&.free
+
+          hex.nil? || ability.hexes.include?(hex.id)
+        end
+
+        def finish_osaka_metro_special_tile_lay!
+          metro = corporation_by_id('メトロ')
+          ability = abilities(metro, :tile_lay, time: 'track')
+          metro.remove_ability(ability) if ability
+          @osaka_metro_special_tile_lay_used = true
         end
 
         def place_home_token(corporation)

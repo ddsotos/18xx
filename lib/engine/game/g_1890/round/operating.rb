@@ -10,7 +10,10 @@ module Engine
         class Operating < Engine::Round::Operating
           def start_operating
             entity = @entities[@entity_index]
-            @game.release_osaka_city_tram_blocks! if entity&.id == 'メトロ'
+            if entity&.id == 'メトロ'
+              @game.release_osaka_city_tram_blocks!
+              @game.activate_osaka_metro_special_tile_lay!
+            end
 
             super
           end
