@@ -99,10 +99,12 @@
 
 ## 4. 品質・検証状況
 
-- `g_1890` 配下の Ruby ファイルは Windows Ruby の `ruby -c` で構文エラーがなかった。
-- `spec/lib/engine/game/g_1890` は存在せず、1890 専用 fixture も見つからなかった。
-- 実行中コンテナで `require 'engine'` による全ゲーム読込みを試したが 60 秒でタイムアウトした。これは 1890 単独の失敗を示すものではないが、起動後の新規 1890 ゲーム作成テストが必要である。
-- TODO は `entities.rb` に 9 か所あり、上記の未実装能力と対応する。
+- `g_1890` 配下の Ruby ファイルは Windows Ruby の `ruby -c` で構文確認している。
+- 1890 専用テストは `spec/lib/engine/game/g_1890/game_spec.rb` に集約している。
+- 通常検証は Docker Compose 上で `bundle exec rspec spec/lib/engine/game/g_1890` を実行する。
+- 2026-07-15 時点の直近確認では 1890 専用テストは 87 examples, 0 failures。
+- Docker 実行後に `sh: 2: Syntax error: "(" unexpected` が表示されることがあるが、RSpec結果自体とは別の終了時出力として扱っている。
+- TODO は `entities.rb` に残っており、上記の未実装能力と対応するものがある。
 
 ## 5. 推奨実装順
 
