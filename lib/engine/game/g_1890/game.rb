@@ -4,6 +4,7 @@ require_relative 'entities'
 require_relative 'map'
 require_relative 'meta'
 require_relative 'step/special_track'
+require_relative 'step/token'
 require_relative 'step/waterfall_auction'
 require_relative '../base'
 
@@ -244,7 +245,7 @@ module Engine
             G1890::Step::SpecialTrack,
             Engine::Step::BuyCompany,
             G1890::Step::Track,
-            Engine::Step::Token,
+            G1890::Step::Token,
             Engine::Step::Route,
             G1890::Step::Dividend,
             Engine::Step::DiscardTrain,
@@ -523,6 +524,11 @@ module Engine
 
       def kobe_rapid_passage_bought?(corporation)
         (@kobe_rapid_passage_corporations || []).include?(corporation)
+      end
+
+      def kobe_rapid_available?
+        company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
+        company&.owned_by_player?
       end
 
 
