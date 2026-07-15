@@ -207,6 +207,11 @@ module Engine
           jr.add_ability(Engine::Ability::Base.new(
             type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
           ))
+          metro = corporation_by_id('メトロ')
+          metro.define_singleton_method(:ignores_token_blocking?) do |city|
+            city.hex&.tile&.color == :brown &&
+              Engine::Game::G1890::Game::OSAKA_METRO_SPECIAL_TILE_HEXES.include?(city.hex.id)
+          end
           @osaka_metro_special_tile_lay_used = false
 
         end

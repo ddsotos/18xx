@@ -90,6 +90,10 @@ module Engine
       true
     end
 
+    def ignores_token_blocking?(_city)
+      false
+    end
+
     def <=>(other)
       return -1 unless (self_key = sort_order_key)
       return 1 unless (other_key = other.sort_order_key)

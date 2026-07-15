@@ -37,6 +37,7 @@ module Engine
       def blocks?(corporation)
         return false unless corporation
         return false if tokened_by?(corporation)
+        return false if corporation.ignores_token_blocking?(self)
         return false if @tokens.include?(nil)
         return false if @tokens.any? { |t| t&.type == :neutral }
 

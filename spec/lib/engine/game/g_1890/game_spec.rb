@@ -28,6 +28,15 @@ module Engine
       end
     end
 
+    def fully_token_city(city, corporations)
+      city.slots.times do |index|
+        corporation = corporations[index]
+        token = corporation.next_token
+        token.place(city)
+        city.tokens[index] = token
+      end
+    end
+
     describe 'scenario C setup' do
       it 'is listed as a beta game for local playtesting' do
         expect(described_class::DEV_STAGE).to eq(:beta)
@@ -536,6 +545,50 @@ module Engine
         game.activate_osaka_metro_special_tile_lay!
 
         expect(game.abilities(metro, :tile_lay, time: 'track')).to be_nil
+      end
+
+      it 'ignores token blocking in brown Osaka city hexes' do
+        metro = game.corporation_by_id('メトロ')
+        osaka_north = game.hex_by_id('G12')
+        osaka_north.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        city = osaka_north.tile.cities.first
+
+        fully_token_city(city, game.corporations.reject { |corporation| corporation == metro })
+
+        expect(city.blocks?(metro)).to be(false)
+      end
+
+      it 'does not ignore token blocking in non-brown Osaka city hexes' do
+        metro = game.corporation_by_id('メトロ')
+        osaka_north = game.hex_by_id('G12')
+        city = osaka_north.tile.cities.first
+
+        fully_token_city(city, game.corporations.reject { |corporation| corporation == metro })
+
+        expect(city.blocks?(metro)).to be(true)
+      end
+
+      it 'does not let other corporations ignore token blocking in brown Osaka city hexes' do
+        metro = game.corporation_by_id('メトロ')
+        nankai = game.corporation_by_id('南海')
+        osaka_north = game.hex_by_id('G12')
+        osaka_north.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        city = osaka_north.tile.cities.first
+
+        fully_token_city(city, game.corporations.reject { |corporation| [metro, nankai].include?(corporation) })
+
+        expect(city.blocks?(nankai)).to be(true)
+      end
+
+      it 'does not ignore token blocking outside Osaka city' do
+        metro = game.corporation_by_id('メトロ')
+        kobe = game.hex_by_id('F5')
+        kobe.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        city = kobe.tile.cities.first
+
+        fully_token_city(city, game.corporations.reject { |corporation| corporation == metro })
+
+        expect(city.blocks?(metro)).to be(true)
       end
     end
 
