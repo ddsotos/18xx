@@ -508,6 +508,35 @@ module Engine
         expect(round.num_laid_track).to eq(0)
         expect(step.can_lay_tile?(metro)).to be(true)
       end
+
+      it 'removes Osaka Metro special tile lay when its track step is passed' do
+        metro = game.corporation_by_id('メトロ')
+        metro.owner = game.players.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Track) }
+
+        step.process_pass(Action::Pass.new(metro))
+
+        expect(game.abilities(metro, :tile_lay, time: 'track')).to be_nil
+      end
+
+      it 'does not grant Osaka Metro special tile lay after its first operation' do
+        metro = game.corporation_by_id('メトロ')
+        metro.owner = game.players.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Track) }
+
+        step.process_pass(Action::Pass.new(metro))
+        game.activate_osaka_metro_special_tile_lay!
+
+        expect(game.abilities(metro, :tile_lay, time: 'track')).to be_nil
+      end
     end
 
     describe 'Semboku Rapid Railway' do
