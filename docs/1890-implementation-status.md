@@ -42,7 +42,7 @@
 | T-60（額面とタイル） | 部分実装 | `BuySellParShares#get_par_prices`、JR の `extra_tile_lay`、5 列車イベント | JR 額面を 100 に固定し、5 列車まで別ヘクスへ 2 回タイル操作する仕組みがある。 |
 | T-60（ホームトークン） | 実装・テスト済み | `Game#place_home_token`、JR の `coordinates` と `reservation` | 神戸、大阪北、京都city 0、奈良city 0へ4個のホームトークンを配置し、予約を解除する処理を盤面画像に照らしてテスト済み。 |
 | T-62, T-63（設立株） | 実装済み | 京津／阪神国道の `shares` 能力、`after_buy_company`、両社の `float_percent: 40`、`BuySellParShares#attached_share_locked?` | 初期競売で付属10%株を渡し、京阪・阪神を40%で設立する。社長株が会社保有中は付属株を売却できないことをテスト済み。 |
-| T-15 | 実装・テスト済み | 列車の `rusts_on`、5列車の `close_companies` イベント、`event_close_companies!` | 2→4、2-2→5、3/3-3→6、4→Dの廃車と、5列車で通常個人会社だけを閉鎖して阪堺・大阪市電・小会社を保持する処理をテスト済み。 |
+| T-15 | 実装・テスト済み | 列車の `rusts_on`、5列車の `close_companies` イベント、`event_close_companies!` | 2→4、2-2→5、3/3-3→6、4→Dの廃車と、5列車で通常個人会社だけを閉鎖して神戸市電・阪堺・大阪市電・小会社を保持する処理をテスト済み。 |
 
 ## 2. 部分実装・ルール差分
 
