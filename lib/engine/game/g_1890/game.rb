@@ -531,9 +531,26 @@ module Engine
         company&.owned_by_player?
       end
 
+      def activate_kobe_rapid_blocking!
+        return if @kobe_rapid_blocking_active
+
+        kobe_city = hex_by_id('F5').tile.cities.first
+        previous_blocks = kobe_city.method(:blocks?)
+        game = self
+        kobe_city.define_singleton_method(:blocks?) do |corporation|
+          previous_blocks.call(corporation) ||
+            (corporation &&
+             !tokened_by?(corporation) &&
+             !game.kobe_rapid_passage_bought?(corporation))
+        end
+        @kobe_rapid_blocking_active = true
+        clear_graph
+      end
+
 
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'
+        activate_kobe_rapid_blocking! if company.id == '神高'
 
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|

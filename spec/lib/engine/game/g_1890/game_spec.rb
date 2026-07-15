@@ -762,6 +762,45 @@ module Engine
         expect(kobe_city.blocks?(other_corporation)).to be(true)
       end
 
+      it 'blocks Kobe with its special token after it is bought' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        other_corporation = game.corporations.find { |candidate| ![corporation.id, 'JR'].include?(candidate.id) }
+        kobe_city = game.hex_by_id('F5').tile.cities.first
+
+        expect(kobe_city.blocks?(corporation)).to be(false)
+
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        game.activate_kobe_rapid_blocking!
+
+        expect(kobe_city.blocks?(corporation)).to be(true)
+
+        game.bank.spend(100, corporation)
+        game.buy_kobe_rapid_passage!(corporation)
+
+        expect(kobe_city.blocks?(corporation)).to be(false)
+        expect(kobe_city.blocks?(other_corporation)).to be(true)
+      end
+
+      it 'activates Kobe blocking when bought through after_buy_company' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        kobe_city = game.hex_by_id('F5').tile.cities.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        expect(kobe_city.blocks?(corporation)).to be(false)
+
+        game.after_buy_company(player, company, company.value)
+
+        expect(kobe_city.blocks?(corporation)).to be(true)
+      end
+
       it 'offers Kobe Rapid passage during the token step' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
