@@ -590,6 +590,17 @@ module Engine
 
         expect(city.blocks?(metro)).to be(true)
       end
+
+      it 'keeps token blocking behavior for minors that do not define the Metro exception' do
+        minor = game.minor_by_id('奈良')
+        osaka_north = game.hex_by_id('G12')
+        osaka_north.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        city = osaka_north.tile.cities.first
+
+        fully_token_city(city, game.corporations)
+
+        expect(city.blocks?(minor)).to be(true)
+      end
     end
 
     describe 'Semboku Rapid Railway' do
