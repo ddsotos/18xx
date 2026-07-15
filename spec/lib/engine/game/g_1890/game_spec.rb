@@ -826,6 +826,23 @@ module Engine
         expect(kobe_city.blocks?(corporation)).to be(false)
       end
 
+      it 'offers Kobe Rapid passage for its special Kobe block without another token in Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        game.activate_kobe_rapid_blocking!
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        game.bank.spend(100, corporation)
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Token) }
+
+        expect(step.choices.keys).to include('buy_kobe_rapid_passage')
+      end
+
       it 'pays its owner half of Kobe revenue once for a corporation using Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
