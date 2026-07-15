@@ -503,6 +503,28 @@ module Engine
         @log << "#{company.owner.name} collects #{format_currency(revenue)} from #{company.name} for Kobe revenue"
       end
 
+      def buy_kobe_rapid_passage!(corporation)
+        company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
+        raise GameError, 'Kobe Rapid Railway is not owned by a player' unless company&.owned_by_player?
+        return if kobe_rapid_passage_bought?(corporation)
+
+        token = corporation.unplaced_tokens.find { |candidate| candidate.price.positive? }
+        raise GameError, "#{corporation.name} has no paid token available" unless token
+
+        corporation.spend(token.price, bank)
+        (@kobe_rapid_passage_corporations ||= []) << corporation
+        previous_ignores_token_blocking = corporation.method(:ignores_token_blocking?)
+        corporation.define_singleton_method(:ignores_token_blocking?) do |city|
+          previous_ignores_token_blocking.call(city) || city.hex&.id == 'F5'
+        end
+        clear_graph_for_entity(corporation)
+        @log << "#{corporation.name} buys Kobe Rapid passage for #{format_currency(token.price)}"
+      end
+
+      def kobe_rapid_passage_bought?(corporation)
+        (@kobe_rapid_passage_corporations || []).include?(corporation)
+      end
+
 
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'

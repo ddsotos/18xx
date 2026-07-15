@@ -736,6 +736,32 @@ module Engine
         expect(game.must_buy_train?(company)).to be(false)
       end
 
+      it 'lets a corporation buy passage through Kobe for the normal token price' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        other_corporation = game.corporations.find { |candidate| ![corporation.id, 'JR'].include?(candidate.id) }
+        kobe_city = game.hex_by_id('F5').tile.cities.first
+        jr = game.corporation_by_id('JR')
+        kobe_city.place_token(jr, jr.next_token, check_tokenable: false)
+        game.bank.spend(100, corporation)
+        cash_before = corporation.cash
+        bank_cash_before = game.bank.cash
+        price = corporation.unplaced_tokens.find { |token| token.price.positive? }.price
+
+        expect(kobe_city.blocks?(corporation)).to be(true)
+
+        game.buy_kobe_rapid_passage!(corporation)
+
+        expect(corporation.cash).to eq(cash_before - price)
+        expect(game.bank.cash).to eq(bank_cash_before + price)
+        expect(kobe_city.blocks?(corporation)).to be(false)
+        expect(kobe_city.blocks?(other_corporation)).to be(true)
+      end
+
       it 'pays its owner half of Kobe revenue once for a corporation using Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
