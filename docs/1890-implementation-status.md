@@ -102,7 +102,7 @@
 - `g_1890` 配下の Ruby ファイルは Windows Ruby の `ruby -c` で構文確認している。
 - 1890 専用テストは `spec/lib/engine/game/g_1890/game_spec.rb` に集約している。
 - 通常検証は Docker Compose 上で `bundle exec rspec spec/lib/engine/game/g_1890` を実行する。
-- 2026-07-16 時点の直近確認では 1890 専用テストは 107 examples, 0 failures。
+- 2026-07-16 時点の直近確認では 1890 専用テストは 109 examples, 0 failures。
 - Docker 実行後に `sh: 2: Syntax error: "(" unexpected` が表示されることがあるが、RSpec結果自体とは別の終了時出力として扱っている。
 - TODO は `entities.rb` に神戸高速の盤面上特殊トークン表示として残っている。
 
