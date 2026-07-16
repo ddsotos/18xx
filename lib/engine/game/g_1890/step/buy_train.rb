@@ -7,7 +7,7 @@ module Engine
     module G1890
       module Step
         class BuyTrain < Engine::Step::BuyTrain
-          def can_entity_buy_train?
+          def can_entity_buy_train?(_entity = nil)
             true
           end
 

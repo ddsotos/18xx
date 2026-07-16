@@ -1432,6 +1432,26 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(true)
       end
 
+      it 'can pass through the Kintetsu special operation using game actions' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        current = game.minor_by_id('河南')
+        round.instance_variable_set(:@entities, [current, kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, current)
+
+        game.process_action(Action::BuyShares.new(daiki_company, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Track)
+        expect { game.process_action(Action::Pass.new(kintetsu)) }.not_to raise_error
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::BuyTrain)
+        expect(game.kintetsu_special_operating?).to be(false)
+      end
+
       it 'may run trains received from minors during the Kintetsu special operation' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
