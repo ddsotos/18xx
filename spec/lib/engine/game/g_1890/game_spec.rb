@@ -394,6 +394,29 @@ module Engine
     end
 
     describe 'operating order' do
+      it 'does not operate unfloated minors or corporations' do
+        minor = game.minors.first
+        corporation = game.corporations.first
+
+        expect(minor).not_to be_floated
+        expect(corporation).not_to be_floated
+        expect(game.operating_order).not_to include(minor)
+        expect(game.operating_order).not_to include(corporation)
+      end
+
+      it 'operates only floated minors before floated corporations' do
+        minor = game.minors.first
+        corporation = game.corporations.first
+        minor.float!
+        game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 70 })
+        corporation.floated = true
+
+        expect(game.operating_order.first).to eq(minor)
+        expect(game.operating_order).to include(corporation)
+        expect(game.operating_order.index(minor)).to be < game.operating_order.index(corporation)
+        expect(game.operating_order).not_to include(*game.minors.drop(1))
+      end
+
       it 'runs floated minors first in company order, then floated corporations by share price' do
         game.minors.each(&:float!)
         nankai = game.corporation_by_id('南海')
