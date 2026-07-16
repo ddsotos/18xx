@@ -37,7 +37,7 @@ module Engine
             color: nil,
           },
           {
-            name: '阪堺電鉄', # TODO: Confirm whether player ownership continues blocking in phase 4
+            name: '阪堺電鉄',
             value: 70,
             revenue: 15,
             desc: '配置制限:堺(J11)大阪南(I12) \n 第4フェイズ(5列車購入時)に閉鎖しない　ただし収入は5になり、売却できず、株券枚数制限に含み続ける',
@@ -76,7 +76,7 @@ module Engine
             color: nil,
           },
           {
-            name: '大阪市電',#TODO 大阪地下鉄の最初の手番がくれば、大阪市内の3ヘックスへのタイルの置き換えは、自由になるものとします。と、大阪市電は、プレーヤーに購入された時点で、額面価格が¥0 に変更されます。
+            name: '大阪市電',
             value: 220,
             revenue: 40,
             desc: '配置制限:大阪北(G12)大阪西(H11)大阪東(H13)  '\
@@ -95,7 +95,7 @@ module Engine
             color: nil,
           },
           {
-            name: '京福鉄道',#TODO 京阪が京都に駅トークンを置いたとき、京阪の金庫にも毎運営時に¥40入ります。
+            name: '京福鉄道',
             value: 200,
             revenue: 40,
             desc: '京阪が京都に駅トークンを置いたとき、京阪の金庫にも毎運営時に¥40入ります。',
@@ -107,7 +107,7 @@ module Engine
             color: nil,
           },
           {
-            name: '神戸高速鉄道',#TODO 
+            name: '神戸高速鉄道', # TODO: 盤面上の特殊トークン表示は未実装
             value: 240,
             revenue: 0,
             desc: '神戸を収益に使う会社ごとに、神戸高速鉄道はその神戸収益の半額を受け取ります。',
@@ -119,7 +119,7 @@ module Engine
             color: nil,
           },
           {
-            name: '北大阪急行',#TODO 
+            name: '北大阪急行',
             value: 280,
             revenue: 60,
             desc: '最初の6列車が買われた次の運行ラウンドに一回だけ、大阪万国博覧会で特別収入として通常の配当に¥40 を加算し(¥100) 受け取ります。',
@@ -131,7 +131,7 @@ module Engine
             color: nil,
           },
           {
-            name: '泉北高速鉄道',#TODO 
+            name: '泉北高速鉄道',
             value: 320,
             revenue: 70,
             desc: '堺に駅トークンを配置している公共会社の金庫に、毎運営時に¥40入ります。',
@@ -143,7 +143,7 @@ module Engine
             color: nil,
           },
           {
-            name: '河南鉄道',#TODO 
+            name: '河南鉄道',
             value: 100,
             revenue: 0,
             desc: '第2フェイズから、近鉄への合併が可能になります。第3フェイズになると、近鉄に強制合併されます。'\
@@ -159,7 +159,7 @@ module Engine
             color: nil,
           },
           {
-            name: '大阪電気軌道',#TODO 
+            name: '大阪電気軌道',
             value: 200,
             revenue: 0,
             desc: '大阪電気軌道は、近鉄の前身となった会社です。初期株式ラウンドで購入されたとき、近鉄の株価を決定します。'\
@@ -177,7 +177,7 @@ module Engine
             color: nil,
           },
           {
-            name: '大阪鉄道',#TODO 
+            name: '大阪鉄道',
             value: 100,
             revenue: 0,
             desc: '近鉄の株1株に引き替えて閉鎖します。閉鎖時に全資産を近鉄は引き継ぎます。'\
