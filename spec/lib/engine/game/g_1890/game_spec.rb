@@ -215,15 +215,24 @@ module Engine
         nara.owner = game.players.first
         nara.float!
         game.place_home_token(nara)
+        game.bank.spend(80, nara)
         game.phase.next! until game.phase.name == '2'
 
         h19 = game.hex_by_id('H19')
         round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [nara])
+        round.instance_variable_set(:@entity_index, 0)
         track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
         upgrade = game.tiles.find { |tile| tile.name == '205' }
+        cash_before = nara.cash
 
         expect(game.upgrades_to?(h19.tile, upgrade)).to be(true)
         expect(track_step.upgradeable_tiles(nara, h19).map(&:name)).to include('205')
+
+        track_step.process_lay_tile(Action::LayTile.new(nara, hex: h19, tile: upgrade, rotation: 0))
+
+        expect(h19.tile.name).to eq('205')
+        expect(nara.cash).to eq(cash_before - 80)
       end
     end
 
