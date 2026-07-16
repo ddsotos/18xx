@@ -824,13 +824,30 @@ module Engine
         city, other_city = game.hex_by_id('J11').tile.cities
         city.place_token(corporation, corporation.next_token, check_tokenable: false)
         other_city.place_token(other_corporation, other_corporation.next_token, check_tokenable: false)
+        player_cash_before = player.cash
         cash_before = corporation.cash
         other_cash_before = other_corporation.cash
 
         game.payout_companies
 
+        expect(player.cash).to eq(player_cash_before + 70)
         expect(corporation.cash).to eq(cash_before + 40)
         expect(other_corporation.cash).to eq(other_cash_before + 40)
+      end
+
+      it 'does not pay corporations when nobody has a token in Sakai' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '泉北' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation_cash = game.corporations.to_h { |corporation| [corporation, corporation.cash] }
+        player_cash_before = player.cash
+
+        game.payout_companies
+
+        expect(player.cash).to eq(player_cash_before + 70)
+        expect(game.corporations).to all(satisfy { |corporation| corporation.cash == corporation_cash[corporation] })
       end
     end
 
