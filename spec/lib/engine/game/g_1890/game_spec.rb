@@ -1420,6 +1420,25 @@ module Engine
         expect(kintetsu.tokens.any? { |token| token.hex&.id == 'H19' }).to be(true)
       end
 
+      it 'keeps the 40 Kintetsu token available when replacing a merged minor token' do
+        daiki = game.minor_by_id('大軌')
+        nara = game.minor_by_id('奈良')
+        kintetsu = game.corporation_by_id('近鉄')
+        game.place_home_token(daiki)
+        game.place_home_token(nara)
+        game.transfer_minor_token!(daiki.tokens.find { |token| token.hex&.id == 'H13' }, kintetsu)
+        forty_token = kintetsu.tokens.find { |token| token.price == 40 }
+        transferred_token = nara.tokens.find { |token| token.hex&.id == 'H19' }
+
+        game.transfer_minor_token!(transferred_token, kintetsu)
+
+        h19_city = game.hex_by_id('H19').tile.cities.first
+        kintetsu_token = h19_city.tokens.compact.find { |token| token.corporation == kintetsu }
+        expect(kintetsu_token.price).to eq(100)
+        expect(forty_token.used).to be(false)
+        expect(kintetsu.unplaced_tokens).to include(forty_token)
+      end
+
       it 'releases unused Kintetsu reserved shares after the final merger' do
         kintetsu = game.corporation_by_id('近鉄')
         unused_share = kintetsu.treasury_shares.find(&:buyable)

@@ -685,7 +685,7 @@ module Engine
             coord = city.hex.coordinates
             token.remove!
             token_to_place = corporation.unplaced_tokens.find { |t| t.price != 40 }# first cost is 40 so 40 token must be reserved
-            city.place_token(corporation, corporation.next_token, check_tokenable: false)
+            city.place_token(corporation, token_to_place || corporation.next_token, check_tokenable: false)
             return unless minor.assigned?(coord)
 
             minor.remove_assignment!(coord)
