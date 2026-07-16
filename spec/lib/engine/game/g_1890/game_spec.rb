@@ -1142,6 +1142,42 @@ module Engine
 
         expect(player.cash).to eq(cash_before + 15)
       end
+
+      it 'pays after a corporation buys passage and runs an actual route through Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(corporation, train, :free)
+        game.bank.spend(100, corporation)
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        kobe_city = kobe_hex.tile.cities.first
+        kobe_city.place_token(corporation, corporation.next_token, check_tokenable: false)
+        game.activate_kobe_rapid_blocking!
+        game.buy_kobe_rapid_passage!(corporation)
+        f3_tile = game.tiles.find { |tile| tile.name == '6' }
+        f3_tile.rotate!(2)
+        game.hex_by_id('F3').lay(f3_tile)
+        route = Route.new(game, game.phase, train)
+        [kobe_city, game.hex_by_id('F3').tile.cities.first].each { |node| route.touch_node(node) }
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        round.routes = [route]
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        cash_before = player.cash
+
+        expect(route.connection_data).not_to be_empty
+        expect(route.visited_stops.map { |stop| stop.hex.location_name }).to include('神戸')
+
+        step.process_dividend(Action::Dividend.new(corporation, kind: 'withhold'))
+
+        expect(player.cash).to eq(cash_before + 30)
+      end
     end
 
     describe 'Keifuku Railway' do
