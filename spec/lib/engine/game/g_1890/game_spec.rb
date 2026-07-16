@@ -334,6 +334,65 @@ module Engine
       end
     end
 
+    describe 'company purchase in operating rounds' do
+      it 'does not allow corporations to buy companies before phase 2' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = seller
+        seller.companies << company
+        game.bank.spend(company.min_price, buyer)
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [buyer])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Engine::Step::BuyCompany) }
+
+        expect(game.phase.name).to eq('1')
+        expect(step.actions(buyer)).not_to include('buy_company')
+      end
+
+      it 'allows corporations to buy sellable companies from phase 2' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = seller
+        seller.companies << company
+        game.bank.spend(company.min_price, buyer)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [buyer])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Engine::Step::BuyCompany) }
+
+        expect(step.actions(buyer)).to include('buy_company')
+        expect(game.purchasable_companies(buyer)).to include(company)
+      end
+
+      it 'enforces the half-to-double price range when buying a company' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = seller
+        seller.companies << company
+        game.bank.spend(company.max_price(buyer), buyer)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [buyer])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Engine::Step::BuyCompany) }
+
+        expect(company.min_price).to eq((company.value / 2.0).ceil)
+        expect(company.max_price(buyer)).to eq(company.value * 2)
+        expect { step.buy_company(buyer, company, company.min_price - 1, seller) }.to raise_error(GameError)
+        expect { step.buy_company(buyer, company, company.max_price(buyer) + 1, seller) }.to raise_error(GameError)
+
+        step.buy_company(buyer, company, company.min_price, seller)
+
+        expect(company.owner).to eq(buyer)
+        expect(buyer.companies).to include(company)
+      end
+    end
+
     describe 'operating order' do
       it 'runs floated minors first in company order, then floated corporations by share price' do
         game.minors.each(&:float!)
