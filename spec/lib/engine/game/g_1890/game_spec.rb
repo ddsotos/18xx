@@ -1343,6 +1343,29 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(true)
       end
 
+      it 'inserts the Kintetsu special operation when Daiki exchanges through the game action flow' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        current = game.minor_by_id('河南')
+        remaining = [game.minor_by_id('神戸'), game.corporation_by_id('南海')]
+        original_order = [current, *remaining]
+        round.instance_variable_set(:@entities, original_order.dup)
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, current)
+        share = kintetsu.treasury_shares.find(&:buyable)
+
+        game.process_action(Action::BuyShares.new(daiki_company, shares: [share]))
+
+        expect(round.current_entity).to eq(kintetsu)
+        expect(round.current_operator).to eq(kintetsu)
+        expect(round.entities).to eq([kintetsu, *original_order])
+        expect(game.kintetsu_special_operating?).to be(true)
+      end
+
       it 'may run trains received from minors during the Kintetsu special operation' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
