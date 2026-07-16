@@ -1603,6 +1603,38 @@ module Engine
         expect(president.cash).to eq(president_cash + 10)
         expect(jr.share_price.price).to be > share_price.price
       end
+
+      it 'uses route revenue when paying the JR half dividend' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+        train = instance_double(Train, owner: jr)
+        route = instance_double(
+          Route,
+          revenue: 110,
+          visited_stops: [],
+          connection_hexes: [],
+          halts: [],
+          node_signatures: [],
+          phase: game.phase,
+          train: train,
+        )
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.routes = [route]
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        corporation_cash = jr.cash
+        president_cash = president.cash
+
+        step.process_dividend(Action::Dividend.new(jr, kind: 'half'))
+
+        expect(jr.cash).to eq(corporation_cash + 60)
+        expect(president.cash).to eq(president_cash + 10)
+      end
     end
 
     describe 'minor dividends' do
