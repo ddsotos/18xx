@@ -245,6 +245,23 @@ module Engine
         expect(h19.tile.name).to eq('205')
         expect(nara.cash).to eq(cash_before - 80)
       end
+
+      it 'restricts special brown tiles to their matching city hexes' do
+        corporation = game.corporations.first
+        round = game.operating_round(1)
+        track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
+        nishinomiya = game.hex_by_id('F9')
+        osaka_west = game.hex_by_id('H11')
+        osaka_east = game.hex_by_id('H13')
+        green_city_tiles = game.tiles.select { |tile| tile.color == :green && tile.cities.any? }
+        nishinomiya.lay(green_city_tiles[0])
+        osaka_west.lay(green_city_tiles[1])
+        osaka_east.lay(green_city_tiles[2])
+
+        expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).to contain_exactly('BNI')
+        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).to contain_exactly('BOS')
+        expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOS')
+      end
     end
 
     describe 'initial auction' do
