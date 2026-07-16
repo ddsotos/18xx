@@ -1324,6 +1324,25 @@ module Engine
         expect(nara).to be_closed
       end
 
+      it 'allows Daiki to exchange from its company certificate through the game action flow' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki = game.minor_by_id('大軌')
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        share = kintetsu.treasury_shares.find(&:buyable)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+
+        expect(round.actions_for(daiki_company)).to include('buy_shares')
+        expect(round.active_step(daiki_company)).to eq(step)
+        expect { game.process_action(Action::BuyShares.new(daiki_company, shares: [share])) }.not_to raise_error
+        expect(daiki).to be_closed
+        expect(kintetsu.floatable).to be(true)
+        expect(game.kintetsu_special_operating?).to be(true)
+      end
+
       it 'may run trains received from minors during the Kintetsu special operation' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
