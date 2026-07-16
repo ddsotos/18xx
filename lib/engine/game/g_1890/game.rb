@@ -181,6 +181,11 @@ module Engine
         EXTRA_TILE_LAYS = [{ lay: true, upgrade: true },
                            { lay: true, upgrade: true, cannot_reuse_same_hex: true },].freeze
         OSAKA_METRO_SPECIAL_TILE_HEXES = %w[G12 H11 H13].freeze
+        OFFBOARD_REVENUE_PHASES = {
+          %w[1 1.2 2 2.2] => :yellow,
+          %w[3 4 5] => :brown,
+          %w[6] => :diesel,
+        }.freeze
 
         INITIAL_AUCTION_ORDER = %w[有電 神電 堺電 阪国 京津 市電 河南 大軌 阪鉄 奈良 神戸].freeze
 
@@ -204,6 +209,7 @@ module Engine
 
         def setup
           super
+          configure_offboard_revenue!
           jr = @corporations.find{|c| c.name == 'JR'}
           jr.add_ability(Engine::Ability::Base.new(
             type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
@@ -219,6 +225,20 @@ module Engine
 
         def initial_auction_companies
           INITIAL_AUCTION_ORDER.map { |id| @companies.find { |company| company.id == id } }
+        end
+
+        def configure_offboard_revenue!
+          @hexes.each do |hex|
+            hex.tile.offboards.each do |offboard|
+              offboard.define_singleton_method(:route_base_revenue) do |phase, _train|
+                _, revenue_key = Engine::Game::G1890::Game::OFFBOARD_REVENUE_PHASES.find do |phase_names, _key|
+                  phase_names.include?(phase.name)
+                end
+
+                revenue[revenue_key] || 0
+              end
+            end
+          end
         end
 
         def new_auction_round

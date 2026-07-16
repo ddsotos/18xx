@@ -139,6 +139,25 @@ module Engine
         expect(game.phase.name).to eq('2')
       end
 
+      it 'uses left offboard revenue in phases 1 and 2, middle in phases 3 through 5, and right in phase 6' do
+        offboard = game.hex_by_id('F1').tile.offboards.first
+        train = game.trains.find { |candidate| candidate.name == '4' }
+
+        expect(offboard.route_base_revenue(game.phase, train)).to eq(40)
+
+        game.phase.next! until game.phase.name == '2.2'
+        expect(game.phase.name).to eq('2.2')
+        expect(offboard.route_base_revenue(game.phase, train)).to eq(40)
+
+        game.phase.next!
+        expect(game.phase.name).to eq('3')
+        expect(offboard.route_base_revenue(game.phase, train)).to eq(50)
+
+        game.phase.next! until game.phase.name == '6'
+        expect(game.phase.name).to eq('6')
+        expect(offboard.route_base_revenue(game.phase, train)).to eq(70)
+      end
+
       it 'floats and places a minor home token only when its certificate is bought' do
         company = game.company_by_id('河南')
         minor = game.minor_by_id('河南')
