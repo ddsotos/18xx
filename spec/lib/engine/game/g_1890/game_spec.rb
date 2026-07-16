@@ -1732,6 +1732,40 @@ module Engine
         expect(jr.cash).to eq(corporation_cash + 60)
         expect(president.cash).to eq(president_cash + 10)
       end
+
+      it 'pays the JR half dividend from an actual board route' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+        game.place_home_token(jr)
+        train = game.trains.first
+        game.buy_train(jr, train, :free)
+        osaka_west = game.hex_by_id('H11').tile.cities.first
+        osaka_north_hex = game.hex_by_id('G12')
+        osaka_north_hex.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        osaka_north = osaka_north_hex.tile.cities.first
+        osaka_north.place_token(jr, jr.tokens.find { |token| token.hex.nil? }, check_tokenable: false)
+        route = Route.new(game, game.phase, train)
+        [osaka_west, osaka_north].each { |node| route.touch_node(node) }
+
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(110)
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.routes = [route]
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        corporation_cash = jr.cash
+        president_cash = president.cash
+
+        step.process_dividend(Action::Dividend.new(jr, kind: 'half'))
+
+        expect(jr.cash).to eq(corporation_cash + 60)
+        expect(president.cash).to eq(president_cash + 10)
+      end
     end
 
     describe 'minor dividends' do
