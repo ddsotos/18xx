@@ -1478,10 +1478,13 @@ module Engine
         jr = game.corporation_by_id('JR')
 
         expect(game.tile_lays(jr).size).to eq(2)
+        expect(game.tile_lays(jr).first[:cannot_reuse_same_hex]).to be_nil
+        expect(game.tile_lays(jr).last[:cannot_reuse_same_hex]).to be(true)
 
         game.event_remove_extra_tile_lay_from_JR!
 
         expect(game.tile_lays(jr).size).to eq(1)
+        expect(game.tile_lays(jr).first[:cannot_reuse_same_hex]).to be_nil
       end
 
       it 'pays half rounded down to 20 yen units and keeps the remainder' do
