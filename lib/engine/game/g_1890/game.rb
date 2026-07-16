@@ -96,6 +96,7 @@ module Engine
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
             operating_rounds: 3,
+            status: ['can_buy_companies'],
           },
           {
             name: '5',
@@ -103,6 +104,7 @@ module Engine
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
             operating_rounds: 3,
+            status: ['can_buy_companies'],
           },
           {
             name: '6',
@@ -110,6 +112,7 @@ module Engine
             train_limit: { minor: 1, major: 2, national: 3 },
             tiles: %i[yellow green brown],
             operating_rounds: 3,
+            status: ['can_buy_companies'],
           },
         ].freeze
 

@@ -396,6 +396,24 @@ module Engine
         expect(game.purchasable_companies(buyer)).to include(company)
       end
 
+      it 'allows corporations to buy sellable companies in later phases' do
+        company = game.company_by_id('有電')
+        seller = game.players.first
+        buyer = game.corporations.first
+        company.owner = seller
+        seller.companies << company
+        game.bank.spend(company.min_price, buyer)
+        game.phase.next! until game.phase.name == '4'
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [buyer])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Engine::Step::BuyCompany) }
+
+        expect(game.phase.status).to include('can_buy_companies')
+        expect(step.actions(buyer)).to include('buy_company')
+        expect(game.purchasable_companies(buyer)).to include(company)
+      end
+
       it 'enforces the half-to-double price range when buying a company' do
         company = game.company_by_id('有電')
         seller = game.players.first
