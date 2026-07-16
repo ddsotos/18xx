@@ -1415,6 +1415,38 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'pays route revenue and ends the Kintetsu special operation' do
+        kintetsu = game.corporation_by_id('近鉄')
+        president = game.players.first
+        game.stock_market.set_par(kintetsu, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(president, kintetsu.presidents_share.to_bundle, exchange: :free)
+        game.instance_variable_set(:@kintetsu_special_operating, true)
+        train = instance_double(Train, owner: kintetsu)
+        route = instance_double(
+          Route,
+          revenue: 100,
+          visited_stops: [],
+          connection_hexes: [],
+          halts: [],
+          node_signatures: [],
+          phase: game.phase,
+          train: train,
+        )
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.routes = [route]
+        dividend = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        president_cash = president.cash
+        share_price = kintetsu.share_price
+
+        dividend.process_dividend(Action::Dividend.new(kintetsu, kind: 'payout'))
+
+        expect(president.cash).to eq(president_cash + 20)
+        expect(kintetsu.share_price.price).to be > share_price.price
+        expect(game.kintetsu_special_operating?).to be(false)
+      end
+
       it 'splits Kanan cash between Kintetsu and its president on the 4 train' do
         buy_all_initial_companies(game)
         %w[2-2 3 3-3].each do |name|
