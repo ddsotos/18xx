@@ -557,7 +557,11 @@ module Engine
       def activate_kobe_rapid_blocking!
         return if @kobe_rapid_blocking_active
 
-        kobe_city = hex_by_id('F5').tile.cities.first
+        kobe_hex = hex_by_id('F5')
+        kobe_tile = kobe_hex.tile
+        kobe_tile.icons << Part::Icon.new('red_cube', 'kobe_rapid_block') unless
+          kobe_tile.icons.any? { |icon| icon.name == 'kobe_rapid_block' }
+        kobe_city = kobe_tile.cities.first
         previous_blocks = kobe_city.method(:blocks?)
         game = self
         kobe_city.define_singleton_method(:blocks?) do |corporation|

@@ -984,6 +984,22 @@ module Engine
         expect(kobe_city.blocks?(other_corporation)).to be(true)
       end
 
+      it 'shows the Kobe Rapid special blocking marker on Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        kobe_tile = game.hex_by_id('F5').tile
+
+        expect(kobe_tile.icons.map(&:name)).not_to include('kobe_rapid_block')
+
+        game.activate_kobe_rapid_blocking!
+        game.activate_kobe_rapid_blocking!
+
+        expect(kobe_tile.icons.count { |icon| icon.name == 'kobe_rapid_block' }).to eq(1)
+      end
+
       it 'activates Kobe blocking when bought through after_buy_company' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
