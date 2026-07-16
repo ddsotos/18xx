@@ -123,7 +123,8 @@ module Engine
         expect(described_class::TRAINS.find { |train| train[:name] == 'D' }[:available_on]).to eq('5')
       end
 
-      it 'advances through the first lower half and second phase when trains are bought' do
+      it 'advances through all train-triggered phases when trains are bought' do
+        buy_all_initial_companies(game)
         corporation = game.corporations.first
         buy_for_phase = lambda do |name|
           train = game.trains.find { |candidate| candidate.name == name }
@@ -137,6 +138,16 @@ module Engine
         expect(game.phase.name).to eq('1.2')
         buy_for_phase.call('3')
         expect(game.phase.name).to eq('2')
+        buy_for_phase.call('3-3')
+        expect(game.phase.name).to eq('2.2')
+        buy_for_phase.call('4')
+        expect(game.phase.name).to eq('3')
+        buy_for_phase.call('5')
+        expect(game.phase.name).to eq('4')
+        buy_for_phase.call('6')
+        expect(game.phase.name).to eq('5')
+        buy_for_phase.call('D')
+        expect(game.phase.name).to eq('6')
       end
 
       it 'uses left offboard revenue in phases 1 and 2, middle in phases 3 through 5, and right in phase 6' do
