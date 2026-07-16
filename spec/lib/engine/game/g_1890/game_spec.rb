@@ -1396,6 +1396,29 @@ module Engine
         expect(kanan).to be_closed
       end
 
+      it 'allows Nara to exchange from its company certificate through the game action flow' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minor_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.finish_kintetsu_special_operating!
+        game.phase.next! until game.phase.name == '4'
+        nara = game.minor_by_id('奈良')
+        nara_company = game.company_by_id('奈良')
+        owner = nara_company.owner
+        shares = game.reserved_kintetsu_shares(kintetsu).first(2)
+
+        expect(round.actions_for(nara_company)).to include('buy_shares')
+        expect(round.active_step(nara_company)).to eq(step)
+        expect { game.process_action(Action::BuyShares.new(nara_company, shares: shares)) }.not_to raise_error
+        expect(nara).to be_closed
+        expect(owner.percent_of(kintetsu)).to be >= 20
+      end
+
       it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do
         buy_all_initial_companies(game)
         daiki = game.minor_by_id('大軌')

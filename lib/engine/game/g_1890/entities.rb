@@ -194,7 +194,12 @@ module Engine
             desc: '第4フェイズから近鉄への合併が可能になり、第5フェイズに強制合併します。',
             sym: '奈良',
             type: :minor,
-            abilities: [{ type: 'no_buy', owner_type: 'player' }],
+            abilities: [{ type: 'no_buy', owner_type: 'player' },
+                        { type: 'exchange',
+                          corporations: ['近鉄'],
+                          when: 'or_between_turns',
+                          from: 'reserved' },
+                       ],
             color: nil,
           },
           {
