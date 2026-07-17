@@ -1452,6 +1452,57 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'can run a train received from Daiki in the Kintetsu special operation using game actions' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki = game.minor_by_id('大軌')
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        daiki_train = game.trains.find { |train| train.name == '2' && train.owner == game.depot }
+        game.buy_train(daiki, daiki_train, :free)
+        daiki_train.operated = true
+        current = game.minor_by_id('河南')
+        remaining = [game.corporation_by_id('南海')]
+        round.instance_variable_set(:@entities, [current, *remaining])
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, current)
+
+        game.process_action(Action::BuyShares.new(daiki_company, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+
+        expect(round.current_entity).to eq(kintetsu)
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Track)
+        expect(daiki_train.owner).to eq(kintetsu)
+        expect(daiki_train.operated).to be(false)
+
+        h15_tile = game.tiles.find { |tile| tile.name == '6' }
+        game.process_action(Action::LayTile.new(kintetsu, tile: h15_tile, hex: game.hex_by_id('H15'), rotation: 1))
+        game.process_action(Action::Pass.new(kintetsu))
+        kintetsu_token_city = game
+                              .hex_by_id('H13')
+                              .tile
+                              .cities
+                              .find { |city| city.tokens.compact.any? { |token| token.corporation == kintetsu } }
+        route = Route.new(game, game.phase, daiki_train)
+        [kintetsu_token_city, game.hex_by_id('H15').tile.cities.first].each { |node| route.touch_node(node) }
+        president_cash = kintetsu.owner.cash
+        share_price = kintetsu.share_price
+
+        expect(round.active_step(kintetsu)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(60)
+
+        expect { game.process_action(Action::RunRoutes.new(kintetsu, routes: [route])) }.not_to raise_error
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Dividend)
+        expect { game.process_action(Action::Dividend.new(kintetsu, kind: 'payout')) }.not_to raise_error
+
+        expect(daiki_train.operated).to be(true)
+        expect(kintetsu.owner.cash).to eq(president_cash + 12)
+        expect(kintetsu.share_price.price).to be > share_price.price
+        expect(game.kintetsu_special_operating?).to be(false)
+      end
+
       it 'may run trains received from minors during the Kintetsu special operation' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
