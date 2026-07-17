@@ -2480,6 +2480,67 @@ module Engine
         expect(game.tile_lays(jr).first[:cannot_reuse_same_hex]).to be_nil
       end
 
+      it 'lets JR lay two different upgraded tiles before the 5 train event through game actions' do
+        game.phase.next! until game.phase.name == '3'
+        jr = game.corporation_by_id('JR')
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(game.players.first, jr.presidents_share.to_bundle, exchange: :free)
+        game.bank.spend(500, jr)
+        game.after_sell_company(jr, game.company_by_id('京津'), 10, game.players.first)
+        game.place_home_token(jr)
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+
+        track_step = round.active_step(jr)
+        expect(track_step).to be_a(Game::G1890::Step::Track)
+        track_step.process_lay_tile(
+          Action::LayTile.new(jr, tile: game.tiles.find { |tile| tile.name == 'GKY' }, hex: game.hex_by_id('B17'), rotation: 1),
+        )
+        expect(round.active_step(jr)).to be_a(Game::G1890::Step::Track)
+        track_step.process_lay_tile(
+          Action::LayTile.new(jr, tile: game.tiles.find { |tile| tile.name == '205' }, hex: game.hex_by_id('H19'), rotation: 0),
+        )
+
+        expect(game.hex_by_id('B17').tile.name).to eq('GKY')
+        expect(game.hex_by_id('H19').tile.name).to eq('205')
+        expect(round.active_step(jr)).not_to be_a(Game::G1890::Step::Track)
+      end
+
+      it 'does not let JR lay a second upgraded tile after the 5 train event through game actions' do
+        game.phase.next! until game.phase.name == '3'
+        jr = game.corporation_by_id('JR')
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(game.players.first, jr.presidents_share.to_bundle, exchange: :free)
+        game.bank.spend(500, jr)
+        game.place_home_token(jr)
+        game.event_remove_extra_tile_lay_from_JR!
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+
+        track_step = round.active_step(jr)
+        expect(track_step).to be_a(Game::G1890::Step::Track)
+        track_step.process_lay_tile(
+          Action::LayTile.new(jr, tile: game.tiles.find { |tile| tile.name == '205' }, hex: game.hex_by_id('H19'), rotation: 0),
+        )
+
+        expect(game.hex_by_id('H19').tile.name).to eq('205')
+        expect(round.active_step(jr)).not_to be_a(Game::G1890::Step::Track)
+      end
+
       it 'pays half rounded down to 20 yen units and keeps the remainder' do
         round = game.operating_round(1)
         step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
