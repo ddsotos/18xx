@@ -301,7 +301,7 @@ module Engine
             color: '#6A3437',
           },
           {
-            float_percent: 50,
+            float_percent: 20,
             sym: 'メトロ',
             name: '大阪地下鉄',
             type: 'major',

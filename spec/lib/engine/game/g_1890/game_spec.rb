@@ -641,6 +641,14 @@ module Engine
         expect(player.shares_of(metro).map(&:president)).to include(true)
       end
 
+      it 'floats Osaka Metro from the Osaka City Tram president share par' do
+        buy_all_initial_companies(game)
+        metro = game.corporations.find { |corporation| corporation.coordinates == 'H11' && corporation.tokens.size == 1 }
+
+        expect(metro).to be_floated
+        expect(game.operating_round(1).instance_variable_get(:@entities)).to include(metro)
+      end
+
       it 'discounts only Arima Railway by 5 after every player passes' do
         step = game.round.active_step
         arima, kobe_tram = step.companies.first(2)
