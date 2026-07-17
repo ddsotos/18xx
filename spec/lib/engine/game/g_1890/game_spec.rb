@@ -1827,6 +1827,24 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'does not add internal current-operator debug messages during the Kintetsu special operation' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        current = game.minor_by_id('河南')
+        round.instance_variable_set(:@entities, [current, kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, current)
+
+        game.process_action(Action::BuyShares.new(daiki_company, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.process_action(Action::Pass.new(kintetsu))
+
+        expect(game.log.grep(/action\.entity\.corporation:/)).to be_empty
+      end
+
       it 'resumes the interrupted operator after passing the Kintetsu special operation using game actions' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'

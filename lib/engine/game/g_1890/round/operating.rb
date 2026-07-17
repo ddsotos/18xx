@@ -32,7 +32,6 @@ module Engine
           end
           def after_process(action)
             return if action.type == 'message'
-            @game.log << "action.entity.corporation: #{action.entity} current_operator:#{@current_operator}"
             @current_operator_acted = true if action.entity == @current_operator
             @current_operator_acted = true if action.entity.corporation == @current_operator
 
