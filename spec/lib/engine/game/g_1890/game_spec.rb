@@ -2235,6 +2235,63 @@ module Engine
         expect(kintetsu.trains).to include(kanan_train)
       end
 
+      it 'can run a train received from Kanan after the 4 train forced merge using game actions' do
+        buy_all_initial_companies(game)
+        %w[2-2 3 3-3].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(game.corporations.first, train, train.owner)
+        end
+
+        kanan_company = game.initial_auction_companies[6]
+        kanan = game.minors.find { |minor| minor.id == kanan_company.id }
+        kintetsu = game.corporations[5]
+        kanan_train = game.trains.find { |candidate| candidate.name == '3' && candidate.owner == game.depot }
+        game.buy_train(kanan, kanan_train, :free)
+        kanan_train.operated = true
+
+        train = game.trains.find { |candidate| candidate.name == '4' }
+        game.phase.buying_train!(game.corporations.first, train, train.owner)
+
+        expect(kanan).to be_closed
+        expect(kanan_train.owner).to eq(kintetsu)
+        expect(kanan_train.operated).to be(false)
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+        tile = game.tiles.find { |candidate| candidate.name == '6' }
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Track)
+        game.process_action(Action::LayTile.new(kintetsu, tile: tile, hex: game.hex_by_id('H15'), rotation: 1))
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Track)
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Token)
+        token_city = game
+                     .hex_by_id('H13')
+                     .tile
+                     .cities
+                     .find { |city| city.tokens.compact.any? { |token| token.corporation == kintetsu } }
+        route_city = game.hex_by_id('H15').tile.cities.first
+        route = Route.new(game, game.phase, kanan_train)
+        [token_city, route_city].each { |node| route.touch_node(node) }
+        president_cash = kintetsu.owner.cash
+        share_price = kintetsu.share_price
+
+        expect(round.active_step(kintetsu)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(60)
+
+        expect { game.process_action(Action::RunRoutes.new(kintetsu, routes: [route])) }.not_to raise_error
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Dividend)
+        expect { game.process_action(Action::Dividend.new(kintetsu, kind: 'payout')) }.not_to raise_error
+
+        expect(kanan_train.operated).to be(true)
+        expect(kintetsu.owner.cash).to eq(president_cash + 12)
+        expect(kintetsu.share_price.price).to be > share_price.price
+      end
+
       it 'forces Nara to merge for two reserved shares on the 6 train' do
         buy_all_initial_companies(game)
         nara = game.minor_by_id('奈良')
