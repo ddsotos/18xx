@@ -1827,6 +1827,36 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'resumes the interrupted operator after passing the Kintetsu special operation using game actions' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        daiki_company = game.company_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        current = game.minor_by_id('河南')
+        following = game.corporation_by_id('南海')
+        round.instance_variable_set(:@entities, [current, following])
+        round.instance_variable_set(:@entity_index, 0)
+        round.instance_variable_set(:@current_operator, current)
+
+        game.process_action(Action::BuyShares.new(daiki_company, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.process_action(Action::Pass.new(kintetsu))
+
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::BuyTrain)
+
+        game.process_action(Action::Pass.new(kintetsu))
+
+        expect(round.active_step(kintetsu)).to be_a(Step::BuyCompany)
+
+        game.process_action(Action::Pass.new(kintetsu))
+
+        expect(game.kintetsu_special_operating?).to be(false)
+        expect(round.current_entity).to eq(current)
+        expect(round.current_operator).to eq(current)
+        expect(round.entities).to eq([kintetsu, current, following])
+      end
+
       it 'can run a train received from Daiki in the Kintetsu special operation using game actions' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
