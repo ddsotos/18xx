@@ -1906,6 +1906,14 @@ module Engine
         expect(kintetsu.owner.cash).to eq(president_cash + 12)
         expect(kintetsu.share_price.price).to be > share_price.price
         expect(game.kintetsu_special_operating?).to be(false)
+
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::BuyTrain)
+        game.process_action(Action::Pass.new(kintetsu))
+        expect(round.active_step(kintetsu)).to be_a(Step::BuyCompany)
+        game.process_action(Action::Pass.new(kintetsu))
+
+        expect(round.current_entity).to eq(current)
+        expect(round.current_operator).to eq(current)
       end
 
       it 'may run trains received from minors during the Kintetsu special operation' do
