@@ -302,7 +302,6 @@ module Engine
             @corporations.each{
             |c| if c.name == '近鉄'
                 shares =c.ipo_shares
-                @log << "近鉄 share num: #{shares.size} "
                 shares[4].buyable = false
                 shares[5].buyable = false
                 shares[6].buyable = false
@@ -311,12 +310,7 @@ module Engine
               end
             }
           when 2
-            @log << "add latecomercompany. size: #{@latecomer_companies.size} "
             @companies += @latecomer_companies
-            @log << "added latecomercompany. size: #{@companies.size} "
-            @log << "buyable_bank_owned_companies size: #{buyable_bank_owned_companies.size} "
-            @log << "unclosed_companies size: #{@latecomer_companies.select { |c| !c.closed? }.size} "
-            @log << "corps size: #{@corporations.size} "
 
             update_cache(:companies)
           end

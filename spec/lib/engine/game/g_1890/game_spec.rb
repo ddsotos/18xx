@@ -724,6 +724,15 @@ module Engine
         expect(game.buyable_bank_owned_companies).to include(*latecomers)
       end
 
+      it 'does not add internal latecomer debug messages to the game log' do
+        buy_all_initial_companies(game)
+
+        game.instance_variable_set(:@turn, 2)
+        game.new_stock_round
+
+        expect(game.log.grep(/latecomercompany|buyable_bank_owned_companies size|unclosed_companies size|corps size/)).to be_empty
+      end
+
       it 'prevents corporations from buying a latecomer from a player' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
         player = game.players.first
