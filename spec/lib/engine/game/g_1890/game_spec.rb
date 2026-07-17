@@ -2580,6 +2580,49 @@ module Engine
         expect(jr.cash).to eq(corporation_cash + 60)
         expect(president.cash).to eq(president_cash + 10)
       end
+
+      it 'runs an actual board route and pays the JR half dividend through game actions' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        par_price = game.stock_market.par_prices.find { |price| price.price == 100 }
+        game.stock_market.set_par(jr, par_price)
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+        game.place_home_token(jr)
+        train = game.trains.first
+        game.buy_train(jr, train, :free)
+        osaka_west = game.hex_by_id('H11').tile.cities.first
+        osaka_north_hex = game.hex_by_id('G12')
+        osaka_north_hex.lay(game.tiles.find { |tile| tile.name == 'BON' })
+        osaka_north = osaka_north_hex.tile.cities.first
+        osaka_north.place_token(jr, jr.tokens.find { |token| token.hex.nil? }, check_tokenable: false)
+        route = Route.new(game, game.phase, train)
+        [osaka_west, osaka_north].each { |node| route.touch_node(node) }
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+        game.process_action(Action::Pass.new(jr)) if round.active_step(jr).is_a?(Game::G1890::Step::Track)
+        game.process_action(Action::Pass.new(jr)) if round.active_step(jr).is_a?(Step::Token)
+        corporation_cash = jr.cash
+        president_cash = president.cash
+        share_price = jr.share_price
+
+        expect(round.active_step(jr)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(110)
+
+        expect { game.process_action(Action::RunRoutes.new(jr, routes: [route])) }.not_to raise_error
+        expect(round.active_step(jr)).to be_a(Game::G1890::Step::Dividend)
+        expect { game.process_action(Action::Dividend.new(jr, kind: 'half')) }.not_to raise_error
+
+        expect(jr.cash).to eq(corporation_cash + 60)
+        expect(president.cash).to eq(president_cash + 10)
+        expect(jr.share_price.price).to be > share_price.price
+      end
     end
 
     describe 'minor dividends' do
