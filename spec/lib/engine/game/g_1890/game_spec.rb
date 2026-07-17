@@ -2121,6 +2121,61 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'can run a train received from Hantetsu after forced conversion using game actions' do
+        buy_all_initial_companies(game)
+        hantetsu = game.minors[2]
+        kintetsu = game.corporations[5]
+        hantetsu_train = game.trains.find { |candidate| candidate.name == '2' && candidate.owner == game.depot }
+        game.buy_train(hantetsu, hantetsu_train, :free)
+        hantetsu_train.operated = true
+
+        %w[2-2 3 3-3].each do |name|
+          train = game.trains.find { |candidate| candidate.name == name }
+          game.phase.buying_train!(game.corporations.first, train, train.owner)
+        end
+
+        expect(hantetsu).to be_closed
+        expect(hantetsu_train.owner).to eq(kintetsu)
+        expect(hantetsu_train.operated).to be(false)
+        expect(game.kintetsu_special_operating?).to be(true)
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+        tile = game.tiles.find { |candidate| candidate.name == '6' }
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Track)
+        game.process_action(Action::LayTile.new(kintetsu, tile: tile, hex: game.hex_by_id('H15'), rotation: 1))
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Track)
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Token)
+        token_city = game
+                     .hex_by_id('H13')
+                     .tile
+                     .cities
+                     .find { |city| city.tokens.compact.any? { |token| token.corporation == kintetsu } }
+        route_city = game.hex_by_id('H15').tile.cities.first
+        route = Route.new(game, game.phase, hantetsu_train)
+        [token_city, route_city].each { |node| route.touch_node(node) }
+        president_cash = kintetsu.owner.cash
+        share_price = kintetsu.share_price
+
+        expect(round.active_step(kintetsu)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(60)
+
+        expect { game.process_action(Action::RunRoutes.new(kintetsu, routes: [route])) }.not_to raise_error
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Dividend)
+        expect { game.process_action(Action::Dividend.new(kintetsu, kind: 'payout')) }.not_to raise_error
+
+        expect(hantetsu_train.operated).to be(true)
+        expect(kintetsu.owner.cash).to eq(president_cash + 12)
+        expect(kintetsu.share_price.price).to be > share_price.price
+        expect(game.kintetsu_special_operating?).to be(false)
+      end
+
       it 'pays route revenue and ends the Kintetsu special operation' do
         kintetsu = game.corporation_by_id('近鉄')
         president = game.players.first
