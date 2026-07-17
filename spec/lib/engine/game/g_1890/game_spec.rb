@@ -2248,6 +2248,39 @@ module Engine
         expect(game.kintetsu_special_operating?).to be(false)
       end
 
+      it 'forces Daiki and Hantetsu to merge when a 3-3 train is bought through the BuyTrain step' do
+        buy_all_initial_companies(game)
+        daiki = game.minors[1]
+        hantetsu = game.minors[2]
+        kintetsu = game.corporations[5]
+        buyer = game.corporations.first
+
+        %w[2 2-2 3].each do |name|
+          game.trains.select { |candidate| candidate.name == name && candidate.owner == game.depot }.each do |train|
+            source = train.owner
+            game.buy_train(buyer, train, :free)
+            game.phase.buying_train!(buyer, train, source)
+          end
+        end
+
+        train = game.trains.find { |candidate| candidate.name == '3-3' }
+        game.bank.spend(train.price - buyer.cash, buyer) if buyer.cash < train.price
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [buyer])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        buy_train = round.steps.find { |step| step.is_a?(Game::G1890::Step::BuyTrain) }
+
+        buy_train.process_buy_train(Action::BuyTrain.new(buyer, train: train, price: train.price))
+
+        expect(daiki).to be_closed
+        expect(hantetsu).to be_closed
+        expect(kintetsu.floatable).to be(true)
+        expect(game.kintetsu_special_operating?).to be(true)
+      end
+
       it 'can run a train received from Hantetsu after forced conversion using game actions' do
         buy_all_initial_companies(game)
         hantetsu = game.minors[2]
