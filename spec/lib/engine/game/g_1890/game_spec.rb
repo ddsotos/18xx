@@ -68,10 +68,105 @@ module Engine
         )
       end
 
+      it 'uses the prescribed train prices' do
+        prices = described_class::TRAINS.to_h { |train| [train[:name], train[:price]] }
+
+        expect(prices).to eq(
+          '2' => 80,
+          '2-2' => 120,
+          '3' => 180,
+          '3-3' => 230,
+          '4' => 300,
+          '5' => 450,
+          '6' => 630,
+          'D' => 1100,
+        )
+      end
+
+      it 'defines the train rusting and event triggers' do
+        trains = described_class::TRAINS.to_h { |train| [train[:name], train] }
+
+        expect(trains['2'][:rusts_on]).to eq('4')
+        expect(trains['2-2'][:rusts_on]).to eq('5')
+        expect(trains['3'][:rusts_on]).to eq('6')
+        expect(trains['3-3'][:rusts_on]).to eq('6')
+        expect(trains['4'][:rusts_on]).to eq('D')
+        expect(trains['3-3'][:events].map { |event| event['type'] }).to eq(['conversion_to_Kintetsu'])
+        expect(trains['4'][:events].map { |event| event['type'] }).to eq(['kanan_merge_to_Kintetsu'])
+        expect(trains['5'][:events].map { |event| event['type'] }).to eq(
+          %w[close_companies remove_extra_tile_lay_from_JR],
+        )
+        expect(trains['6'][:events].map { |event| event['type'] }).to eq(
+          %w[Osaka_Expo nara_merge_to_Kintetsu],
+        )
+      end
+
+      it 'defines display text for all 1890-specific train events' do
+        expect(described_class::EVENTS_TEXT.keys).to include(
+          'conversion_to_Kintetsu',
+          'remove_extra_tile_lay_from_JR',
+          'kanan_merge_to_Kintetsu',
+          'Osaka_Expo',
+          'nara_merge_to_Kintetsu',
+        )
+      end
+
+      it 'keeps D trains unavailable until the 5 phase and discounts them for 4, 5, or 6 trains' do
+        d_train = described_class::TRAINS.find { |train| train[:name] == 'D' }
+
+        expect(d_train[:available_on]).to eq('5')
+        expect(d_train[:discount]).to eq('4' => 300, '5' => 300, '6' => 300)
+      end
+
+      it 'defines 2-2 and 3-3 trains as town-and-stop split-distance trains' do
+        trains = described_class::TRAINS.to_h { |train| [train[:name], train] }
+
+        expect(trains['2-2'][:distance]).to eq(
+          [
+            { 'nodes' => ['town'], 'pay' => 2, 'visit' => 2 },
+            { 'nodes' => %w[city offboard town], 'pay' => 2, 'visit' => 2 },
+          ],
+        )
+        expect(trains['3-3'][:distance]).to eq(
+          [
+            { 'nodes' => ['town'], 'pay' => 3, 'visit' => 3 },
+            { 'nodes' => %w[city offboard town], 'pay' => 3, 'visit' => 3 },
+          ],
+        )
+      end
+
       it 'creates an operating minor for each minor certificate' do
         expect(game.minors.map(&:id)).to eq(
           %w[河南 大軌 阪鉄 奈良 神戸],
         )
+      end
+
+      it 'uses the prescribed certificate limits' do
+        expect(described_class::CERT_LIMIT).to eq(
+          2 => 26,
+          3 => 18,
+          4 => 15,
+          5 => 13,
+          6 => 11,
+          7 => 10,
+        )
+      end
+
+      it 'uses full capitalization and the 1890 stock-market sale constraints' do
+        expect(described_class::BANK_CASH).to eq(12_000)
+        expect(described_class::CAPITALIZATION).to eq(:full)
+        expect(described_class::MARKET_SHARE_LIMIT).to eq(60)
+        expect(described_class::MUST_SELL_IN_BLOCKS).to be(true)
+      end
+
+      it 'uses operating-round home token placement and restrictive emergency train buying' do
+        expect(described_class::HOME_TOKEN_TIMING).to eq(:operating_round)
+        expect(described_class::EBUY_PRES_SWAP).to be(false)
+        expect(described_class::EBUY_FROM_OTHERS).to eq(:never)
+      end
+
+      it 'uses the prescribed par prices for normal public corporations' do
+        expect(game.stock_market.par_prices.map(&:price)).to eq([100, 90, 80, 75, 70, 65])
       end
 
       it 'uses the prescribed latecomer company face values' do
@@ -82,9 +177,64 @@ module Engine
         expect(values).to eq('京福' => 200, '神高' => 240, '北急' => 280, '泉北' => 320)
       end
 
+      it 'keeps latecomer companies out of the initial auction packet' do
+        latecomers = game.instance_variable_get(:@latecomer_companies)
+
+        expect(game.companies & latecomers).to be_empty
+        expect(latecomers.size).to eq(4)
+        expect(latecomers.map(&:type)).to all(eq(:latecomer))
+      end
+
+      it 'keeps all latecomer companies bank-owned and closed to corporate purchase at setup' do
+        latecomers = game.instance_variable_get(:@latecomer_companies)
+
+        expect(latecomers.map(&:owner)).to all(eq(game.bank))
+        expect(latecomers).to all(satisfy { |company| company.all_abilities.any? { |ability| ability.type == :no_buy } })
+        expect(latecomers).to all(
+          satisfy { |company| company.all_abilities.any? { |ability| ability.type == :close && ability.on_phase == 'never' } },
+        )
+      end
+
       it 'floats Keihan and Hanshin at 40 percent because of their attached shares' do
         expect(game.corporation_by_id('京阪').float_percent).to eq(40)
         expect(game.corporation_by_id('阪神').float_percent).to eq(40)
+      end
+
+      it 'creates the prescribed public corporation mix' do
+        expect(game.corporations.size).to eq(8)
+        expect(game.corporations.count { |corporation| corporation.type == :major }).to eq(7)
+        expect(game.corporations.count { |corporation| corporation.type == :national }).to eq(1)
+        expect(game.corporation_by_id('JR').type).to eq(:national)
+      end
+
+      it 'uses the prescribed token costs for public corporations' do
+        expect(game.corporations.map { |corporation| corporation.tokens.map(&:price) }).to eq(
+          [
+            [0, 40, 100],
+            [0, 40, 100],
+            [0, 40],
+            [0, 40, 100],
+            [0, 40, 100, 100],
+            [0, 40, 100, 100, 100, 100],
+            [0, 0, 0, 0, 40, 100],
+            [0],
+          ],
+        )
+      end
+
+      it 'keeps Kintetsu unavailable for ordinary par before conversion' do
+        kintetsu = game.corporations[5]
+
+        expect(kintetsu.float_percent).to eq(20)
+        expect(kintetsu.floatable).to be(false)
+        expect(kintetsu.coordinates).to be_nil
+      end
+
+      it 'defines JR as the only national corporation and gives it the national train limit' do
+        jr = game.corporation_by_id('JR')
+
+        expect(game.train_limit(jr)).to eq(6)
+        expect((game.corporations - [jr]).map(&:type)).not_to include(:national)
       end
 
       it 'uses the prescribed minor, public company, and JR train limits' do
@@ -121,6 +271,35 @@ module Engine
         )
         expect(described_class::PHASES.map { |phase| phase[:operating_rounds] }).to eq([1, 1, 2, 2, 2, 3, 3, 3])
         expect(described_class::TRAINS.find { |train| train[:name] == 'D' }[:available_on]).to eq('5')
+      end
+
+      it 'uses the prescribed phase tile colors and company-buying status' do
+        phases = described_class::PHASES.to_h { |phase| [phase[:name], phase] }
+
+        expect(phases['1'][:tiles]).to eq([:yellow])
+        expect(phases['1.2'][:tiles]).to eq([:yellow])
+        expect(phases['2'][:tiles]).to eq(%i[yellow green])
+        expect(phases['2.2'][:tiles]).to eq(%i[yellow green])
+        expect(phases['3'][:tiles]).to eq(%i[yellow green])
+        expect(phases['4'][:tiles]).to eq(%i[yellow green brown])
+        expect(phases['5'][:tiles]).to eq(%i[yellow green brown])
+        expect(phases['6'][:tiles]).to eq(%i[yellow green brown])
+        expect(phases.values_at('1', '1.2').map { |phase| phase[:status] }).to eq([nil, nil])
+        expect(phases.values_at('2', '2.2', '3', '4', '5', '6').map { |phase| phase[:status] }).to all(
+          eq(['can_buy_companies']),
+        )
+      end
+
+      it 'gives JR two tile lays before the 5 train event' do
+        jr = game.corporation_by_id('JR')
+
+        expect(game.tile_lays(jr)).to eq(
+          [{ lay: true, upgrade: true }, { lay: true, upgrade: true, cannot_reuse_same_hex: true }],
+        )
+      end
+
+      it 'uses the prescribed Osaka Metro special tile-lay hexes' do
+        expect(described_class::OSAKA_METRO_SPECIAL_TILE_HEXES).to eq(%w[G12 H11 H13])
       end
 
       it 'advances through all train-triggered phases when trains are bought' do
@@ -169,6 +348,69 @@ module Engine
         expect(offboard.route_base_revenue(game.phase, train)).to eq(70)
       end
 
+      it 'keeps the 1890-specific city tile inventory' do
+        tiles = described_class::TILES
+
+        expect(tiles['GOE']).to include('count' => 1, 'color' => 'green')
+        expect(tiles['BOE']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['GON']).to include('count' => 1, 'color' => 'green')
+        expect(tiles['BON']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['GKO']).to include('count' => 1, 'color' => 'green')
+        expect(tiles['BKO']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['GKY']).to include('count' => 1, 'color' => 'green')
+        expect(tiles['BKY']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['BNI']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['BOS']).to include('count' => 1, 'color' => 'brown')
+      end
+
+      it 'keeps the prescribed standard yellow tile counts used by scenario C' do
+        tiles = described_class::TILES
+
+        expect(tiles.values_at('3', '4', '6', '7', '8', '9')).to eq([2, 3, 2, 4, 8, 7])
+        expect(tiles.values_at('57', '58', '63', '69')).to eq([4, 3, 3, 1])
+      end
+
+      it 'keeps the prescribed green upgrade tile counts used by scenario C' do
+        tiles = described_class::TILES
+
+        expect(tiles.values_at('12', '14', '15', '16', '18', '19', '20')).to eq([2, 2, 2, 2, 1, 2, 2])
+        expect(tiles.values_at('23', '24', '25', '26', '27', '28', '29')).to eq([3, 3, 3, 2, 2, 2, 2])
+        expect(tiles.values_at('202', '205', '206', '208', '210', '211', '217')).to eq([1, 1, 1, 1, 1, 1, 1])
+      end
+
+      it 'starts the three Osaka city hexes with their prescribed yellow labels and revenues' do
+        expect(game.hex_by_id('G12').tile.code).to include('revenue:40,slots:2', 'label=ON')
+        expect(game.hex_by_id('H11').tile.code).to include('revenue:30', 'label=OW')
+        expect(game.hex_by_id('H13').tile.code).to include('revenue:40;city=revenue:40', 'label=OE')
+      end
+
+      it 'starts Nara H19 as two 20-revenue cities with an 80 upgrade cost' do
+        h19 = game.hex_by_id('H19')
+
+        expect(h19.tile.color).to eq(:yellow)
+        expect(h19.tile.code).to include('city=revenue:20;city=revenue:20;upgrade=cost:80')
+      end
+
+      it 'keeps the printed Kobe, Kyoto, Sakai, and Nara tiles on their expected hexes' do
+        expect(game.hex_by_id('F5').tile.code).to include('label=KO')
+        expect(game.hex_by_id('B17').tile.code).to include('label=KY')
+        expect(game.hex_by_id('J11').tile.code).to include('label=XX')
+        expect(game.hex_by_id('H19').tile.cities.size).to eq(2)
+      end
+
+      it 'keeps the printed impassable borders on selected mountain and water hexes' do
+        expect(game.hex_by_id('C18').tile.code).to include('border=edge:1,type:impassable')
+        expect(game.hex_by_id('D17').tile.code).to include(
+          'border=edge:2,type:impassable',
+          'border=edge:1,type:impassable',
+          'border=edge:4,type:impassable',
+        )
+        expect(game.hex_by_id('F15').tile.code).to include(
+          'border=edge:2,type:impassable',
+          'border=edge:1,type:impassable',
+        )
+      end
+
       it 'floats and places a minor home token only when its certificate is bought' do
         company = game.company_by_id('河南')
         minor = game.minor_by_id('河南')
@@ -207,6 +449,21 @@ module Engine
         game.place_home_token(kobe)
 
         expect(kobe.placed_tokens.map { |token| token.hex.id }).to eq(['D5'])
+      end
+
+      it 'keeps Hantetsu tokenless until it is absorbed into Kintetsu' do
+        hantetsu = game.minors[2]
+
+        expect(hantetsu.tokens).to be_empty
+        expect(hantetsu.coordinates).to be_nil
+      end
+
+      it 'defines Nara reservations on Kyoto city 1 and Nara city 0' do
+        nara = game.minors[3]
+
+        expect(nara.all_abilities.select { |ability| ability.type == :reservation }.map do |ability|
+          [ability.hex, ability.city]
+        end).to contain_exactly(['B17', 1], ['H19', 0])
       end
 
       it 'places Nara Electric Railway in the prescribed Kyoto and Nara cities' do
@@ -261,6 +518,94 @@ module Engine
         expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).to contain_exactly('BNI')
         expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).to contain_exactly('BOS')
         expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOS')
+      end
+    end
+
+    describe 'initial company packet definitions' do
+      it 'uses the prescribed face values and revenues for the eleven initial certificates' do
+        companies = game.initial_auction_companies
+
+        expect(companies.map(&:value)).to eq([20, 40, 70, 110, 160, 220, 100, 200, 100, 160, 100])
+        expect(companies.map(&:revenue)).to eq([5, 10, 15, 20, 25, 40, 0, 0, 0, 0, 0])
+      end
+
+      it 'keeps the first six initial certificates private and the last five minor certificates' do
+        companies = game.initial_auction_companies
+
+        expect(companies.first(6).map(&:type)).to all(eq(:private))
+        expect(companies.last(5).map(&:type)).to all(eq(:minor))
+      end
+
+      it 'defines the initial blocking hexes for the private companies' do
+        companies = game.initial_auction_companies
+        blocking_hexes = companies.first(6).map do |company|
+          company.all_abilities.find { |ability| ability.type == :blocks_hexes }&.hexes&.map(&:id)&.sort
+        end
+
+        expect(blocking_hexes).to eq(
+          [
+            ['D7'],
+            ['F5'],
+            %w[I12 J11],
+            nil,
+            %w[B17 B19],
+            %w[G12 H11 H13],
+          ],
+        )
+      end
+
+      it 'defines Arima as the only initial private that lays track when sold' do
+        companies = game.initial_auction_companies
+        track_layers = companies.select { |company| company.all_abilities.any? { |ability| ability.type == :tile_lay } }
+        ability = track_layers.first.all_abilities.find { |candidate| candidate.type == :tile_lay }
+
+        expect(track_layers).to eq([companies.first])
+        expect(ability.hexes).to eq(['D7'])
+        expect(ability.tiles).to eq(%w[3 4 58])
+        expect(ability.when).to eq(['sold'])
+      end
+
+      it 'defines Hankai and Kobe City Tram revenue reductions for phase 4' do
+        companies = game.initial_auction_companies
+        revenue_changes = [companies[1], companies[2]].map do |company|
+          company.all_abilities.find { |ability| ability.type == :revenue_change }
+        end
+
+        expect(revenue_changes.map(&:revenue)).to eq([5, 5])
+        expect(revenue_changes.map { |ability| ability.on_phase.to_s }).to eq(%w[4 4])
+      end
+
+      it 'defines the attached share certificates in the initial packet' do
+        companies = game.initial_auction_companies
+        share_companies = companies.select { |company| company.all_abilities.any? { |ability| ability.type == :shares } }
+
+        expect(share_companies).to eq([companies[3], companies[4], companies[5], companies[7]])
+        expect(share_companies.map { |company| game.abilities(company, :shares).shares.first.corporation }).to eq(
+          [game.corporations[3], game.corporations[1], game.corporations[7], game.corporations[5]],
+        )
+      end
+
+      it 'defines Kanan, Daiki, and Nara as exchange certificates for reserved Kintetsu shares' do
+        companies = game.initial_auction_companies
+        exchange_companies = [companies[6], companies[7], companies[9]]
+        exchange_abilities = exchange_companies.map do |company|
+          company.all_abilities.find { |ability| ability.type == :exchange }
+        end
+
+        expect(exchange_abilities.map(&:corporations)).to all(
+          eq([game.corporations[5].id]),
+        )
+        expect(exchange_abilities.map(&:from)).to eq(
+          [[:reserved], [:reserved], [:reserved]],
+        )
+      end
+
+      it 'prevents players from buying initial minor certificates after setup by ordinary company-buying rules' do
+        companies = game.initial_auction_companies
+
+        expect(companies.last(5)).to all(
+          satisfy { |company| company.all_abilities.any? { |ability| ability.type == :no_buy } },
+        )
       end
     end
 
@@ -1292,6 +1637,36 @@ module Engine
           game.share_pool.buy_shares(president, corporation.presidents_share.to_bundle, exchange: :free)
           expect(step.attached_share_locked?(attached_share.to_bundle)).to be(false)
         end
+      end
+    end
+
+    describe 'stock market' do
+      it 'marks the yellow market as no-certificate-limit spaces' do
+        yellow_prices = game.stock_market.market.flatten.compact.select { |price| price.type == :no_cert_limit }
+
+        expect(yellow_prices.map(&:price)).to include(45, 50)
+        expect(yellow_prices).to all(satisfy { |price| price.coordinates[0] >= 4 })
+      end
+
+      it 'marks the brown market as unlimited ownership spaces' do
+        brown_prices = game.stock_market.market.flatten.compact.select { |price| price.type == :unlimited }
+
+        expect(brown_prices.map(&:price)).to include(30, 35, 40)
+        expect(brown_prices).to all(satisfy { |price| price.coordinates[0] >= 6 })
+      end
+
+      it 'keeps close spaces only in the bottom-left market area' do
+        close_prices = game.stock_market.market.flatten.compact.select { |price| price.type == :close }
+
+        expect(close_prices.map(&:price)).to all(eq(0))
+        expect(close_prices.map(&:coordinates)).to contain_exactly([9, 0], [10, 0], [10, 1])
+      end
+
+      it 'keeps the normal market share limit at 60 before a corporation enters the brown market' do
+        corporation = game.corporations.first
+        game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 70 })
+
+        expect(game.market_share_limit(corporation)).to eq(60)
       end
     end
 
