@@ -2017,6 +2017,72 @@ module Engine
         expect(owner.percent_of(kintetsu)).to be >= 20
       end
 
+      it 'can run a train received from Nara after exchange using game actions' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        setup_round = game.operating_round(1)
+        game.instance_variable_set(:@round, setup_round)
+        step = setup_round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minors[1]
+        kintetsu = game.corporations[5]
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.finish_kintetsu_special_operating!
+        game.phase.next! until game.phase.name == '4'
+        nara_company = game.initial_auction_companies[9]
+        nara = game.minors.find { |minor| minor.id == nara_company.id }
+        nara_train = game.trains.find { |train| train.name == '3' && train.owner == game.depot }
+        game.buy_train(nara, nara_train, :free)
+        nara_train.operated = true
+        other_corporation = game.corporations.find { |corporation| corporation != kintetsu }
+        setup_round.instance_variable_set(:@entities, [other_corporation])
+        setup_round.instance_variable_set(:@entity_index, 0)
+        setup_round.instance_variable_set(:@current_operator, other_corporation)
+
+        game.process_action(
+          Action::BuyShares.new(nara_company, shares: game.reserved_kintetsu_shares(kintetsu).first(2)),
+        )
+
+        expect(nara).to be_closed
+        expect(nara_train.owner).to eq(kintetsu)
+        expect(nara_train.operated).to be(false)
+        expect(kintetsu.tokens.any? { |token| token.hex&.id == 'H19' }).to be(true)
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [kintetsu])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+        tile = game.tiles.find { |candidate| candidate.name == '6' }
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Track)
+        game.process_action(Action::LayTile.new(kintetsu, tile: tile, hex: game.hex_by_id('H15'), rotation: 1))
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Track)
+        game.process_action(Action::Pass.new(kintetsu)) if round.active_step(kintetsu).is_a?(Game::G1890::Step::Token)
+        token_city = game
+                     .hex_by_id('H13')
+                     .tile
+                     .cities
+                     .find { |city| city.tokens.compact.any? { |token| token.corporation == kintetsu } }
+        route_city = game.hex_by_id('H15').tile.cities.first
+        route = Route.new(game, game.phase, nara_train)
+        [token_city, route_city].each { |node| route.touch_node(node) }
+        president_cash = kintetsu.owner.cash
+        share_price = kintetsu.share_price
+
+        expect(round.active_step(kintetsu)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.revenue).to eq(60)
+
+        expect { game.process_action(Action::RunRoutes.new(kintetsu, routes: [route])) }.not_to raise_error
+        expect(round.active_step(kintetsu)).to be_a(Game::G1890::Step::Dividend)
+        expect { game.process_action(Action::Dividend.new(kintetsu, kind: 'payout')) }.not_to raise_error
+
+        expect(nara_train.operated).to be(true)
+        expect(kintetsu.owner.cash).to eq(president_cash + 12)
+        expect(kintetsu.share_price.price).to be > share_price.price
+      end
+
       it 'forces Daiki and Hantetsu to merge when the 3-3 train is bought' do
         buy_all_initial_companies(game)
         daiki = game.minor_by_id('大軌')
