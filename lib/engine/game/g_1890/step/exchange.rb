@@ -52,7 +52,6 @@ module Engine
 
           def process_buy_shares(action)
             entity = exchange_minor_entity(action.entity)
-            @game.log << "can_exchange? #{entity.name} "
             @game.exchange_minor(entity, action.bundle)
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
           end

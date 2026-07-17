@@ -1851,7 +1851,7 @@ module Engine
         game.process_action(Action::BuyShares.new(daiki_company, shares: [kintetsu.treasury_shares.find(&:buyable)]))
         game.process_action(Action::Pass.new(kintetsu))
 
-        expect(game.log.grep(/action\.entity\.corporation:/)).to be_empty
+        expect(game.log.grep(/action\.entity\.corporation:|can_exchange\?/)).to be_empty
       end
 
       it 'resumes the interrupted operator after passing the Kintetsu special operation using game actions' do
