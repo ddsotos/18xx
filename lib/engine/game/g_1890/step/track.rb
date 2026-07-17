@@ -18,6 +18,7 @@ module Engine
             else
               super
             end
+            @game.clear_graph_for_entity(action.entity)
             return unless action.entity.id == '阪急' && action.tile.color == :yellow
 
             @game.bank.spend(10, action.entity)
