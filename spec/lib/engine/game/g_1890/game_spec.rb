@@ -1532,6 +1532,60 @@ module Engine
 
         expect(player.cash).to eq(cash_before + 30)
       end
+
+      it 'buys passage in the token step and pays after running an actual route through Kobe using game actions' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(player, corporation.presidents_share.to_bundle, exchange: :free)
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(corporation, train, :free)
+        game.bank.spend(200, corporation)
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        kobe_city = kobe_hex.tile.cities.first
+        game.after_buy_company(player, company, company.value)
+        f3_tile = game.tiles.find { |tile| tile.name == '6' }
+        f3_tile.rotate!(2)
+        game.hex_by_id('F3').lay(f3_tile)
+        f3_city = game.hex_by_id('F3').tile.cities.first
+        f3_token = corporation.next_token
+        f3_token.place(f3_city)
+        f3_city.tokens[0] = f3_token
+        route = Route.new(game, game.phase, train)
+        [f3_city, kobe_city].each { |node| route.touch_node(node) }
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+        game.process_action(Action::Pass.new(corporation)) if round.active_step(corporation).is_a?(Game::G1890::Step::Track)
+        cash_before = player.cash
+
+        expect(round.active_step(corporation)).to be_a(Game::G1890::Step::Token)
+        expect(round.active_step(corporation).choices.keys).to include('buy_kobe_rapid_passage')
+        expect(kobe_city.blocks?(corporation)).to be(true)
+
+        game.process_action(Action::Choose.new(corporation, choice: 'buy_kobe_rapid_passage'))
+
+        expect(game.kobe_rapid_passage_bought?(corporation)).to be(true)
+        expect(kobe_city.blocks?(corporation)).to be(false)
+        expect(round.active_step(corporation)).to be_a(Step::Route)
+        expect(route.connection_data).not_to be_empty
+        expect(route.visited_stops.map { |stop| stop.hex.location_name }).to include('神戸')
+
+        game.process_action(Action::RunRoutes.new(corporation, routes: [route]))
+        expect(round.active_step(corporation)).to be_a(Game::G1890::Step::Dividend)
+        game.process_action(Action::Dividend.new(corporation, kind: 'withhold'))
+
+        expect(player.cash).to eq(cash_before + 30)
+      end
     end
 
     describe 'Keifuku Railway' do
