@@ -532,6 +532,34 @@ module Engine
         expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOS')
         expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOS')
       end
+
+      it 'allows the Nishinomiya green city to upgrade to the special brown tile without losing track' do
+        game.phase.next! until game.phase.name == '4'
+        corporation = game.corporations.first
+        game.bank.spend(100, corporation)
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
+        nishinomiya = game.hex_by_id('F9')
+        green = game.tiles.find { |tile| tile.name == '15' }
+        green.rotate!(1)
+        nishinomiya.lay(green)
+        nishinomiya.tile.cities.first.place_token(corporation, corporation.next_token, check_tokenable: false)
+        upgrade = game.tiles.find { |tile| tile.name == 'BNI' }
+        cash_before = corporation.cash
+
+        expect(nishinomiya.neighbors.keys).to contain_exactly(1, 2, 3, 4)
+        expect(nishinomiya.tile.exits).to contain_exactly(1, 2, 3, 4)
+        expect(upgrade.exits).to contain_exactly(1, 2, 3, 4)
+        expect(game.upgrades_to?(nishinomiya.tile, upgrade)).to be(true)
+        expect(track_step.legal_tile_rotation?(corporation, nishinomiya, upgrade)).to be(true)
+
+        track_step.process_lay_tile(Action::LayTile.new(corporation, hex: nishinomiya, tile: upgrade, rotation: 0))
+
+        expect(nishinomiya.tile.name).to eq('BNI')
+        expect(corporation.cash).to eq(cash_before)
+      end
     end
 
     describe 'initial company packet definitions' do
