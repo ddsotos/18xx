@@ -34,8 +34,8 @@ module View
         return [] unless last_run
         return [] if @abilities&.any?
 
-        halts = operating[operating.keys.max]&.halts
-        nodes = operating[operating.keys.max]&.nodes
+        halts = operating[operating.keys.max]&.halts || {}
+        nodes = operating[operating.keys.max]&.nodes || {}
         last_run.map do |train, connection_hexes|
           next unless trains.include?(train)
 
