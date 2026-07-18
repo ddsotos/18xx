@@ -1909,6 +1909,36 @@ module Engine
         end.to raise_error(GameError, /Cannot exchange/)
       end
 
+      it 'blocks Daiki operation on its optional conversion choice after Kanan skips trains' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        kanan = game.minors[0]
+        daiki = game.minors[1]
+        train = game.trains.find { |candidate| candidate.name == '2' && candidate.owner == game.depot }
+        game.buy_train(kanan, train, :free)
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entity_index, round.entities.index(kanan))
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+
+        game.process_action(Action::Pass.new(kanan))
+        expect(round.active_step(kanan)).to be_a(Game::G1890::Step::BuyTrain)
+        game.process_action(Action::Pass.new(kanan))
+
+        expect(round.current_entity).to eq(daiki)
+        expect(round.active_step).to be_a(Game::G1890::Step::Exchange)
+        expect(round.actions_for(daiki)).to include('buy_shares', 'pass')
+        expect(round.actions_for(daiki)).not_to include('lay_tile')
+
+        game.process_action(Action::Pass.new(daiki))
+
+        expect(round.active_step).to be_a(Game::G1890::Step::Track)
+        expect(round.actions_for(daiki)).to include('lay_tile', 'pass')
+        expect(round.actions_for(daiki)).not_to include('buy_shares')
+      end
+
       it 'inserts the Kintetsu special operation when Daiki exchanges through the game action flow' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'

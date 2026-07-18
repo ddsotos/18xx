@@ -28,6 +28,16 @@ module Engine
             end
           end
 
+          def actions(entity)
+            return [] unless can_exchange?(entity)
+
+            ACTIONS + %w[pass]
+          end
+
+          def blocks?
+            can_exchange?(current_entity)
+          end
+
           def can_exchange?(entity, bundle = nil)
             entity = exchange_minor_entity(entity)
             return super unless entity.minor?
@@ -60,13 +70,7 @@ module Engine
           end
 
           def process_pass(_action)
-            @game.minors.dup.each do |minor|
-              next unless minor&.owner == current_entity
-
-              merge_minor!(minor, nil, @game.bank)
-            end
-
-            super
+            pass!
           end
 
           def exchange_minor_entity(entity)
