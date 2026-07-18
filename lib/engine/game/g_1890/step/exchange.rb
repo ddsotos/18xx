@@ -34,6 +34,7 @@ module Engine
             actions = []
             actions.concat(ACTIONS) if can_exchange?(entity)
             actions << 'choose' if can_latecomerize_kobe_electric?(entity)
+            actions << 'choose_ability' if can_latecomerize_kobe_electric_ability?(entity)
             return [] if actions.empty?
 
             actions + %w[pass]
@@ -49,6 +50,14 @@ module Engine
 
           def choices
             return {} unless can_latecomerize_kobe_electric?(current_entity)
+
+            {
+              KOBE_ELECTRIC_LATECOMERIZE_CHOICE => 'Declare Kobe Electric as a latecomer company',
+            }
+          end
+
+          def choices_ability(entity)
+            return {} unless can_latecomerize_kobe_electric_ability?(entity)
 
             {
               KOBE_ELECTRIC_LATECOMERIZE_CHOICE => 'Declare Kobe Electric as a latecomer company',
@@ -95,6 +104,14 @@ module Engine
             pass!
           end
 
+          def process_choose_ability(action)
+            raise GameError, 'Illegal choice' unless action.choice == KOBE_ELECTRIC_LATECOMERIZE_CHOICE
+            raise GameError, "#{action.entity.id} cannot latecomerize Kobe Electric" unless
+              can_latecomerize_kobe_electric_ability?(action.entity)
+
+            @game.latecomerize_kobe_electric!
+          end
+
           def process_pass(_action)
             pass!
           end
@@ -113,6 +130,17 @@ module Engine
             return false if @game.kobe_electric_latecomerized?(company)
 
             entity == kobe
+          end
+
+          def can_latecomerize_kobe_electric_ability?(entity)
+            return false unless entity&.company? && entity.id == '神戸'
+
+            kobe = @game.minor_by_id('神戸')
+            company = @game.company_by_id('神戸')
+            return false unless kobe&.owner && company&.owner && !kobe.closed?
+            return false if @game.kobe_electric_latecomerized?(company)
+
+            entity.owner == kobe.owner
           end
 
         end

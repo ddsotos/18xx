@@ -214,10 +214,7 @@ module Engine
         def setup
           super
           configure_offboard_revenue!
-          jr = @corporations.find{|c| c.name == 'JR'}
-          jr.add_ability(Engine::Ability::Base.new(
-            type: 'extra_tile_lay',# entityでこの能力を記述すると、対応する能力クラスがなくて落ちる
-          ))
+          @jr_extra_tile_lay = true
           metro = corporation_by_id('メトロ')
           metro.define_singleton_method(:ignores_token_blocking?) do |city|
             city.hex&.tile&.color == :brown &&
@@ -456,8 +453,7 @@ module Engine
       end
 
       def event_remove_extra_tile_lay_from_JR!
-        jr = @corporations.find{|c| c.name == 'JR'}
-        jr.remove_ability(jr.all_abilities.find { |ability| ability.type == :extra_tile_lay})
+        @jr_extra_tile_lay = false
       end
 
       def event_Osaka_Expo!
@@ -721,7 +717,7 @@ module Engine
         end
 
         def tile_lays(entity)
-          return EXTRA_TILE_LAYS if abilities(entity, :extra_tile_lay)
+          return EXTRA_TILE_LAYS if entity&.id == 'JR' && @jr_extra_tile_lay
 
           super
         end

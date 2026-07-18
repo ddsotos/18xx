@@ -1841,6 +1841,31 @@ module Engine
           expect(kobe_company.owner).to eq(kobe.owner)
         end
 
+        it 'offers Kobe Electric latecomerization from the company abilities panel during another OR turn' do
+          buy_all_initial_companies(game)
+          kobe = game.minor_by_id('神戸')
+          kobe_company = game.company_by_id('神戸')
+          other = game.minors.find { |minor| minor != kobe }
+          round = game.operating_round(1)
+          game.instance_variable_set(:@round, round)
+          round.instance_variable_set(:@entities, [other])
+          round.instance_variable_set(:@entity_index, 0)
+          round.steps.each(&:unpass!)
+          round.steps.each(&:setup)
+          round.start_operating
+          step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+
+          expect(round.actions_for(kobe_company)).to include('choose_ability')
+          expect(step.choices_ability(kobe_company)).to include(
+            'kobe_electric_latecomerize' => 'Declare Kobe Electric as a latecomer company',
+          )
+
+          game.process_action(Action::ChooseAbility.new(kobe_company, choice: 'kobe_electric_latecomerize'))
+
+          expect(kobe).to be_closed
+          expect(game.kobe_electric_latecomerized?(kobe_company)).to be(true)
+        end
+
         it 'removes Kobe Electric assets and keeps its certificate at zero value outside cert limit' do
           buy_all_initial_companies(game)
           kobe = game.minor_by_id('神戸')
