@@ -6,6 +6,7 @@ require_relative 'meta'
 require_relative 'step/buy_company'
 require_relative 'step/special_track'
 require_relative 'step/token'
+require_relative 'step/route'
 require_relative 'step/waterfall_auction'
 require_relative '../base'
 
@@ -26,6 +27,15 @@ module Engine
                         brown: '#7b352a')
 
         CURRENCY_FORMAT_STR = '¥%s'
+
+        HANSHIN_TIGERS_REVENUE = {
+          1 => 100,
+          2 => 60,
+          3 => 50,
+          4 => 40,
+          5 => 40,
+          6 => 40,
+        }.freeze
 
         BANK_CASH = 12000
 
@@ -267,7 +277,7 @@ module Engine
             G1890::Step::BuyCompany,
             G1890::Step::Track,
             G1890::Step::Token,
-            Engine::Step::Route,
+            G1890::Step::Route,
             G1890::Step::Dividend,
             Engine::Step::DiscardTrain,
             G1890::Step::BuyTrain,
@@ -537,14 +547,16 @@ module Engine
       end
 
       def routes_subsidy(routes)
-        return super if routes.empty? || routes.first.train.owner&.id != '阪神'
+        super
+      end
 
-        uses_brown_nishinomiya = routes.any? do |route|
-          route.visited_stops.any? do |stop|
-            stop.hex.location_name == '西宮' && stop.hex.tile.color == :brown
-          end
-        end
-        uses_brown_nishinomiya ? 10 : 0
+      def hanshin_tigers_revenue(entity, routes)
+        return nil unless entity&.id == '阪神'
+        return nil unless @phase.name.to_f >= 4
+        return nil unless routes.any? { |route| route.visited_stops.any? { |stop| stop.hex.location_name == '西宮' } }
+
+        face = (rand % 6) + 1
+        [face, HANSHIN_TIGERS_REVENUE[face]]
       end
 
       def kobe_rapid_revenue(routes)
@@ -682,6 +694,19 @@ module Engine
 
       def upgrade_ignore_num_cities(from)
         from.hex.id == 'H19' && from.color == :yellow
+      end
+
+      def upgrades_to?(from, to, special = false, selected_company: nil)
+        return true if double_city_tile_upgrades_to_217?(from, to)
+
+        super
+      end
+
+      def double_city_tile_upgrades_to_217?(from, to)
+        %w[210 211].include?(from.name) &&
+          to.name == '217' &&
+          upgrades_to_correct_color?(from, to) &&
+          from.paths_are_subset_of?(to.paths)
       end
 
           def exchange_minor(minor, bundle)

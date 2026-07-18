@@ -573,6 +573,17 @@ module Engine
         expect(nishinomiya.tile.name).to eq('BNI')
         expect(corporation.cash).to eq(cash_before)
       end
+
+      it 'allows double-city green tiles 210 and 211 to upgrade to brown tile 217' do
+        upgrade = game.tiles.find { |tile| tile.name == '217' }
+
+        %w[210 211].each do |tile_name|
+          tile = game.tiles.find { |candidate| candidate.name == tile_name }
+
+          expect(tile.paths_are_subset_of?(upgrade.paths)).to be(true)
+          expect(game.upgrades_to?(tile, upgrade)).to be(true)
+        end
+      end
     end
 
     describe 'initial company packet definitions' do
@@ -1868,17 +1879,74 @@ module Engine
     end
 
     describe 'Hanshin Railway' do
-      it 'receives 10 once per OR when a route uses brown Nishinomiya' do
+      it 'does not use the old fixed Nishinomiya subsidy' do
         hanshin = game.corporation_by_id('阪神')
         hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown))
         stop = double('stop', hex: hex)
         hanshin_train = instance_double(Train, owner: hanshin)
         routes = Array.new(2) { instance_double(Route, visited_stops: [stop], train: hanshin_train) }
 
-        expect(game.routes_subsidy(routes)).to eq(10)
+        expect(game.routes_subsidy(routes)).to eq(0)
 
         hankyu_train = instance_double(Train, owner: game.corporation_by_id('阪急'))
         expect(game.routes_subsidy([instance_double(Route, visited_stops: [stop], train: hankyu_train)])).to eq(0)
+      end
+
+      it 'rolls for Hanshin Tigers popularity after Hanshin confirms a Nishinomiya route in phase 4' do
+        game.phase.next! until game.phase.name == '4'
+        hanshin = game.corporation_by_id('阪神')
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        route = instance_double(
+          Route,
+          train: train,
+          revenue: 80,
+          revenue_str: '西宮',
+          abilities: nil,
+          visited_stops: [nishinomiya_stop],
+        )
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [hanshin])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
+        allow(game).to receive(:rand).and_return(0)
+
+        step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route]))
+
+        expect(round.extra_revenue).to eq(100)
+        expect(game.log.map(&:message).last(3)).to include(
+          "#{hanshin.name} rolls 1 for Hanshin Tigers popularity and receives ¥100",
+          "#{hanshin.name} receives ¥100 additional revenue",
+        )
+      end
+
+      it 'uses the C10.12 Tigers revenue table for all die faces' do
+        game.phase.next! until game.phase.name == '4'
+        hanshin = game.corporation_by_id('阪神')
+        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        train = instance_double(Train, owner: hanshin)
+        routes = [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)]
+
+        [100, 60, 50, 40, 40, 40].each_with_index do |revenue, die_index|
+          allow(game).to receive(:rand).and_return(die_index)
+
+          expect(game.hanshin_tigers_revenue(hanshin, routes)).to eq([die_index + 1, revenue])
+        end
+      end
+
+      it 'does not roll for Tigers popularity before phase 4 or when Hanshin does not use Nishinomiya' do
+        hanshin = game.corporation_by_id('阪神')
+        train = instance_double(Train, owner: hanshin)
+        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        osaka_stop = double('Osaka stop', hex: instance_double(Hex, location_name: '大阪'))
+
+        expect(game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
+
+        game.phase.next! until game.phase.name == '4'
+
+        expect(game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [osaka_stop], train: train)])).to be_nil
+        expect(game.hanshin_tigers_revenue(game.corporation_by_id('阪急'), [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
       end
     end
 
