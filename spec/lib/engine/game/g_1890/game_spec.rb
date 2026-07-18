@@ -245,6 +245,19 @@ module Engine
         expect((game.corporations - [jr]).map(&:type)).not_to include(:national)
       end
 
+      it 'uses 1890-specific logos for all corporations and minors' do
+        entities = described_class::CORPORATIONS + described_class::MINORS
+
+        entities.each do |entity|
+          expect(entity[:logo]).to start_with('1890/')
+          expect(File.exist?(File.join('public', 'logos', "#{entity[:logo]}.svg"))).to be(true)
+          next unless entity[:simple_logo]
+
+          expect(entity[:simple_logo]).to start_with('1890/')
+          expect(File.exist?(File.join('public', 'logos', "#{entity[:simple_logo]}.svg"))).to be(true)
+        end
+      end
+
       it 'uses the prescribed minor, public company, and JR train limits' do
         expect(described_class::PHASES.map { |phase| phase[:train_limit] }).to eq(
           [
