@@ -584,6 +584,25 @@ module Engine
           expect(game.upgrades_to?(tile, upgrade)).to be(true)
         end
       end
+
+      it 'keeps 210 and 211 track when rotating brown tile 217' do
+        %w[210 211].each do |tile_name|
+          from = game.tiles.find { |candidate| candidate.name == tile_name }
+
+          legal_rotations = (0..5).select do |rotation|
+            upgrade = game.tiles.find { |tile| tile.name == '217' }
+            upgrade.rotate!(rotation)
+            game.upgrades_to?(from, upgrade)
+          end
+
+          expect(legal_rotations).not_to be_empty
+          expect(legal_rotations).to all(satisfy do |rotation|
+            upgrade = game.tiles.find { |tile| tile.name == '217' }
+            upgrade.rotate!(rotation)
+            from.paths_are_subset_of?(upgrade.paths)
+          end)
+        end
+      end
     end
 
     describe 'initial company packet definitions' do
@@ -1879,6 +1898,12 @@ module Engine
     end
 
     describe 'Hanshin Railway' do
+      it 'uses the 1890-specific Route step in operating rounds' do
+        route_step = game.operating_round(1).steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
+
+        expect(route_step).to be_a(Game::G1890::Step::Route)
+      end
+
       it 'does not use the old fixed Nishinomiya subsidy' do
         hanshin = game.corporation_by_id('阪神')
         hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown))
@@ -1947,6 +1972,66 @@ module Engine
 
         expect(game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [osaka_stop], train: train)])).to be_nil
         expect(game.hanshin_tigers_revenue(game.corporation_by_id('阪急'), [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
+      end
+
+      it 'adds Tigers revenue to existing extra revenue when routes are confirmed' do
+        game.phase.next! until game.phase.name == '4'
+        hanshin = game.corporation_by_id('阪神')
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        route = instance_double(
+          Route,
+          train: train,
+          revenue: 80,
+          revenue_str: '西宮',
+          abilities: nil,
+          visited_stops: [nishinomiya_stop],
+        )
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [hanshin])
+        round.instance_variable_set(:@entity_index, 0)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
+        allow(game).to receive(:rand).and_return(1)
+
+        step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route], extra_revenue: 20))
+
+        expect(round.extra_revenue).to eq(80)
+      end
+
+      it 'pays Tigers revenue together with route revenue during dividend processing' do
+        game.phase.next! until game.phase.name == '4'
+        hanshin = game.corporation_by_id('阪神')
+        president = game.players.first
+        game.stock_market.set_par(hanshin, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(president, hanshin.presidents_share.to_bundle, exchange: :free)
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        route = instance_double(
+          Route,
+          train: train,
+          revenue: 80,
+          revenue_str: '西宮',
+          abilities: nil,
+          visited_stops: [nishinomiya_stop],
+          connection_hexes: [],
+          halts: [],
+          node_signatures: [],
+        )
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [hanshin])
+        round.instance_variable_set(:@entity_index, 0)
+        route_step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
+        dividend_step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        allow(game).to receive(:rand).and_return(2)
+        corporation_cash = hanshin.cash
+
+        route_step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route]))
+        dividend_step.process_dividend(Action::Dividend.new(hanshin, kind: 'withhold'))
+
+        expect(hanshin.cash).to eq(corporation_cash + 130)
       end
     end
 
