@@ -71,8 +71,6 @@ module Engine
               case hex.id
               when 'F9'
                 return @game.tiles.select { |t| t.name == 'BNI' }
-              when 'H11'
-                return @game.tiles.select { |t| t.name == 'BOS' }
               end
             end
             tiles = super

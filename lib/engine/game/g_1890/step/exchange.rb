@@ -107,7 +107,12 @@ module Engine
 
           def can_latecomerize_kobe_electric?(entity)
             entity = exchange_minor_entity(entity)
-            entity&.minor? && entity.id == '神戸' && entity.owner && !entity.closed?
+            kobe = @game.minor_by_id('神戸')
+            company = @game.company_by_id('神戸')
+            return false unless kobe&.owner && company&.owner && !kobe.closed?
+            return false if @game.kobe_electric_latecomerized?(company)
+
+            entity == kobe
           end
 
         end

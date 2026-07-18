@@ -380,7 +380,8 @@ module Engine
 
       it 'starts the three Osaka city hexes with their prescribed yellow labels and revenues' do
         expect(game.hex_by_id('G12').tile.code).to include('revenue:40,slots:2', 'label=ON')
-        expect(game.hex_by_id('H11').tile.code).to include('revenue:30', 'label=OW')
+        expect(game.hex_by_id('H11').tile.code).to include('revenue:30')
+        expect(game.hex_by_id('H11').tile.code).not_to include('label=OW')
         expect(game.hex_by_id('H13').tile.code).to include('revenue:40;city=revenue:40', 'label=OE')
       end
 
@@ -507,7 +508,7 @@ module Engine
         expect(nara.cash).to eq(cash_before - 80)
       end
 
-      it 'restricts special brown tiles to their matching city hexes' do
+      it 'restricts the Nishinomiya special brown tile but not Osaka West' do
         corporation = game.corporations.first
         round = game.operating_round(1)
         track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
@@ -520,7 +521,7 @@ module Engine
         osaka_east.lay(green_city_tiles[2])
 
         expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).to contain_exactly('BNI')
-        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).to contain_exactly('BOS')
+        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOS')
         expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOS')
       end
     end
@@ -1870,6 +1871,29 @@ module Engine
           expect(kobe_company.revenue).to eq(0)
           expect(game.kobe_electric_latecomerized?(kobe_company)).to be(true)
           expect(game.num_certs(owner)).to eq(certificate_count_before - 1)
+        end
+
+        it 'moves from Nara train pass to Kobe Electric in one action without logging a company skip' do
+          buy_all_initial_companies(game)
+          nara = game.minor_by_id('奈良')
+          kobe = game.minor_by_id('神戸')
+          game.phase.next! until game.phase.name == '3'
+          round = game.operating_round(1)
+          game.instance_variable_set(:@round, round)
+          round.instance_variable_set(:@entities, [nara, kobe])
+          round.instance_variable_set(:@entity_index, 0)
+          round.steps.each(&:unpass!)
+          round.steps.each(&:setup)
+          round.start_operating
+          game.process_action(Action::Pass.new(nara)) while round.active_step(nara)&.description != 'Buy Trains'
+          log_size = game.log.size
+
+          game.process_action(Action::Pass.new(nara))
+
+          expect(round.current_entity).to eq(kobe)
+          messages = game.log[log_size..].map(&:message)
+          expect(messages).to include('奈良 passes buy trains')
+          expect(messages).not_to include('奈良 skips buy companies')
         end
       end
 

@@ -236,7 +236,7 @@ module Engine
             %w[J11] => 'city=revenue:0;city=revenue:0;label=XX',
             ['I12'] => 'city=revenue:40;upgrade=cost:80;path=a:0,b:_0;path=a:5,b:_0;label=Y',
             ['H13'] => 'city=revenue:40;city=revenue:40;upgrade=cost:80;path=a:3,b:_1;path=a:4,b:_0;label=OE',
-            ['H11'] => 'city=revenue:30;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_0;label=OW',
+            ['H11'] => 'city=revenue:30;upgrade=cost:80;path=a:3,b:_0;path=a:4,b:_0',
             ['H19'] => 'city=revenue:20;city=revenue:20;upgrade=cost:80;path=a:0,b:_0;path=a:1,b:_1;path=a:3,b:_1',
             ['J15'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;',
             ['E16'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;border=edge:2,type:impassable;border=edge:1,type:impassable;border=edge:4,type:impassable',

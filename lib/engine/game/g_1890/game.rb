@@ -3,6 +3,7 @@
 require_relative 'entities'
 require_relative 'map'
 require_relative 'meta'
+require_relative 'step/buy_company'
 require_relative 'step/special_track'
 require_relative 'step/token'
 require_relative 'step/waterfall_auction'
@@ -266,14 +267,14 @@ module Engine
             Engine::Step::Bankrupt,
             G1890::Step::Exchange,
             G1890::Step::SpecialTrack,
-            Engine::Step::BuyCompany,
+            G1890::Step::BuyCompany,
             G1890::Step::Track,
             G1890::Step::Token,
             Engine::Step::Route,
             G1890::Step::Dividend,
             Engine::Step::DiscardTrain,
             G1890::Step::BuyTrain,
-            [Engine::Step::BuyCompany, { blocks: true }],
+            [G1890::Step::BuyCompany, { blocks: true }],
           ], round_num: round_num)
         end
 
