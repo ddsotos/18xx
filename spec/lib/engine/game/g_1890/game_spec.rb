@@ -1876,6 +1876,39 @@ module Engine
         expect(step.can_exchange?(kanan)).to be(true)
       end
 
+      it 'does not offer minor certificate exchange actions before the 3 train opens phase 2' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '1.2'
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        kanan_company = game.initial_auction_companies[6]
+        daiki_company = game.initial_auction_companies[7]
+        nara_company = game.initial_auction_companies[9]
+        kintetsu = game.corporations[5]
+        kintetsu.floatable = true
+
+        expect(step.can_exchange?(daiki_company)).to be(false)
+        expect(step.can_exchange?(kanan_company)).to be(false)
+        expect(step.can_exchange?(nara_company)).to be(false)
+        expect(step.actions(daiki_company)).to be_empty
+        expect(step.actions(kanan_company)).to be_empty
+        expect(step.actions(nara_company)).to be_empty
+      end
+
+      it 'rejects minor certificate exchange actions before their phase window' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '1.2'
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki_company = game.initial_auction_companies[7]
+        kintetsu = game.corporations[5]
+        share = kintetsu.presidents_share
+
+        expect do
+          step.process_buy_shares(Action::BuyShares.new(daiki_company, shares: [share]))
+        end.to raise_error(GameError, /Cannot exchange/)
+      end
+
       it 'inserts the Kintetsu special operation when Daiki exchanges through the game action flow' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
