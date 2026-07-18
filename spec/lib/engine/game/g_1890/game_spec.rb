@@ -2961,6 +2961,25 @@ module Engine
         expect(round.active_step(jr)).to be_nil
         expect(round.active_step).to be_nil
       end
+
+      it 'skips a zero-revenue JR dividend using the JR half-pay dividend type' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        game.stock_market.set_par(jr, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        dividend = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        round.routes = []
+        round.extra_revenue = 0
+
+        expect(dividend.dividend_types).to eq([:half])
+        expect { dividend.skip! }.not_to raise_error
+        expect(jr.operating_history[game.turn_round_num].dividend.kind).to eq('half')
+      end
     end
 
     describe 'minor dividends' do

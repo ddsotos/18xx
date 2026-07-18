@@ -18,6 +18,14 @@ module Engine
             super
           end
 
+          def skip!
+            return super unless current_entity&.id == 'JR'
+
+            action = Action::Dividend.new(current_entity, kind: 'half')
+            action.id = @game.actions.last.id if @game.actions.last
+            process_dividend(action)
+          end
+
           def half(entity, revenue)
             return super unless entity.id == 'JR'
 
