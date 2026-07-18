@@ -1,18 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <defs>
-    <radialGradient id="bg" cx="35%" cy="25%" r="70%">
-      <stop offset="0" stop-color="#1aa36f"/>
-      <stop offset="1" stop-color="#005a3c"/>
-    </radialGradient>
-    <clipPath id="clip"><circle cx="96" cy="96" r="90"/></clipPath>
-  </defs>
-  <circle cx="96" cy="96" r="90" fill="url(#bg)"/>
-  <g clip-path="url(#clip)">
-    <path d="M-4 136 C42 116 72 82 110 38 C129 17 154 2 196 -6 L196 24 C153 32 130 48 110 72 C82 106 47 139 -4 162Z" fill="#ffffff" opacity=".95"/>
-    <path d="M-4 154 C50 132 84 97 119 55 C142 28 164 18 196 12" fill="none" stroke="#e50038" stroke-width="13" opacity=".88"/>
-    <path d="M12 45 L142 45" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
-    <path d="M50 147 L180 147" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
-  </g>
-  <circle cx="96" cy="96" r="86" fill="none" stroke="#f5fff9" stroke-width="7"/>
-  <text x="96" y="112" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="48" font-weight="800" fill="#ffffff" paint-order="stroke" stroke="#00402b" stroke-width="4">京阪</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="30" fill="#005a3c"/>
+  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="3"/>
+  <text x="32" y="39" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="22" font-weight="700" fill="#ffffff">京阪</text>
 </svg>
