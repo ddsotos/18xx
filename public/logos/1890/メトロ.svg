@@ -1,5 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" fill="#00a0a8"/>
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="3"/>
-  <text x="32" y="38" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="17" font-weight="700" fill="#ffffff">メトロ</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="75%">
+      <stop offset="0" stop-color="#35d2d2"/>
+      <stop offset="1" stop-color="#008b94"/>
+    </radialGradient>
+    <clipPath id="clip"><circle cx="96" cy="96" r="90"/></clipPath>
+  </defs>
+  <circle cx="96" cy="96" r="90" fill="url(#bg)"/>
+  <g clip-path="url(#clip)">
+    <path d="M32 142 L32 58 L58 58 L96 111 L134 58 L160 58 L160 142" fill="none" stroke="#ffffff" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M-8 146 L200 146" stroke="#003f44" stroke-width="15" opacity=".45"/>
+    <circle cx="63" cy="146" r="8" fill="#ffffff"/>
+    <circle cx="129" cy="146" r="8" fill="#ffffff"/>
+  </g>
+  <circle cx="96" cy="96" r="86" fill="none" stroke="#ffffff" stroke-width="7"/>
+  <text x="96" y="177" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="25" font-weight="800" fill="#ffffff">メトロ</text>
 </svg>

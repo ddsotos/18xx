@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" fill="#c51e2f"/>
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="3"/>
-  <text x="32" y="39" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="22" font-weight="700" fill="#ffffff">山陽</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7a55"/>
+      <stop offset=".55" stop-color="#c51e2f"/>
+      <stop offset="1" stop-color="#7b1020"/>
+    </linearGradient>
+    <clipPath id="clip"><circle cx="96" cy="96" r="90"/></clipPath>
+  </defs>
+  <circle cx="96" cy="96" r="90" fill="url(#sky)"/>
+  <g clip-path="url(#clip)">
+    <circle cx="70" cy="74" r="34" fill="#ffd75a"/>
+    <path d="M-8 116 C34 101 62 101 98 116 C131 130 160 131 200 112 L200 196 L-8 196Z" fill="#0d68a8"/>
+    <path d="M-8 137 C34 123 62 123 98 137 C131 151 160 152 200 133" fill="none" stroke="#ffffff" stroke-width="8" opacity=".9"/>
+    <path d="M30 54 L152 138" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity=".95"/>
+    <path d="M47 54 L169 138" stroke="#c51e2f" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+  </g>
+  <circle cx="96" cy="96" r="86" fill="none" stroke="#fff4f4" stroke-width="7"/>
+  <text x="96" y="114" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="47" font-weight="800" fill="#ffffff" paint-order="stroke" stroke="#7b1020" stroke-width="4">山陽</text>
 </svg>

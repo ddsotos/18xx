@@ -1,5 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" fill="#004f8a"/>
-  <circle cx="32" cy="32" r="26" fill="none" stroke="#ffffff" stroke-width="3"/>
-  <text x="32" y="39" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="22" font-weight="700" fill="#ffffff">阪神</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="75%">
+      <stop offset="0" stop-color="#1877b9"/>
+      <stop offset="1" stop-color="#004f8a"/>
+    </radialGradient>
+    <clipPath id="clip"><circle cx="96" cy="96" r="90"/></clipPath>
+  </defs>
+  <circle cx="96" cy="96" r="90" fill="url(#bg)"/>
+  <g clip-path="url(#clip)">
+    <path d="M-12 42 L204 42" stroke="#f7d117" stroke-width="20"/>
+    <path d="M-12 74 L204 74" stroke="#f7d117" stroke-width="12"/>
+    <path d="M-12 122 L204 122" stroke="#f7d117" stroke-width="12"/>
+    <path d="M-12 154 L204 154" stroke="#f7d117" stroke-width="20"/>
+    <path d="M49 -10 L84 202 M107 -10 L142 202" stroke="#ffffff" stroke-width="11" opacity=".92"/>
+  </g>
+  <circle cx="96" cy="96" r="86" fill="none" stroke="#ffffff" stroke-width="7"/>
+  <text x="96" y="113" text-anchor="middle" font-family="'Noto Sans JP','Yu Gothic',sans-serif" font-size="47" font-weight="800" fill="#ffffff" paint-order="stroke" stroke="#00375f" stroke-width="4">阪神</text>
 </svg>
