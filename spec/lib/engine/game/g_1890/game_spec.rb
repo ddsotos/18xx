@@ -395,6 +395,8 @@ module Engine
         expect(game.hex_by_id('F5').tile.code).to include('label=KO')
         expect(game.hex_by_id('B17').tile.code).to include('label=KY')
         expect(game.hex_by_id('J11').tile.code).to include('label=XX')
+        expect(game.hex_by_id('E14').tile.code).to include('label=XX')
+        expect(game.hex_by_id('G14').tile.code).to include('label=XX')
         expect(game.hex_by_id('H19').tile.cities.size).to eq(2)
       end
 
@@ -1325,6 +1327,41 @@ module Engine
         expect(kobe_city.blocks?(other_corporation)).to be(true)
       end
 
+      it 'shows which corporations bought Kobe Rapid passage on the company description' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+        game.bank.spend(100, corporation)
+
+        expect(company.desc).not_to include('通過権購入済み')
+
+        game.buy_kobe_rapid_passage!(corporation)
+
+        expect(company.desc).to include('通過権購入済み')
+        expect(company.desc).to include(corporation.name)
+      end
+
+      it 'turns a 40 yen token used for Kobe Rapid passage into a 100 yen token' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.find do |candidate|
+          candidate.id != 'JR' && candidate.unplaced_tokens.any? { |token| token.price == 40 }
+        end
+        token = corporation.unplaced_tokens.find { |candidate| candidate.price == 40 }
+        game.bank.spend(100, corporation)
+
+        game.buy_kobe_rapid_passage!(corporation)
+
+        expect(token.price).to eq(100)
+        expect(corporation.unplaced_tokens.map(&:price)).not_to include(40)
+      end
+
       it 'blocks Kobe with its special token after it is bought' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
@@ -2239,6 +2276,24 @@ module Engine
         expect { game.process_action(Action::BuyShares.new(nara_company, shares: shares)) }.not_to raise_error
         expect(nara).to be_closed
         expect(owner.percent_of(kintetsu)).to be >= 20
+      end
+
+      it 'allows Nara to exchange after the 4 train starts phase 3 in code' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '2'
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        daiki = game.minor_by_id('大軌')
+        kintetsu = game.corporation_by_id('近鉄')
+        step.process_buy_shares(Action::BuyShares.new(daiki, shares: [kintetsu.treasury_shares.find(&:buyable)]))
+        game.finish_kintetsu_special_operating!
+        game.phase.next! until game.phase.name == '3'
+        nara = game.minor_by_id('奈良')
+        nara_company = game.company_by_id('奈良')
+
+        expect(step.can_exchange?(nara)).to be(true)
+        expect(round.actions_for(nara_company)).to include('buy_shares')
       end
 
       it 'can run a train received from Nara after exchange using game actions' do

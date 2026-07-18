@@ -535,14 +535,23 @@ module Engine
         token = corporation.unplaced_tokens.find { |candidate| candidate.price.positive? }
         raise GameError, "#{corporation.name} has no paid token available" unless token
 
-        corporation.spend(token.price, bank)
+        passage_price = token.price
+        corporation.spend(passage_price, bank)
         (@kobe_rapid_passage_corporations ||= []) << corporation
+        token.price = 100 if token.price == 40
+        update_kobe_rapid_passage_description!(company)
         previous_ignores_token_blocking = corporation.method(:ignores_token_blocking?)
         corporation.define_singleton_method(:ignores_token_blocking?) do |city|
           previous_ignores_token_blocking.call(city) || city.hex&.id == 'F5'
         end
         clear_graph_for_entity(corporation)
-        @log << "#{corporation.name} buys Kobe Rapid passage for #{format_currency(token.price)}"
+        @log << "#{corporation.name} buys Kobe Rapid passage for #{format_currency(passage_price)}"
+      end
+
+      def update_kobe_rapid_passage_description!(company)
+        @kobe_rapid_base_description ||= company.desc
+        buyers = (@kobe_rapid_passage_corporations || []).map(&:name).join('、')
+        company.desc = "#{@kobe_rapid_base_description}\n通過権購入済み: #{buyers}"
       end
 
       def kobe_rapid_passage_bought?(corporation)

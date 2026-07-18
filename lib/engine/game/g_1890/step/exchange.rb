@@ -51,7 +51,7 @@ module Engine
               when '河南'
                 @game.phase.available?('2') && kintetsu.floatable
               when '奈良'
-                @game.phase.available?('4') && kintetsu.floatable
+                @game.phase.available?('3') && kintetsu.floatable
               else
                 false
               end
