@@ -317,14 +317,23 @@ module Engine
         end
 
         def unowned_purchasable_companies(_entity)
-          @companies.select { |c| !c.owned_by_player? }
+          @companies.select { |c| !c.owned_by_player? && purchasable_latecomer?(c) }
+        end
+
+        def buyable_bank_owned_companies
+          super.select { |company| purchasable_latecomer?(company) }
         end
 
         def purchasable_companies(entity = nil)
           companies = super
+          companies = companies.select { |company| purchasable_latecomer?(company) }
           return companies unless @phase.available?('4')
 
           companies.reject { |company| company.id == '神電' }
+        end
+
+        def purchasable_latecomer?(company)
+          company.id != '神高' || kobe_rapid_purchase_available?
         end
 
         def market_share_limit(corporation = nil)
@@ -473,6 +482,7 @@ module Engine
 
 
       def payout_companies(ignore: [])
+        update_keifuku_revenue!
         companies = companies_to_payout(ignore: ignore)
 
         companies.sort_by! do |company|
@@ -494,12 +504,6 @@ module Engine
           owner = company.owner
           next if owner == bank
           case company.sym
-          when "京福"
-            keihan = @corporations.find{|c| c.name == '京阪'}
-            if keihan.tokens.find{|t| t.hex&.location_name == '京都'}
-              @bank.spend(40, keihan)
-              @log << "#{keihan.name} have token in 京都, so collects 40 from 京福"
-            end
           when "泉北"
             @corporations.select{|c| c.tokens.find{|t| t.hex&.location_name == '堺'}}.each do |c| 
               bank.spend(40, c)
@@ -522,6 +526,14 @@ module Engine
 
         @bank.spend(40, hankyu)
         @log << "#{hankyu.name} collects #{format_currency(40)} for its Takarazuka token"
+      end
+
+      def update_keifuku_revenue!
+        company = company_by_id('京福') || @latecomer_companies.find { |candidate| candidate.id == '京福' }
+        return unless company
+
+        keihan = corporation_by_id('京阪')
+        company.revenue = 80 if keihan.tokens.any? { |token| token.hex&.location_name == '京都' }
       end
 
       def routes_subsidy(routes)
@@ -591,6 +603,10 @@ module Engine
         company&.owned_by_player?
       end
 
+      def kobe_rapid_purchase_available?
+        hex_by_id('F5').tile.cities.sum(&:slots) >= 2
+      end
+
       def activate_kobe_rapid_blocking!
         return if @kobe_rapid_blocking_active
 
@@ -615,6 +631,7 @@ module Engine
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'
         activate_kobe_rapid_blocking! if company.id == '神高'
+        update_keifuku_revenue! if company.id == '京福'
 
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|

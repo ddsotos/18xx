@@ -241,7 +241,7 @@ module Engine
             ['J15'] => 'city=revenue:20,slots:1;path=a:1,b:_0;path=a:4,b:_0;',
             ['E16'] => 'city=revenue:20,slots:1;path=a:0,b:_0;path=a:3,b:_0;border=edge:2,type:impassable;border=edge:1,type:impassable;border=edge:4,type:impassable',
             ['E14'] => 'city=revenue:0;city=revenue:0;border=edge:5,type:impassable;border=edge:4,type:impassable;label=XX',
-            ['G14'] => 'city=revenue:0;city=revenue:0;border=edge:2,type:impassable;label=XX',
+            ['G14'] => 'city=revenue:0;city=revenue:0;path=a:0,b:_0;border=edge:2,type:impassable;label=XX',
 
           },
           gray: {

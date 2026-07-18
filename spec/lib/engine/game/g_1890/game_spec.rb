@@ -37,6 +37,14 @@ module Engine
       end
     end
 
+    def own_latecomer(game, company_id, owner = game.players.first)
+      company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == company_id }
+      company.owner = owner
+      owner.companies << company if owner.respond_to?(:companies) && !owner.companies.include?(company)
+      game.companies << company unless game.companies.include?(company)
+      company
+    end
+
     describe 'scenario C setup' do
       it 'is listed as a beta game for local playtesting' do
         expect(described_class::DEV_STAGE).to eq(:beta)
@@ -734,7 +742,10 @@ module Engine
         game.new_stock_round
 
         expect(game.companies).to include(*latecomers)
-        expect(game.buyable_bank_owned_companies).to include(*latecomers)
+        expect(game.buyable_bank_owned_companies).to include(*latecomers.reject { |company| company.id == '神高' })
+        expect(game.buyable_bank_owned_companies).not_to include(
+          latecomers.find { |company| company.id == '神高' },
+        )
       end
 
       it 'does not add internal latecomer debug messages to the game log' do
@@ -754,6 +765,41 @@ module Engine
         game.companies << company
 
         expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
+      end
+
+      it 'keeps Kobe Rapid unavailable while Kobe is still a one-station city' do
+        buy_all_initial_companies(game)
+        game.instance_variable_set(:@turn, 2)
+        game.new_stock_round
+
+        kobe_rapid = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+
+        expect(game.hex_by_id('F5').tile.cities.sum(&:slots)).to eq(1)
+        expect(game.buyable_bank_owned_companies).not_to include(kobe_rapid)
+      end
+
+      it 'makes Kobe Rapid purchasable once Kobe has a two-station tile' do
+        buy_all_initial_companies(game)
+        game.hex_by_id('F5').lay(game.tiles.find { |tile| tile.name == 'GKO' })
+        game.instance_variable_set(:@turn, 2)
+        game.new_stock_round
+
+        kobe_rapid = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+
+        expect(game.hex_by_id('F5').tile.cities.sum(&:slots)).to eq(2)
+        expect(game.buyable_bank_owned_companies).to include(kobe_rapid)
+      end
+
+      it 'keeps Kobe Rapid purchasable when Kobe has a three-station tile' do
+        buy_all_initial_companies(game)
+        game.hex_by_id('F5').lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        game.instance_variable_set(:@turn, 2)
+        game.new_stock_round
+
+        kobe_rapid = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+
+        expect(game.hex_by_id('F5').tile.cities.sum(&:slots)).to eq(3)
+        expect(game.buyable_bank_owned_companies).to include(kobe_rapid)
       end
     end
 
@@ -1292,11 +1338,7 @@ module Engine
       end
 
       it 'does not operate or have to buy trains' do
-        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
-        player = game.players.first
-        company.owner = player
-        player.companies << company
-        game.companies << company
+        company = own_latecomer(game, '神高')
 
         expect(game.operating_order).not_to include(company)
         expect(game.must_buy_train?(company)).to be(false)
@@ -1634,6 +1676,56 @@ module Engine
 
         expect(player.cash).to eq(cash_before + 30)
       end
+
+      [
+        ['GKO', false],
+        ['GKO', true],
+        ['BKO', false],
+        ['BKO', true],
+      ].each do |tile_name, already_tokened|
+        it "keeps Kobe Rapid routing usable on #{tile_name} after purchase#{already_tokened ? ' with' : ' without'} a non-JR Kobe token" do
+          company = own_latecomer(game, '神高')
+          player = game.players.first
+          corporation = game.corporations.find { |candidate| candidate.id != 'JR' && candidate.unplaced_tokens.any? }
+          train = game.trains.find { |candidate| candidate.name == '2' }
+          game.buy_train(corporation, train, :free)
+          game.bank.spend(200, corporation)
+          kobe_hex = game.hex_by_id('F5')
+          kobe_hex.lay(game.tiles.find { |tile| tile.name == tile_name })
+          kobe_city = kobe_hex.tile.cities.first
+          if already_tokened
+            kobe_city.place_token(corporation, corporation.next_token, check_tokenable: false)
+          else
+            game.activate_kobe_rapid_blocking!
+            game.buy_kobe_rapid_passage!(corporation)
+          end
+          f3_tile = game.tiles.find { |tile| tile.name == '6' }
+          f3_tile.rotate!(2)
+          game.hex_by_id('F3').lay(f3_tile)
+          f3_city = game.hex_by_id('F3').tile.cities.first
+          unless corporation.placed_tokens.any?
+            f3_token = corporation.next_token
+            f3_token.place(f3_city)
+            f3_city.tokens[0] = f3_token
+          end
+          route = Route.new(game, game.phase, train)
+          [kobe_city, f3_city].each { |node| route.touch_node(node) }
+          round = game.operating_round(1)
+          round.instance_variable_set(:@entities, [corporation])
+          round.instance_variable_set(:@entity_index, 0)
+          round.routes = [route]
+          step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+          cash_before = player.cash
+
+          expect(route.connection_data).not_to be_empty
+          expect(route.visited_stops.map { |stop| stop.hex.location_name }).to include('神戸')
+
+          step.process_dividend(Action::Dividend.new(corporation, kind: 'withhold'))
+
+          expect(player.cash).to eq(cash_before + (tile_name == 'GKO' ? 25 : 30))
+          expect(company.owner).to eq(player)
+        end
+      end
     end
 
     describe 'Keifuku Railway' do
@@ -1653,7 +1745,7 @@ module Engine
         expect(player.cash).to eq(player_cash + 40)
       end
 
-      it 'pays 40 to Keihan when it has a token in Kyoto' do
+      it 'raises Keifuku revenue to 80 when Keihan has a token in Kyoto' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
         player = game.players.first
         company.owner = player
@@ -1668,8 +1760,40 @@ module Engine
 
         game.payout_companies
 
-        expect(keihan.cash).to eq(corporation_cash + 40)
-        expect(player.cash).to eq(player_cash + 40)
+        expect(company.revenue).to eq(80)
+        expect(keihan.cash).to eq(corporation_cash)
+        expect(player.cash).to eq(player_cash + 80)
+      end
+
+      it 'raises Keifuku revenue when it is bought after Keihan already has a Kyoto token' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
+        player = game.players.first
+        keihan = game.corporation_by_id('京阪')
+        kyoto = game.hex_by_id('B17').tile.cities.last
+        kyoto.place_token(keihan, keihan.next_token, check_tokenable: false)
+        company.owner = player
+        player.companies << company
+        game.companies << company
+
+        game.after_buy_company(player, company, company.value)
+
+        expect(company.revenue).to eq(80)
+      end
+    end
+
+    describe 'Moriguchi-Kadoma route connectivity' do
+      it 'connects Osaka East to Moriguchi-Kadoma across the printed H13-G14 edge' do
+        corporation = game.corporations.first
+        train = game.trains.find { |candidate| candidate.name == '2' }
+        game.buy_train(corporation, train, :free)
+        osaka_east = game.hex_by_id('H13').tile.cities.last
+        moriguchi = game.hex_by_id('G14').tile.cities.first
+        osaka_east.place_token(corporation, corporation.next_token, check_tokenable: false)
+        route = Route.new(game, game.phase, train)
+
+        [osaka_east, moriguchi].each { |node| route.touch_node(node) }
+
+        expect(route.connection_data).not_to be_empty
       end
     end
 
@@ -2962,9 +3086,31 @@ module Engine
         round.instance_variable_set(:@entities, [jr])
         round.instance_variable_set(:@entity_index, 0)
 
-        expect(step.dividend_types).to eq([:half])
+        expect(step.dividend_types).to eq(%i[half withhold])
         expect(step.half(jr, 100)).to eq(corporation: 50, per_share: 5.0)
         expect(step.half(jr, 110)).to eq(corporation: 60, per_share: 5.0)
+      end
+
+      it 'lets JR withhold revenue' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        game.stock_market.set_par(jr, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.extra_revenue = 110
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
+        corporation_cash = jr.cash
+        president_cash = president.cash
+
+        expect(step.dividend_types).to include(:withhold)
+
+        step.process_dividend(Action::Dividend.new(jr, kind: 'withhold'))
+
+        expect(jr.cash).to eq(corporation_cash + 110)
+        expect(president.cash).to eq(president_cash)
       end
 
       it 'pays the corporation and president and moves the share price right' do
@@ -3133,7 +3279,7 @@ module Engine
         round.routes = []
         round.extra_revenue = 0
 
-        expect(dividend.dividend_types).to eq([:half])
+        expect(dividend.dividend_types).to eq(%i[half withhold])
         expect { dividend.skip! }.not_to raise_error
         expect(jr.operating_history[game.turn_round_num].dividend.kind).to eq('half')
       end

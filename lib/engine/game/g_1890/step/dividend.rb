@@ -13,7 +13,7 @@ module Engine
           include Engine::Step::MinorHalfPay
 
           def dividend_types
-            return [:half] if current_entity&.id == 'JR'
+            return %i[half withhold] if current_entity&.id == 'JR'
 
             super
           end
