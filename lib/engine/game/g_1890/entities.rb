@@ -301,7 +301,7 @@ module Engine
             color: '#6A3437',
           },
           {
-            float_percent: 20,
+            float_percent: 50,
             sym: 'メトロ',
             name: '大阪地下鉄',
             type: 'major',
@@ -352,7 +352,7 @@ module Engine
             tokens: [0, 0],
             coordinates: %w[B17 H19],
             abilities: [
-              { type: 'reservation', hex: 'B17', city: 1 },
+              { type: 'reservation', hex: 'B17', city: 2 },
               { type: 'reservation', hex: 'H19', city: 0 },
             ],
             color: '#8B4513',

@@ -458,12 +458,14 @@ module Engine
         expect(hantetsu.coordinates).to be_nil
       end
 
-      it 'defines Nara reservations on Kyoto city 1 and Nara city 0' do
+      it 'defines Nara reservations on Kyoto city 2 and Nara city 0' do
         nara = game.minors[3]
 
         expect(nara.all_abilities.select { |ability| ability.type == :reservation }.map do |ability|
           [ability.hex, ability.city]
-        end).to contain_exactly(['B17', 1], ['H19', 0])
+        end).to contain_exactly(['B17', 2], ['H19', 0])
+        expect(game.hex_by_id('B17').neighbors[5].id).to eq('C18')
+        expect(game.hex_by_id('B17').tile.cities[2].paths.flat_map(&:exits)).to include(5)
       end
 
       it 'places Nara Electric Railway in the prescribed Kyoto and Nara cities' do
@@ -474,7 +476,7 @@ module Engine
         game.place_home_token(nara)
 
         expect(nara.placed_tokens.map { |token| token.hex.id }).to contain_exactly('B17', 'H19')
-        expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, true, false])
+        expect(game.hex_by_id('B17').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([false, false, true])
         expect(game.hex_by_id('H19').tile.cities.map { |city| city.tokened_by?(nara) }).to eq([true, false])
       end
 
@@ -641,12 +643,12 @@ module Engine
         expect(player.shares_of(metro).map(&:president)).to include(true)
       end
 
-      it 'floats Osaka Metro from the Osaka City Tram president share par' do
+      it 'does not float Osaka Metro from the Osaka City Tram president share par alone' do
         buy_all_initial_companies(game)
         metro = game.corporations.find { |corporation| corporation.coordinates == 'H11' && corporation.tokens.size == 1 }
 
-        expect(metro).to be_floated
-        expect(game.operating_round(1).instance_variable_get(:@entities)).to include(metro)
+        expect(metro).not_to be_floated
+        expect(game.operating_round(1).instance_variable_get(:@entities)).not_to include(metro)
       end
 
       it 'discounts only Arima Railway by 5 after every player passes' do
@@ -1853,6 +1855,25 @@ module Engine
         expect(daiki).to be_closed
         expect(kintetsu.floatable).to be(true)
         expect(game.kintetsu_special_operating?).to be(true)
+      end
+
+      it 'does not allow Daiki or Kanan conversion before the 3 train opens phase 2' do
+        buy_all_initial_companies(game)
+        game.phase.next! until game.phase.name == '1.2'
+        round = game.operating_round(1)
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+        kanan = game.minors[0]
+        daiki = game.minors[1]
+        kintetsu = game.corporations[5]
+        kintetsu.floatable = true
+
+        expect(step.can_exchange?(daiki)).to be(false)
+        expect(step.can_exchange?(kanan)).to be(false)
+
+        game.phase.next! until game.phase.name == '2'
+
+        expect(step.can_exchange?(daiki)).to be(true)
+        expect(step.can_exchange?(kanan)).to be(true)
       end
 
       it 'inserts the Kintetsu special operation when Daiki exchanges through the game action flow' do
