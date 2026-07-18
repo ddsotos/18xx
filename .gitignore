@@ -27,6 +27,8 @@ docker-compose.override.yml
 .ruby-version
 
 db.backup*
+backups/
+diagnostics/
 validate*.json
 migrate*.json
 validate/

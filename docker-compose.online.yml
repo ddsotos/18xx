@@ -1,0 +1,74 @@
+name: 18xx-online
+
+x-rack: &rack
+  environment:
+    DATABASE_URL: postgres://root:password@db:5432/18xx_development
+    RACK_ENV: development
+    RUBYOPT: --yjit
+    OPAL_PREFORK_DISABLE: "true"
+    DB_LOG_LEVEL: fatal
+  build:
+    context: .
+    args:
+      RACK_ENV: development
+    dockerfile: ${DEV_DOCKERFILE:-Dockerfile}
+  volumes:
+    - .:/18xx
+    - /18xx/vendor
+    - /18xx/.tools
+  depends_on:
+    - db
+    - redis
+  logging:
+    options:
+      max-size: "10m"
+
+services:
+  rack:
+    <<: *rack
+    ports:
+      - ${ONLINE_PORT:-9293}:9292
+    command: >-
+      sh -c "bundle exec rake dev_up &&
+      bundle exec rerun --background -i 'build/*' -i 'public/*' -i '.tools/*'
+      'unicorn -c config/unicorn.rb'"
+
+  queue:
+    <<: *rack
+    command: sh -c "bundle exec rake dev_up && bundle exec ruby queue.rb"
+
+  redis:
+    build:
+      context: ./redis/
+    logging:
+      options:
+        max-size: "10m"
+
+  db:
+    build:
+      context: ./db/
+      dockerfile: ${DEV_DOCKERFILE:-Dockerfile}
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: 18xx_development
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    logging:
+      options:
+        max-size: "10m"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles:
+      - tunnel
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - rack
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+
+volumes:
+  db-data:
