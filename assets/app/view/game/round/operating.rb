@@ -34,6 +34,8 @@ module View
         def render
           round = @game.round
           @step = round.active_step
+          return h(:div) unless @step
+
           entity = @step.current_entity
           @current_actions = round.actions_for(entity)
 

@@ -2941,6 +2941,26 @@ module Engine
         expect(president.cash).to eq(president_cash + 10)
         expect(jr.share_price.price).to be > share_price.price
       end
+
+      it 'can skip JR token placement when JR has no runnable route' do
+        jr = game.corporation_by_id('JR')
+        president = game.players.first
+        game.stock_market.set_par(jr, game.stock_market.par_prices.find { |price| price.price == 100 })
+        game.share_pool.buy_shares(president, jr.presidents_share.to_bundle, exchange: :free)
+        game.buy_train(jr, game.trains.find { |train| train.name == '2' }, :free)
+        round = game.operating_round(1)
+        game.instance_variable_set(:@round, round)
+        round.instance_variable_set(:@entities, [jr])
+        round.instance_variable_set(:@entity_index, 0)
+        round.steps.each(&:unpass!)
+        round.steps.each(&:setup)
+        round.start_operating
+
+        game.process_action(Action::Pass.new(jr))
+
+        expect(round.active_step(jr)).to be_nil
+        expect(round.active_step).to be_nil
+      end
     end
 
     describe 'minor dividends' do
