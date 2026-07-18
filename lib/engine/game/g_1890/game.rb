@@ -335,8 +335,39 @@ module Engine
           super
         end
 
+        def num_certs(entity)
+          certs = super
+          certs -= entity.companies.count { |company| kobe_electric_latecomerized?(company) } if entity.respond_to?(:companies)
+          certs
+        end
+
         def home_token_can_be_cheater
           true
+        end
+
+        def latecomerize_kobe_electric!
+          minor = minor_by_id('神戸')
+          company = company_by_id('神戸')
+          raise GameError, 'Kobe Electric is not owned' unless minor&.owner && company&.owner
+          return if kobe_electric_latecomerized?(company)
+
+          owner = company.owner
+          minor.placed_tokens.dup.each(&:remove!)
+          transfer_trains(minor, @depot)
+          minor.spend(minor.cash, @bank) if minor.cash.positive?
+          minor.close!
+
+          company.value = 0
+          company.revenue = 0
+          company.meta[:latecomerized] = true
+          company.desc = "#{company.desc}\n後発会社化済み。額面価格は¥0で、持ち株制限に含めません。"
+
+          @log << "#{owner.name} declares #{company.name} as a latecomer company"
+          clear_graph
+        end
+
+        def kobe_electric_latecomerized?(company)
+          company&.id == '神戸' && company.meta[:latecomerized] == true
         end
 
         def kintetsu_special_operating?

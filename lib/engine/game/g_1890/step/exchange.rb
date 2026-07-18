@@ -10,6 +10,8 @@ module Engine
         class Exchange < Engine::Step::Exchange
           include MinorExchange
 
+          KOBE_ELECTRIC_LATECOMERIZE_CHOICE = 'kobe_electric_latecomerize'
+
           def round_state
             super.merge(
               {
@@ -29,13 +31,28 @@ module Engine
           end
 
           def actions(entity)
-            return [] unless can_exchange?(entity)
+            actions = []
+            actions.concat(ACTIONS) if can_exchange?(entity)
+            actions << 'choose' if can_latecomerize_kobe_electric?(entity)
+            return [] if actions.empty?
 
-            ACTIONS + %w[pass]
+            actions + %w[pass]
           end
 
           def blocks?
-            can_exchange?(current_entity)
+            can_exchange?(current_entity) || can_latecomerize_kobe_electric?(current_entity)
+          end
+
+          def choice_name
+            'Kobe Electric'
+          end
+
+          def choices
+            return {} unless can_latecomerize_kobe_electric?(current_entity)
+
+            {
+              KOBE_ELECTRIC_LATECOMERIZE_CHOICE => 'Declare Kobe Electric as a latecomer company',
+            }
           end
 
           def can_exchange?(entity, bundle = nil)
@@ -69,6 +86,15 @@ module Engine
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
           end
 
+          def process_choose(action)
+            raise GameError, 'Illegal choice' unless action.choice == KOBE_ELECTRIC_LATECOMERIZE_CHOICE
+            raise GameError, "#{action.entity.id} cannot latecomerize Kobe Electric" unless
+              can_latecomerize_kobe_electric?(action.entity)
+
+            @game.latecomerize_kobe_electric!
+            pass!
+          end
+
           def process_pass(_action)
             pass!
           end
@@ -77,6 +103,11 @@ module Engine
             return entity unless entity.company? && entity.type == :minor
 
             @game.minor_by_id(entity.id) || entity
+          end
+
+          def can_latecomerize_kobe_electric?(entity)
+            entity = exchange_minor_entity(entity)
+            entity&.minor? && entity.id == '神戸' && entity.owner && !entity.closed?
           end
 
         end

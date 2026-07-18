@@ -1820,6 +1820,59 @@ module Engine
     end
 
     describe 'Kintetsu conversion' do
+      describe 'Kobe Electric latecomerization' do
+        it 'lets Kobe Electric declare latecomerization during its operating turn' do
+          buy_all_initial_companies(game)
+          kobe = game.minor_by_id('神戸')
+          kobe_company = game.company_by_id('神戸')
+          round = game.operating_round(1)
+          game.instance_variable_set(:@round, round)
+          round.instance_variable_set(:@entities, [kobe])
+          round.instance_variable_set(:@entity_index, 0)
+          round.steps.each(&:unpass!)
+          round.steps.each(&:setup)
+          round.start_operating
+          step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
+
+          expect(round.active_step(kobe)).to eq(step)
+          expect(round.actions_for(kobe)).to include('choose', 'pass')
+          expect(step.choices).to include('kobe_electric_latecomerize' => 'Declare Kobe Electric as a latecomer company')
+          expect(kobe_company.owner).to eq(kobe.owner)
+        end
+
+        it 'removes Kobe Electric assets and keeps its certificate at zero value outside cert limit' do
+          buy_all_initial_companies(game)
+          kobe = game.minor_by_id('神戸')
+          kobe_company = game.company_by_id('神戸')
+          owner = kobe.owner
+          train = game.trains.find { |candidate| candidate.name == '2' && candidate.owner == game.depot }
+          game.buy_train(kobe, train, :free)
+          game.bank.spend(80, kobe)
+          city = game.hex_by_id('D5').tile.cities.first
+          certificate_count_before = game.num_certs(owner)
+          round = game.operating_round(1)
+          game.instance_variable_set(:@round, round)
+          round.instance_variable_set(:@entities, [kobe])
+          round.instance_variable_set(:@entity_index, 0)
+          round.steps.each(&:unpass!)
+          round.steps.each(&:setup)
+          round.start_operating
+
+          game.process_action(Action::Choose.new(kobe, choice: 'kobe_electric_latecomerize'))
+
+          expect(kobe).to be_closed
+          expect(kobe.cash).to eq(0)
+          expect(train.owner).to eq(game.depot)
+          expect(city.tokens).to all(be_nil)
+          expect(kobe_company.owner).to eq(owner)
+          expect(owner.companies).to include(kobe_company)
+          expect(kobe_company.value).to eq(0)
+          expect(kobe_company.revenue).to eq(0)
+          expect(game.kobe_electric_latecomerized?(kobe_company)).to be(true)
+          expect(game.num_certs(owner)).to eq(certificate_count_before - 1)
+        end
+      end
+
       %w[大軌 阪鉄 河南 奈良].each do |minor_id|
         it "makes an operated train received from #{minor_id} available to Kintetsu" do
           minor = game.minor_by_id(minor_id)
