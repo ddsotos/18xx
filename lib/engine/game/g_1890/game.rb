@@ -448,8 +448,14 @@ module Engine
         companies = companies_to_payout(ignore: ignore)
 
         companies.sort_by! do |company|
+          owner = company.owner
+          owner_key = if company.owned_by_player?
+                        [0, @players.index(owner) || @players.size, owner.name]
+                      else
+                        [1, owner.class.name, owner.respond_to?(:id) ? owner.id.to_s : owner.name.to_s]
+                      end
           [
-            company.owned_by_player? ? [0, @players.index(company.owner)] : [1, company.owner],
+            owner_key,
             company.revenue,
             company.name,
           ]

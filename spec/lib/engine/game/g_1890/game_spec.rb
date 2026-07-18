@@ -1679,6 +1679,19 @@ module Engine
       end
     end
 
+    describe 'company payouts' do
+      it 'sorts bank-owned and corporation-owned companies without comparing owners directly' do
+        corporation = game.corporations.first
+        corporation_owned_company = game.initial_auction_companies[3]
+        corporation_owned_company.owner = corporation
+        corporation.companies << corporation_owned_company
+        latecomer = game.instance_variable_get(:@latecomer_companies).find { |company| company.value == 280 }
+        game.companies << latecomer
+
+        expect { game.payout_companies }.not_to raise_error
+      end
+    end
+
     describe 'attached shares' do
       it 'gives Keihan and Hanshin shares when their privates are bought' do
         player = game.players.first
