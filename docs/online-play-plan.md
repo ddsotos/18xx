@@ -8,42 +8,35 @@
 
 実際に使うコマンドだけ確認したい場合は [身内オンラインプレイ Quickstart](online-play-quickstart.md) を参照する。
 
-## 採用方針
+## 当面の採用方針
 
-推奨構成は次のとおり。
+当面は Cloudflare Quick Tunnel を使う。
 
 ```text
 友人のブラウザ
-  -> Cloudflare Access
-  -> Cloudflare Tunnel
-  -> Docker上の cloudflared
-  -> http://rack:9292
+  -> https://ランダム文字列.trycloudflare.com
+  -> Cloudflare Quick Tunnel
+  -> ホスト PC 上の cloudflared
+  -> http://localhost:9293
   -> 18xx dev stack
 ```
 
 ## 採用するもの
 
-### Cloudflare Tunnel
+### Cloudflare Quick Tunnel
 
-友人側に VPN クライアントを入れてもらわず、ブラウザで URL を開くだけで参加できるようにするため、Cloudflare Tunnel を使う。
+友人側に VPN クライアントを入れてもらわず、ブラウザで URL を開くだけで参加できるようにするため、Cloudflare Quick Tunnel を使う。
+
+独自ドメインは不要。Cloudflare アカウントなしでも `*.trycloudflare.com` のランダム URL を発行できる。
 
 ルーターのポート開放は行わない。ホスト PC から Cloudflare へ外向き接続を張り、Cloudflare 経由でローカルの 18xx サーバーへ転送する。
 
-### Named Tunnel
+制約:
 
-一時的な Quick Tunnel ではなく、Cloudflare の Named Tunnel を使う。
-
-理由:
-
-- URL を固定できる。
-- 継続中のゲームで接続先を変えずに済む。
-- Cloudflare Access と組み合わせて管理しやすい。
-
-### Cloudflare Access
-
-URL を知っているだけでは入れないように、Cloudflare Access で友人のメールアドレスだけを許可する。
-
-友人側の操作は、ブラウザで URL を開き、メール認証を通す形にする。
+- URL は起動のたびに変わる。
+- `cloudflared` を止めると URL は無効になる。
+- Cloudflare Access のメール制限とは組み合わせにくい。
+- テスト・開発向けの機能であり、長期固定 URL や安定運用の保証は前提にしない。
 
 ### dev stack
 
@@ -52,7 +45,7 @@ URL を知っているだけでは入れないように、Cloudflare Access で�
 起動は原則として次を使う。
 
 ```powershell
-.\scripts\online\dev-up.cmd
+.\scripts\online\dev-up.cmd -Detach -Wait
 ```
 
 理由:
@@ -61,19 +54,47 @@ URL を知っているだけでは入れないように、Cloudflare Access で�
 - `NEW_RELIC_LICENSE_KEY`、`ELASTIC_KEY`、`SLACK_WEBHOOK_URL` などの本番用外部サービス設定が不要。
 - ローカル開発中のコードをそのまま動かせる。
 
-### Docker 上の cloudflared
+### Friend Login
 
-Docker Compose の `tunnel` profile で `cloudflared` コンテナを起動する。
+オンライン用 compose では `FRIEND_LOGIN_ENABLED=true` を設定し、パスワードなしの `Friend Login` を有効にする。
 
-理由:
+友人は User Name と Email だけで入る。既存の User Name と Email が一致すれば同じユーザーとしてログインし、存在しなければ新規ユーザーを自動作成する。
 
-- ホスト PC に `cloudflared` を直接インストールしなくてよい。
-- 18xx stack と Tunnel を同じ Docker Compose project で管理できる。
-- token を `.env.online.local` に分離できる。
+User Name と Email の片方だけが既存ユーザーと一致する場合は拒否する。これにより、同じ名前で別メール、または同じメールで別名の誤ログインを避ける。
 
-安定運用が必要になったら、後でホスト側の Windows service 化も検討する。
+### Docker またはホスト上の cloudflared
 
-## 使わないもの
+Quick Tunnel はどちらの方法でも起動できる。
+
+ホスト PC に `cloudflared` を入れる場合:
+
+```powershell
+cloudflared tunnel --url http://localhost:9293
+```
+
+Docker で一時実行する場合:
+
+```powershell
+docker run --rm -it cloudflare/cloudflared:latest tunnel --no-autoupdate --url http://host.docker.internal:9293
+```
+
+まずは Docker の一時実行でよい。`cloudflared` をホスト PC に入れると、毎回のコマンドは少し短くなる。
+
+## 当面使わないもの
+
+### Cloudflare Access
+
+Quick Tunnel のランダム URL は自分の管理ドメインではないため、Cloudflare Access で「友人のメールアドレスだけ許可する」運用とは相性が悪い。
+
+当面は URL を知っている人がアクセスできる前提で運用し、URL は参加者以外へ転送しない。
+
+メール制限まで必要になったら、独自ドメインを取得し、Named Tunnel と Cloudflare Access へ移行する。
+
+### Named Tunnel
+
+当面は使わない。
+
+Named Tunnel は固定 URL と Cloudflare Access を使いたい場合の将来案とする。利用するには、Cloudflare 管理下の独自ドメインを用意するのが自然。
 
 ### production compose
 
@@ -107,58 +128,40 @@ Docker Compose の `tunnel` profile で `cloudflared` コンテナを起動す�
 
 ## 初期セットアップの想定手順
 
-実際の作業手順は [Cloudflare Tunnel セットアップ手順](cloudflare-tunnel-runbook.md) にまとめる。
-
-1. Cloudflare にドメインを登録する。
-2. Cloudflare で Named Tunnel を作成する。
-3. Tunnel の公開 hostname を作る。
-4. 公開 hostname の転送先を `http://rack:9292` にする。
-5. Cloudflare Access で、参加する友人のメールアドレスだけを許可する。
-6. `.env.online.local` を作成する。
+1. Docker Desktop を起動する。
+2. 18xx stack を起動する。
 
 ```powershell
-.\scripts\online\init-env.cmd
+.\scripts\online\dev-up.cmd -Detach -Wait
 ```
 
-7. Cloudflare の Tunnel token を `.env.online.local` に保存する。
-8. ローカル stack と Tunnel を起動する。
-
-```powershell
-.\scripts\online\play-start.cmd
-```
-
-9. ブラウザでローカル確認する。
+3. ローカルで表示を確認する。
 
 ```text
 http://localhost:9293
 ```
 
-10. 公開 URL をコマンドで確認する。
+4. Quick Tunnel を起動する。
 
 ```powershell
-.\scripts\online\check-public.cmd
+docker run --rm -it cloudflare/cloudflared:latest tunnel --no-autoupdate --url http://host.docker.internal:9293
 ```
 
-11. 友人に Cloudflare 側の URL を共有する。
+5. 表示された `https://...trycloudflare.com` URL を友人に共有する。
 
 ## 運用上の注意
 
 ホスト PC の電源が落ちるとプレイできなくなる。
 
-通常起動は `.\scripts\online\online-up.cmd` を使う。これは 18xx stack を起動し、ローカル HTTP 応答を待ち、`cloudflared` を起動する。
+Quick Tunnel を停止すると、その URL は使えなくなる。再開時は新しい URL を発行して共有する。
 
-通常停止は `.\scripts\online\online-down.cmd` を使う。
+ゲーム状態は Quick Tunnel 側ではなくローカル DB に保存される。URL が変わっても、ローカル DB を消していなければ続きから再開できる。
 
-プレイ日の運用では、開始前・終了後バックアップも含む `.\scripts\online\play-start.cmd` と `.\scripts\online\play-stop.cmd` を使う。
-
-長期戦のゲームを遊ぶ場合は、プレイ終了後や大きな更新前に `.\scripts\online\db-backup.cmd` で PostgreSQL のバックアップを取る。バックアップ手順と復元手順は [Cloudflare Tunnel セットアップ手順](cloudflare-tunnel-runbook.md) にまとめる。
-
-Cloudflare Access の許可対象メールアドレスは、参加者が増減するたびに見直す。
+長期戦のゲームを遊ぶ場合は、プレイ終了後や大きな更新前に `.\scripts\online\db-backup.cmd` で PostgreSQL のバックアップを取る。
 
 ## 今後の作業
 
-1. ローカルで `.\scripts\online\dev-up.cmd` が正常に起動することを確認する。
-2. Cloudflare Tunnel の Named Tunnel 設定手順を実作業に合わせて追記する。
-3. Cloudflare Access のメール制限設定を確認する。
-4. 友人のブラウザからアクセスできることを確認する。
-5. 必要に応じてバックアップを外部ストレージへ定期コピーする。
+1. Quick Tunnel 起動用の補助スクリプトを追加する。
+2. 友人のブラウザから `trycloudflare.com` URL でアクセスできることを確認する。
+3. 必要に応じてバックアップを外部ストレージへ定期コピーする。
+4. 固定 URL やメール制限が必要になったら、独自ドメイン、Named Tunnel、Cloudflare Access へ移行する。

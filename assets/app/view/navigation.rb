@@ -7,12 +7,15 @@ module View
   class Navigation < Snabberb::Component
     needs :app_route, default: nil, store: true
     needs :user, default: nil, store: true
+    needs :friend_login_enabled, default: false, store: true
 
     def render
       other_links = [item('About', '/about')]
 
       if @user
         other_links << item("Profile (#{@user['name']})", "/profile/#{@user['id']}")
+      elsif @friend_login_enabled
+        other_links << item('Login', '/login')
       else
         other_links << item('Signup', '/signup')
         other_links << item('Login', '/login')

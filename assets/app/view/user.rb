@@ -134,6 +134,7 @@ module View
 
     def render_login
       return [h('h3', 'You are already logged in')] if @user
+      return [render_friend_login] if @friend_login_enabled
 
       title = 'Login'
       inputs = [
@@ -144,6 +145,23 @@ module View
       ]
 
       [render_form(title, inputs)]
+    end
+
+    def render_friend_login
+      friend_inputs = {}
+      inputs = [
+        render_input('Email', id: :email, type: :email, attrs: { autocomplete: 'email' }, inputs: friend_inputs),
+        render_input('User Name', id: :name, attrs: { autocomplete: 'name' }, inputs: friend_inputs),
+        h(:div, { style: { marginBottom: '1rem' } }, [
+          render_button('Enter Friend Game') { friend_login(params(friend_inputs)) },
+        ]),
+      ]
+
+      render_form(
+        'Friend Login',
+        inputs,
+        'Existing players can log in with email only. New players also need a user name.',
+      )
     end
 
     def reset_settings

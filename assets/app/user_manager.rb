@@ -10,6 +10,7 @@ module UserManager
     base.needs :flash_opts, default: {}, store: true
     base.needs :connection, default: nil, store: true
     base.needs :games, default: [], store: true
+    base.needs :friend_login_enabled, default: false
   end
 
   def create_user(params)
@@ -26,6 +27,12 @@ module UserManager
 
   def login(params)
     @connection.safe_post('/user/login', params) do |data|
+      login_user(data)
+    end
+  end
+
+  def friend_login(params)
+    @connection.safe_post('/user/friend_login', params) do |data|
       login_user(data)
     end
   end

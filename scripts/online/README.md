@@ -8,10 +8,23 @@ Windows 向けの身内オンラインプレイ補助スクリプト。
 
 | Command | Purpose |
 | --- | --- |
-| `play-start.cmd` | Start a play session: preflight, start stack, backup, start tunnel, check public URL. |
-| `play-stop.cmd` | Stop a play session after taking a backup. |
+| `dev-up.cmd -Detach -Wait` | Start the 18xx dev stack for Quick Tunnel play. |
+| `dev-down.cmd` | Stop the 18xx dev stack after Quick Tunnel is stopped. |
+| `db-backup.cmd` | Create a backup before or after play. |
 | `overview.cmd` | Show local URL, public URL, token state, compose status, and local HTTP status. |
 | `collect-diagnostics.cmd` | Write troubleshooting logs to `diagnostics/`. |
+
+Quick Tunnel itself is currently started directly:
+
+```powershell
+docker run --rm -it cloudflare/cloudflared:latest tunnel --no-autoupdate --url http://host.docker.internal:9293
+```
+
+If `cloudflared` is installed on the host PC:
+
+```powershell
+cloudflared tunnel --url http://localhost:9293
+```
 
 ## Setup Commands
 
@@ -20,18 +33,18 @@ Windows 向けの身内オンラインプレイ補助スクリプト。
 | `init-env.cmd` | Create or update `.env.online.local` from `.env.online.example`. |
 | `preflight.cmd` | Validate local online settings before starting. |
 | `doctor.cmd` | Check Docker, compose, local HTTP, and tunnel-related settings. |
-| `check-public.cmd` | Check the Cloudflare public URL. |
+| `check-public.cmd` | Check a fixed Cloudflare public URL. Mainly for future Named Tunnel use. |
 
 ## Lower-Level Commands
 
 | Command | Purpose |
 | --- | --- |
-| `online-up.cmd` / `online-down.cmd` | Start or stop the stack and tunnel together. |
+| `online-up.cmd` / `online-down.cmd` | Start or stop the stack and Named Tunnel together. Mainly for future fixed-URL use. |
 | `dev-up.cmd` / `dev-down.cmd` | Start or stop only the 18xx dev stack. |
-| `tunnel-up.cmd` / `tunnel-down.cmd` | Start or stop only the Cloudflare Tunnel container. |
+| `tunnel-up.cmd` / `tunnel-down.cmd` | Start or stop only the Named Tunnel container. Mainly for future fixed-URL use. |
 | `status.cmd` | Show compose service status. |
 | `logs.cmd` | Show logs for `rack`, `queue`, `db`, or `redis`. |
-| `tunnel-logs.cmd` | Show Cloudflare Tunnel logs. |
+| `tunnel-logs.cmd` | Show Named Tunnel logs. |
 | `wait-local.cmd` | Wait until local HTTP responds. |
 
 ## Database Commands

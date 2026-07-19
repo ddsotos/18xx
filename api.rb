@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 PRODUCTION = ENV['RACK_ENV'] == 'production'
+FRIEND_LOGIN_ENABLED = ENV['FRIEND_LOGIN_ENABLED'] == 'true'
 
 require 'opal'
 require 'require_all'
@@ -223,6 +224,7 @@ class Api < Roda
   def static(desc: '', js_tags: '', **needs)
     args = Snabberb.wrap(
       app_route: request.path,
+      friend_login_enabled: FRIEND_LOGIN_ENABLED,
       production: PRODUCTION,
       **needs,
     )

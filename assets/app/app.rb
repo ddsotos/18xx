@@ -71,9 +71,9 @@ class App < Snabberb::Component
       when /[^?](game|hotseat|tutorial|fixture)/
         render_game
       when /signup/
-        h(View::User, type: :signup)
+        h(View::User, type: @friend_login_enabled ? :login : :signup, friend_login_enabled: @friend_login_enabled)
       when /login/
-        h(View::User, type: :login)
+        h(View::User, type: :login, friend_login_enabled: @friend_login_enabled)
       when /forgot/
         h(View::Forgot)
       when /reset/

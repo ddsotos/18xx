@@ -3,10 +3,11 @@ name: 18xx-online
 x-rack: &rack
   environment:
     DATABASE_URL: postgres://root:password@db:5432/18xx_development
-    RACK_ENV: development
+    RACK_ENV: online
     RUBYOPT: --yjit
     OPAL_PREFORK_DISABLE: "true"
     DB_LOG_LEVEL: fatal
+    FRIEND_LOGIN_ENABLED: "true"
   build:
     context: .
     args:

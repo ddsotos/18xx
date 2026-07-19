@@ -14,6 +14,33 @@ class Api
           login_user(user)
         end
 
+        # POST '/api/user/friend_login'
+        r.is 'friend_login' do
+          halt(404, 'Friend login is not enabled') unless FRIEND_LOGIN_ENABLED
+
+          name = r.params['name']&.strip
+          email = r.params['email']&.strip
+
+          halt(400, 'Email may not be empty') if (email || '').empty?
+
+          unless (user = User.by_email(email))
+            halt(400, 'User Name may not be empty for first login') if (name || '').empty?
+            halt(400, 'That user name is already registered with another email') if User.by_email(name)
+
+            user = User.create(
+              name: name,
+              email: email,
+              password: SecureRandom.hex(32),
+              settings: {
+                notifications: 'none',
+                friend_login: true,
+              },
+            )
+          end
+
+          login_user(user)
+        end
+
         # POST '/api/user/'
         r.is do
           params = {

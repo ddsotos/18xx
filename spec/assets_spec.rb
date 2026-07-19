@@ -270,6 +270,13 @@ describe 'Assets' do
       expect(render(app_route: '/login')).to include('Login')
     end
 
+    it 'renders friend login when enabled' do
+      rendered = render(app_route: '/login', friend_login_enabled: true)
+
+      expect(rendered).to include('Friend Login')
+      expect(rendered).to include('Enter Friend Game')
+    end
+
     it 'renders signup' do
       expect(render(app_route: '/signup')).to include('Signup')
     end
