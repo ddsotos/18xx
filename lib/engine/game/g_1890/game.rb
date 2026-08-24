@@ -341,11 +341,7 @@ module Engine
         end
 
         def purchasable_companies(entity = nil)
-          companies = super
-          companies = companies.select { |company| purchasable_latecomer?(company) }
-          return companies unless @phase.available?('4')
-
-          companies.reject { |company| company.id == '神電' }
+          super.select { |company| purchasable_latecomer?(company) }
         end
 
         def purchasable_latecomer?(company)
@@ -492,6 +488,7 @@ module Engine
 
 
       def payout_companies(ignore: [])
+        expo_timing = @Osaka_Expo_timing
         companies = companies_to_payout(ignore: ignore)
 
         companies.sort_by! do |company|
@@ -525,16 +522,17 @@ module Engine
               @log << "#{c.name} have token in 堺, so collects 40 from 泉北"
             end
           when "北急"
-            if @Osaka_Expo_timing
+            if expo_timing
               bank.spend(40, owner)
               @log << "#{owner.name} collects 40 from 北急 as Expo special revenue"
-              @Osaka_Expo_timing = false
             end
           end
           revenue = company.revenue
           @bank.spend(revenue, owner)
           @log << "#{owner.name} collects #{format_currency(revenue)} from #{company.name}"
         end
+
+        @Osaka_Expo_timing = false if expo_timing
 
         hankyu = corporation_by_id('阪急')
         return unless hankyu.tokens.any? { |token| token.hex&.location_name == '宝塚' }
@@ -575,6 +573,9 @@ module Engine
       end
 
       def kobe_rapid_revenue(routes)
+        operator = routes.first&.train&.owner
+        return 0 if operator && kobe_tokened_by?(operator)
+
         routes.each do |route|
           kobe_stop = route.visited_stops.find { |stop| stop.hex.location_name == '神戸' }
           return kobe_stop.route_revenue(route.phase, route.train) / 2 if kobe_stop
@@ -594,6 +595,21 @@ module Engine
         @log << "#{company.owner.name} collects #{format_currency(revenue)} from #{company.name} for Kobe revenue"
       end
 
+      def kobe_tokened_by?(corporation)
+        hex_by_id('F5').tile.cities.any? { |city| city.tokened_by?(corporation) }
+      end
+
+      def grant_kobe_rapid_passage!(corporation)
+        return if kobe_rapid_passage_bought?(corporation)
+
+        (@kobe_rapid_passage_corporations ||= []) << corporation
+        previous_ignores_token_blocking = corporation.method(:ignores_token_blocking?)
+        corporation.define_singleton_method(:ignores_token_blocking?) do |city|
+          previous_ignores_token_blocking.call(city) || city.hex&.id == 'F5'
+        end
+        clear_graph_for_entity(corporation)
+      end
+
       def buy_kobe_rapid_passage!(corporation)
         company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
         raise GameError, 'Kobe Rapid Railway is not owned by a player' unless company&.owned_by_player?
@@ -604,14 +620,9 @@ module Engine
 
         passage_price = token.price
         corporation.spend(passage_price, bank)
-        (@kobe_rapid_passage_corporations ||= []) << corporation
+        grant_kobe_rapid_passage!(corporation)
         token.price = 100 if token.price == 40
         update_kobe_rapid_passage_description!(company)
-        previous_ignores_token_blocking = corporation.method(:ignores_token_blocking?)
-        corporation.define_singleton_method(:ignores_token_blocking?) do |city|
-          previous_ignores_token_blocking.call(city) || city.hex&.id == 'F5'
-        end
-        clear_graph_for_entity(corporation)
         @log << "#{corporation.name} buys Kobe Rapid passage for #{format_currency(passage_price)}"
       end
 
@@ -637,11 +648,22 @@ module Engine
       def activate_kobe_rapid_blocking!
         return if @kobe_rapid_blocking_active
 
+        company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
         kobe_hex = hex_by_id('F5')
         kobe_tile = kobe_hex.tile
         kobe_tile.icons << Part::Icon.new('red_cube', 'kobe_rapid_block') unless
           kobe_tile.icons.any? { |icon| icon.name == 'kobe_rapid_block' }
         kobe_city = kobe_tile.cities.first
+        returned_tokens = kobe_city.tokens.compact.reject { |token| token.corporation.id == 'JR' }
+        returned_tokens.each do |token|
+          corporation = token.corporation
+          token.remove!
+          token.price = 100
+          grant_kobe_rapid_passage!(corporation)
+          @log << "#{corporation.name} returns its Kobe token and receives Kobe Rapid passage"
+        end
+        update_kobe_rapid_passage_description!(company) if returned_tokens.any?
+
         previous_blocks = kobe_city.method(:blocks?)
         game = self
         kobe_city.define_singleton_method(:blocks?) do |corporation|
@@ -821,7 +843,7 @@ module Engine
         @log << '-- Event: Private companies close --'
         @companies.each do |company|
           next unless company.type == :private
-          next if %w[市電 神電].include?(company.id)
+          next if company.id == '市電'
 
           if (ability = abilities(company, :close, on_phase: 'any')) &&
               (ability.on_phase == 'never' || @phase.future.any? { |phase| ability.on_phase == phase[:name] })

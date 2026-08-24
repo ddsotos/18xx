@@ -32,7 +32,6 @@ module Engine
             type: :private,
             abilities: [
               { type: 'blocks_hexes', owner_type: 'player', remove: '4', hexes: ['F5'] },
-              { type: 'revenue_change', revenue: 5, on_phase: '4' },
             ],
             color: nil,
           },

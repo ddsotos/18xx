@@ -1061,19 +1061,17 @@ module Engine
         expect(game.abilities(osaka_tram, :blocks_hexes)).not_to be_nil
       end
 
-      it 'reduces Kobe City Tram and Hankai revenue to 5 in phase 4' do
-        companies = %w[神電 堺電].map { |id| game.company_by_id(id) }
-        companies.each do |company|
-          company.owner = game.players.first
-          game.players.first.companies << company
-        end
+      it 'reduces Hankai revenue to 5 in phase 4' do
+        company = game.company_by_id('堺電')
+        company.owner = game.players.first
+        game.players.first.companies << company
 
         game.phase.next! until game.phase.name == '4'
 
-        expect(companies.map(&:revenue)).to eq([5, 5])
+        expect(company.revenue).to eq(5)
       end
 
-      it 'prevents corporations from buying Kobe City Tram from phase 4' do
+      it 'prevents corporations from buying Kobe City Tram after it closes in phase 4' do
         company = game.company_by_id('神電')
         company.owner = game.players.first
         game.players.first.companies << company
@@ -1083,7 +1081,10 @@ module Engine
         expect(game.purchasable_companies(corporation)).to include(company)
 
         game.phase.next!
+        game.event_close_companies!
+
         expect(game.phase.name).to eq('4')
+        expect(company).to be_closed
         expect(game.purchasable_companies(corporation)).not_to include(company)
       end
 
@@ -1099,7 +1100,7 @@ module Engine
         expect(game.num_certs(player)).to eq(1)
       end
 
-      it 'keeps Kobe City Tram open and in the certificate count after phase 4' do
+      it 'closes Kobe City Tram and removes it from the certificate count in phase 4' do
         company = game.company_by_id('神電')
         player = game.players.first
         company.owner = player
@@ -1108,9 +1109,8 @@ module Engine
         game.phase.next! until game.phase.name == '4'
         game.event_close_companies!
 
-        expect(company).not_to be_closed
-        expect(company.revenue).to eq(5)
-        expect(game.num_certs(player)).to eq(1)
+        expect(company).to be_closed
+        expect(game.num_certs(player)).to eq(0)
         expect(game.purchasable_companies(game.corporations.first)).not_to include(company)
       end
 
@@ -1118,7 +1118,7 @@ module Engine
         game.event_close_companies!
 
         expect(game.company_by_id('有電')).to be_closed
-        expect(game.company_by_id('神電')).not_to be_closed
+        expect(game.company_by_id('神電')).to be_closed
         expect(game.company_by_id('堺電')).not_to be_closed
         expect(game.company_by_id('市電')).not_to be_closed
         expect(game.company_by_id('河南')).not_to be_closed
@@ -1407,6 +1407,22 @@ module Engine
         game.payout_companies
         expect(player.cash).to eq(cash_before + 160)
       end
+
+      it 'expires the Osaka Expo bonus if Kita-Osaka is unowned in the next operating round' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '北急' }
+        player = game.players.first
+
+        game.event_Osaka_Expo!
+        game.payout_companies
+
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        cash_before = player.cash
+        game.payout_companies
+
+        expect(player.cash).to eq(cash_before + 60)
+      end
     end
 
     describe 'Kobe Rapid Railway' do
@@ -1509,6 +1525,33 @@ module Engine
         expect(kobe_city.blocks?(other_corporation)).to be(true)
       end
 
+      it 'returns non-JR Kobe tokens as 100 yen tokens and grants passage when bought' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        kobe_city = kobe_hex.tile.cities.first
+        jr = game.corporation_by_id('JR')
+        corporation = game.corporations.find { |candidate| ![jr, game.corporation_by_id('メトロ')].include?(candidate) }
+        jr_token = jr.next_token
+        returned_token = corporation.tokens.find { |token| token.price == 40 }
+        kobe_city.place_token(jr, jr_token, check_tokenable: false)
+        kobe_city.place_token(corporation, returned_token, check_tokenable: false)
+
+        game.activate_kobe_rapid_blocking!
+
+        expect(jr_token.used).to be(true)
+        expect(kobe_city.tokened_by?(jr)).to be(true)
+        expect(returned_token.used).to be(false)
+        expect(returned_token.price).to eq(100)
+        expect(kobe_city.tokened_by?(corporation)).to be(false)
+        expect(game.kobe_rapid_passage_bought?(corporation)).to be(true)
+        expect(kobe_city.blocks?(corporation)).to be(false)
+      end
+
       it 'shows the Kobe Rapid special blocking marker on Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
@@ -1607,7 +1650,8 @@ module Engine
         kobe_stop = double('Kobe stop', hex: kobe_hex)
         allow(kobe_stop).to receive(:route_revenue).and_return(30)
         other_stop = double('Other stop', hex: instance_double(Hex, location_name: '大阪'))
-        train = instance_double(Train)
+        corporation = game.corporations.first
+        train = instance_double(Train, owner: corporation)
         routes = [
           instance_double(Route, visited_stops: [other_stop, kobe_stop], phase: game.phase, train: train),
           instance_double(Route, visited_stops: [kobe_stop], phase: game.phase, train: train),
@@ -1619,6 +1663,26 @@ module Engine
         expect(player.cash).to eq(cash_before + 15)
       end
 
+      it 'does not pay when the operating corporation has a station token in Kobe' do
+        company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
+        player = game.players.first
+        company.owner = player
+        player.companies << company
+        game.companies << company
+        corporation = game.corporations.first
+        kobe_city = game.hex_by_id('F5').tile.cities.first
+        kobe_city.place_token(corporation, corporation.next_token, check_tokenable: false)
+        kobe_stop = double('Kobe stop', hex: kobe_city.hex)
+        allow(kobe_stop).to receive(:route_revenue).and_return(30)
+        train = instance_double(Train, owner: corporation)
+        route = instance_double(Route, visited_stops: [kobe_stop], phase: game.phase, train: train)
+        cash_before = player.cash
+
+        game.pay_kobe_rapid_revenue!([route])
+
+        expect(player.cash).to eq(cash_before)
+      end
+
       it 'does not pay when no route uses Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
@@ -1626,7 +1690,8 @@ module Engine
         player.companies << company
         game.companies << company
         osaka_stop = double('Osaka stop', hex: instance_double(Hex, location_name: '大阪'))
-        route = instance_double(Route, visited_stops: [osaka_stop])
+        train = instance_double(Train, owner: game.corporations.first)
+        route = instance_double(Route, visited_stops: [osaka_stop], train: train)
         cash_before = player.cash
 
         game.pay_kobe_rapid_revenue!([route])
