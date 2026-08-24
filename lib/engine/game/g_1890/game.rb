@@ -39,13 +39,15 @@ module Engine
 
         BANK_CASH = 12000
 
+        GAME_END_CHECK = { bankrupt: :immediate, bank: :full_or, fixed_round: :full_or }.freeze
+
         CERT_LIMIT = { 2 => 26, 3 => 18, 4 => 15, 5 => 13, 6 => 11, 7 => 10 }.freeze
 
         STARTING_CASH = { 2 => 1260, 3 => 840, 4 => 630, 5 => 504, 6 => 420, 7 => 360 }.freeze
 
         CAPITALIZATION = :full
 
-        MARKET_SHARE_LIMIT = 60
+        MARKET_SHARE_LIMIT = 50
 
         MUST_SELL_IN_BLOCKS = true
 
@@ -302,6 +304,10 @@ module Engine
           false
         end
 
+        def game_end_check_fixed_round?
+          @turn >= 10
+        end
+
         def new_stock_round
           @log << "new stock round. old round is #{@turn} "
 
@@ -344,12 +350,6 @@ module Engine
 
         def purchasable_latecomer?(company)
           company.id != '神高' || kobe_rapid_purchase_available?
-        end
-
-        def market_share_limit(corporation = nil)
-          return 100 if corporation&.share_price&.type == :unlimited
-
-          super
         end
 
         def num_certs(entity)
@@ -492,7 +492,6 @@ module Engine
 
 
       def payout_companies(ignore: [])
-        update_keifuku_revenue!
         companies = companies_to_payout(ignore: ignore)
 
         companies.sort_by! do |company|
@@ -514,6 +513,12 @@ module Engine
           owner = company.owner
           next if owner == bank
           case company.sym
+          when "京福"
+            keihan = corporation_by_id('京阪')
+            if keihan.tokens.any? { |token| token.hex&.location_name == '京都' }
+              bank.spend(40, keihan)
+              @log << "#{keihan.name} collects #{format_currency(40)} for its Kyoto token"
+            end
           when "泉北"
             @corporations.select{|c| c.tokens.find{|t| t.hex&.location_name == '堺'}}.each do |c| 
               bank.spend(40, c)
@@ -538,25 +543,34 @@ module Engine
         @log << "#{hankyu.name} collects #{format_currency(40)} for its Takarazuka token"
       end
 
-      def update_keifuku_revenue!
-        company = company_by_id('京福') || @latecomer_companies.find { |candidate| candidate.id == '京福' }
-        return unless company
-
-        keihan = corporation_by_id('京阪')
-        company.revenue = 80 if keihan.tokens.any? { |token| token.hex&.location_name == '京都' }
-      end
-
       def routes_subsidy(routes)
-        super
+        subsidy = super
+        return subsidy if hanshin_tigers_variant?
+        return subsidy unless hanshin_uses_brown_nishinomiya?(routes)
+
+        subsidy + 10
       end
 
       def hanshin_tigers_revenue(entity, routes)
+        return nil unless hanshin_tigers_variant?
         return nil unless entity&.id == '阪神'
-        return nil unless @phase.name.to_f >= 4
-        return nil unless routes.any? { |route| route.visited_stops.any? { |stop| stop.hex.location_name == '西宮' } }
+        return nil unless hanshin_uses_brown_nishinomiya?(routes)
 
         face = (rand % 6) + 1
         [face, HANSHIN_TIGERS_REVENUE[face]]
+      end
+
+      def hanshin_tigers_variant?
+        @optional_rules.include?(:hanshin_tigers)
+      end
+
+      def hanshin_uses_brown_nishinomiya?(routes)
+        routes.any? do |route|
+          route.train.owner&.id == '阪神' &&
+            route.visited_stops.any? do |stop|
+              stop.hex.location_name == '西宮' && stop.hex.tile.color == :brown
+            end
+        end
       end
 
       def kobe_rapid_revenue(routes)
@@ -643,7 +657,6 @@ module Engine
       def after_buy_company(player, company, _price)
         company.value = 0 if company.id == '市電'
         activate_kobe_rapid_blocking! if company.id == '神高'
-        update_keifuku_revenue! if company.id == '京福'
 
         abilities(company, :shares) do |ability|
           ability.shares.each do |share|
@@ -770,8 +783,11 @@ module Engine
             city = token.city
             coord = city.hex.coordinates
             token.remove!
-            token_to_place = corporation.unplaced_tokens.find { |t| t.price != 40 }# first cost is 40 so 40 token must be reserved
-            city.place_token(corporation, token_to_place || corporation.next_token, check_tokenable: false)
+            unless city.tokened_by?(corporation)
+              # The first paid token costs 40 and must remain available for ordinary placement.
+              token_to_place = corporation.unplaced_tokens.find { |candidate| candidate.price != 40 }
+              city.place_token(corporation, token_to_place || corporation.next_token, check_tokenable: false)
+            end
             return unless minor.assigned?(coord)
 
             minor.remove_assignment!(coord)
@@ -849,3 +865,4 @@ module Engine
     end
   end
 end
+

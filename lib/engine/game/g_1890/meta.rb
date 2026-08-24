@@ -25,8 +25,14 @@ module Engine
             short_name: 'Beginner Game',
             desc: 'Simpler privates, more tiles available',
           },
+          {
+            sym: :hanshin_tigers,
+            short_name: 'C10.12 Hanshin Tigers',
+            desc: 'Replace the standard Nishinomiya bonus with a die roll',
+          },
         ].freeze
       end
     end
   end
 end
+

@@ -109,6 +109,16 @@ module Engine
         )
       end
 
+      it 'ends after the tenth game turn' do
+        expect(described_class::GAME_END_CHECK[:fixed_round]).to eq(:full_or)
+
+        game.instance_variable_set(:@turn, 9)
+        expect(game.send(:game_end_check_fixed_round?)).to be(false)
+
+        game.instance_variable_set(:@turn, 10)
+        expect(game.send(:game_end_check_fixed_round?)).to be(true)
+      end
+
       it 'defines display text for all 1890-specific train events' do
         expect(described_class::EVENTS_TEXT.keys).to include(
           'conversion_to_Kintetsu',
@@ -163,7 +173,7 @@ module Engine
       it 'uses full capitalization and the 1890 stock-market sale constraints' do
         expect(described_class::BANK_CASH).to eq(12_000)
         expect(described_class::CAPITALIZATION).to eq(:full)
-        expect(described_class::MARKET_SHARE_LIMIT).to eq(60)
+        expect(described_class::MARKET_SHARE_LIMIT).to eq(50)
         expect(described_class::MUST_SELL_IN_BLOCKS).to be(true)
       end
 
@@ -1816,7 +1826,7 @@ module Engine
         expect(player.cash).to eq(player_cash + 40)
       end
 
-      it 'raises Keifuku revenue to 80 when Keihan has a token in Kyoto' do
+      it 'pays 40 to Keihan when Keihan has a token in Kyoto' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
         player = game.players.first
         company.owner = player
@@ -1831,12 +1841,12 @@ module Engine
 
         game.payout_companies
 
-        expect(company.revenue).to eq(80)
-        expect(keihan.cash).to eq(corporation_cash)
-        expect(player.cash).to eq(player_cash + 80)
+        expect(company.revenue).to eq(40)
+        expect(keihan.cash).to eq(corporation_cash + 40)
+        expect(player.cash).to eq(player_cash + 40)
       end
 
-      it 'raises Keifuku revenue when it is bought after Keihan already has a Kyoto token' do
+      it 'keeps Keifuku revenue at 40 when it is bought after Keihan already has a Kyoto token' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '京福' }
         player = game.players.first
         keihan = game.corporation_by_id('京阪')
@@ -1848,7 +1858,7 @@ module Engine
 
         game.after_buy_company(player, company, company.value)
 
-        expect(company.revenue).to eq(80)
+        expect(company.revenue).to eq(40)
       end
     end
 
@@ -1904,25 +1914,43 @@ module Engine
         expect(route_step).to be_a(Game::G1890::Step::Route)
       end
 
-      it 'does not use the old fixed Nishinomiya subsidy' do
+      it 'pays the standard 10 yen subsidy once when Hanshin uses brown Nishinomiya' do
         hanshin = game.corporation_by_id('阪神')
-        hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown))
-        stop = double('stop', hex: hex)
+        brown_hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown))
+        green_hex = instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :green))
         hanshin_train = instance_double(Train, owner: hanshin)
-        routes = Array.new(2) { instance_double(Route, visited_stops: [stop], train: hanshin_train) }
+        routes = Array.new(2) do
+          instance_double(Route, visited_stops: [double('stop', hex: brown_hex)], train: hanshin_train)
+        end
 
-        expect(game.routes_subsidy(routes)).to eq(0)
+        expect(game.routes_subsidy(routes)).to eq(10)
+
+        green_route = instance_double(
+          Route,
+          visited_stops: [double('stop', hex: green_hex)],
+          train: hanshin_train,
+        )
+        expect(game.routes_subsidy([green_route])).to eq(0)
 
         hankyu_train = instance_double(Train, owner: game.corporation_by_id('阪急'))
-        expect(game.routes_subsidy([instance_double(Route, visited_stops: [stop], train: hankyu_train)])).to eq(0)
+        hankyu_route = instance_double(
+          Route,
+          visited_stops: [double('stop', hex: brown_hex)],
+          train: hankyu_train,
+        )
+        expect(game.routes_subsidy([hankyu_route])).to eq(0)
       end
 
       it 'rolls for Hanshin Tigers popularity after Hanshin confirms a Nishinomiya route in phase 4' do
-        game.phase.next! until game.phase.name == '4'
-        hanshin = game.corporation_by_id('阪神')
-        train = game.trains.find { |candidate| candidate.name == '2' }
-        game.buy_train(hanshin, train, :free)
-        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        variant_game = described_class.new(players, optional_rules: [:hanshin_tigers])
+        variant_game.phase.next! until variant_game.phase.name == '4'
+        hanshin = variant_game.corporation_by_id('阪神')
+        train = variant_game.trains.find { |candidate| candidate.name == '2' }
+        variant_game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double(
+          'Nishinomiya stop',
+          hex: instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown)),
+        )
         route = instance_double(
           Route,
           train: train,
@@ -1931,55 +1959,67 @@ module Engine
           abilities: nil,
           visited_stops: [nishinomiya_stop],
         )
-        round = game.operating_round(1)
+        round = variant_game.operating_round(1)
         round.instance_variable_set(:@entities, [hanshin])
         round.instance_variable_set(:@entity_index, 0)
         step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
-        allow(game).to receive(:rand).and_return(0)
+        allow(variant_game).to receive(:rand).and_return(0)
 
         step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route]))
 
         expect(round.extra_revenue).to eq(100)
-        expect(game.log.map(&:message).last(3)).to include(
+        expect(variant_game.log.map(&:message).last(3)).to include(
           "#{hanshin.name} rolls 1 for Hanshin Tigers popularity and receives ¥100",
           "#{hanshin.name} receives ¥100 additional revenue",
         )
       end
 
       it 'uses the C10.12 Tigers revenue table for all die faces' do
-        game.phase.next! until game.phase.name == '4'
-        hanshin = game.corporation_by_id('阪神')
-        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        variant_game = described_class.new(players, optional_rules: [:hanshin_tigers])
+        variant_game.phase.next! until variant_game.phase.name == '4'
+        hanshin = variant_game.corporation_by_id('阪神')
+        nishinomiya_stop = double(
+          'Nishinomiya stop',
+          hex: instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown)),
+        )
         train = instance_double(Train, owner: hanshin)
         routes = [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)]
 
         [100, 60, 50, 40, 40, 40].each_with_index do |revenue, die_index|
-          allow(game).to receive(:rand).and_return(die_index)
+          allow(variant_game).to receive(:rand).and_return(die_index)
 
-          expect(game.hanshin_tigers_revenue(hanshin, routes)).to eq([die_index + 1, revenue])
+          expect(variant_game.hanshin_tigers_revenue(hanshin, routes)).to eq([die_index + 1, revenue])
         end
       end
 
       it 'does not roll for Tigers popularity before phase 4 or when Hanshin does not use Nishinomiya' do
-        hanshin = game.corporation_by_id('阪神')
+        variant_game = described_class.new(players, optional_rules: [:hanshin_tigers])
+        hanshin = variant_game.corporation_by_id('阪神')
         train = instance_double(Train, owner: hanshin)
-        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        nishinomiya_stop = double(
+          'Nishinomiya stop',
+          hex: instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown)),
+        )
         osaka_stop = double('Osaka stop', hex: instance_double(Hex, location_name: '大阪'))
 
-        expect(game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
+        expect(variant_game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
 
-        game.phase.next! until game.phase.name == '4'
+        variant_game.phase.next! until variant_game.phase.name == '4'
 
-        expect(game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [osaka_stop], train: train)])).to be_nil
-        expect(game.hanshin_tigers_revenue(game.corporation_by_id('阪急'), [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
+        expect(variant_game.hanshin_tigers_revenue(hanshin, [instance_double(Route, visited_stops: [osaka_stop], train: train)])).to be_nil
+        expect(variant_game.hanshin_tigers_revenue(variant_game.corporation_by_id('阪急'), [instance_double(Route, visited_stops: [nishinomiya_stop], train: train)])).to be_nil
       end
 
       it 'adds Tigers revenue to existing extra revenue when routes are confirmed' do
-        game.phase.next! until game.phase.name == '4'
-        hanshin = game.corporation_by_id('阪神')
-        train = game.trains.find { |candidate| candidate.name == '2' }
-        game.buy_train(hanshin, train, :free)
-        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        variant_game = described_class.new(players, optional_rules: [:hanshin_tigers])
+        variant_game.phase.next! until variant_game.phase.name == '4'
+        hanshin = variant_game.corporation_by_id('阪神')
+        train = variant_game.trains.find { |candidate| candidate.name == '2' }
+        variant_game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double(
+          'Nishinomiya stop',
+          hex: instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown)),
+        )
         route = instance_double(
           Route,
           train: train,
@@ -1988,11 +2028,11 @@ module Engine
           abilities: nil,
           visited_stops: [nishinomiya_stop],
         )
-        round = game.operating_round(1)
+        round = variant_game.operating_round(1)
         round.instance_variable_set(:@entities, [hanshin])
         round.instance_variable_set(:@entity_index, 0)
         step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
-        allow(game).to receive(:rand).and_return(1)
+        allow(variant_game).to receive(:rand).and_return(1)
 
         step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route], extra_revenue: 20))
 
@@ -2000,14 +2040,18 @@ module Engine
       end
 
       it 'pays Tigers revenue together with route revenue during dividend processing' do
-        game.phase.next! until game.phase.name == '4'
-        hanshin = game.corporation_by_id('阪神')
-        president = game.players.first
-        game.stock_market.set_par(hanshin, game.stock_market.par_prices.find { |price| price.price == 100 })
-        game.share_pool.buy_shares(president, hanshin.presidents_share.to_bundle, exchange: :free)
-        train = game.trains.find { |candidate| candidate.name == '2' }
-        game.buy_train(hanshin, train, :free)
-        nishinomiya_stop = double('Nishinomiya stop', hex: instance_double(Hex, location_name: '西宮'))
+        variant_game = described_class.new(players, optional_rules: [:hanshin_tigers])
+        variant_game.phase.next! until variant_game.phase.name == '4'
+        hanshin = variant_game.corporation_by_id('阪神')
+        president = variant_game.players.first
+        variant_game.stock_market.set_par(hanshin, variant_game.stock_market.par_prices.find { |price| price.price == 100 })
+        variant_game.share_pool.buy_shares(president, hanshin.presidents_share.to_bundle, exchange: :free)
+        train = variant_game.trains.find { |candidate| candidate.name == '2' }
+        variant_game.buy_train(hanshin, train, :free)
+        nishinomiya_stop = double(
+          'Nishinomiya stop',
+          hex: instance_double(Hex, location_name: '西宮', tile: instance_double(Tile, color: :brown)),
+        )
         route = instance_double(
           Route,
           train: train,
@@ -2019,13 +2063,13 @@ module Engine
           halts: [],
           node_signatures: [],
         )
-        round = game.operating_round(1)
-        game.instance_variable_set(:@round, round)
+        round = variant_game.operating_round(1)
+        variant_game.instance_variable_set(:@round, round)
         round.instance_variable_set(:@entities, [hanshin])
         round.instance_variable_set(:@entity_index, 0)
         route_step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Route) }
         dividend_step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Dividend) }
-        allow(game).to receive(:rand).and_return(2)
+        allow(variant_game).to receive(:rand).and_return(2)
         corporation_cash = hanshin.cash
 
         route_step.process_run_routes(Action::RunRoutes.new(hanshin, routes: [route]))
@@ -2698,7 +2742,7 @@ module Engine
         expect(owner.percent_of(kintetsu)).to be >= 20
       end
 
-      it 'allows Nara to exchange after the 4 train starts phase 3 in code' do
+      it 'does not allow Nara to exchange after the 4 train starts phase 3' do
         buy_all_initial_companies(game)
         game.phase.next! until game.phase.name == '2'
         round = game.operating_round(1)
@@ -2712,8 +2756,8 @@ module Engine
         nara = game.minor_by_id('奈良')
         nara_company = game.company_by_id('奈良')
 
-        expect(step.can_exchange?(nara)).to be(true)
-        expect(round.actions_for(nara_company)).to include('buy_shares')
+        expect(step.can_exchange?(nara)).to be(false)
+        expect(round.actions_for(nara_company)).not_to include('buy_shares')
       end
 
       it 'can run a train received from Nara after exchange using game actions' do
@@ -3022,6 +3066,22 @@ module Engine
         expect(kanan_train.operated).to be(true)
         expect(kintetsu.owner.cash).to eq(president_cash + 12)
         expect(kintetsu.share_price.price).to be > share_price.price
+      end
+
+      it 'removes a Nara token instead of placing a duplicate Kintetsu token' do
+        buy_all_initial_companies(game)
+        nara = game.minor_by_id('奈良')
+        kintetsu = game.corporation_by_id('近鉄')
+        token = nara.placed_tokens.first
+        city = token.city
+        unplaced_tokens = kintetsu.unplaced_tokens.size
+
+        allow(city).to receive(:tokened_by?).with(kintetsu).and_return(true)
+
+        game.transfer_minor_token!(token, kintetsu)
+
+        expect(token.city).to be_nil
+        expect(kintetsu.unplaced_tokens.size).to eq(unplaced_tokens)
       end
 
       it 'forces Nara to merge for two reserved shares on the 6 train' do
