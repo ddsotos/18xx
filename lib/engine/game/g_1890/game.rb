@@ -554,6 +554,7 @@ module Engine
       def hanshin_tigers_revenue(entity, routes)
         return nil unless hanshin_tigers_variant?
         return nil unless entity&.id == '阪神'
+        return nil unless @phase.name.to_f >= 4
         return nil unless hanshin_uses_brown_nishinomiya?(routes)
 
         face = (rand % 6) + 1
@@ -865,4 +866,3 @@ module Engine
     end
   end
 end
-
