@@ -12,7 +12,6 @@ module Engine
               @game.osaka_metro_special_tile_lay?(action.entity, action.hex)
             if osaka_metro_special_tile_lay
               lay_tile_action(action)
-              @round.num_laid_track -= 1
               @game.finish_osaka_metro_special_tile_lay!
               pass! unless can_lay_tile?(action.entity)
             else

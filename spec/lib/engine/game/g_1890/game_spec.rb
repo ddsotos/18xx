@@ -1184,7 +1184,7 @@ module Engine
         expect(ability.hexes).to contain_exactly('G12', 'H11', 'H13')
       end
 
-      it 'limits Osaka Metro special tile lay to Osaka city and leaves its normal tile lay after use' do
+      it 'uses Osaka Metro normal tile lay for its free Osaka city placement' do
         2.times { game.phase.next! }
         metro = game.corporation_by_id('メトロ')
         metro.owner = game.players.first
@@ -1205,8 +1205,8 @@ module Engine
 
         expect(metro.cash).to eq(cash_before)
         expect(game.abilities(metro, :tile_lay, time: 'track')).to be_nil
-        expect(round.num_laid_track).to eq(0)
-        expect(step.can_lay_tile?(metro)).to be(true)
+        expect(round.num_laid_track).to eq(1)
+        expect(step.can_lay_tile?(metro)).to be(false)
       end
 
       it 'removes Osaka Metro special tile lay when its track step is passed' do
