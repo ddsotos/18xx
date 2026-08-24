@@ -34,7 +34,7 @@ if ([string]::IsNullOrWhiteSpace($env:CLOUDFLARE_TUNNEL_TOKEN)) {
   if ($RequireToken) {
     Fail "CLOUDFLARE_TUNNEL_TOKEN is not set"
   } else {
-    Write-Host "WARN: CLOUDFLARE_TUNNEL_TOKEN is not set"
+    Write-Host "OK: CLOUDFLARE_TUNNEL_TOKEN is not set; Quick Tunnel does not need it"
   }
 } elseif ($env:CLOUDFLARE_TUNNEL_TOKEN -match '^<.*>$') {
   Fail "CLOUDFLARE_TUNNEL_TOKEN still looks like a placeholder"
@@ -46,7 +46,7 @@ if ([string]::IsNullOrWhiteSpace($env:CLOUDFLARE_PUBLIC_URL)) {
   if ($RequirePublicUrl) {
     Fail "CLOUDFLARE_PUBLIC_URL is not set"
   } else {
-    Write-Host "WARN: CLOUDFLARE_PUBLIC_URL is not set"
+    Write-Host "OK: CLOUDFLARE_PUBLIC_URL is not set; Quick Tunnel prints a random URL when started"
   }
 } elseif ($env:CLOUDFLARE_PUBLIC_URL -notmatch '^https://') {
   Fail "CLOUDFLARE_PUBLIC_URL should start with https://"
@@ -55,7 +55,10 @@ if ([string]::IsNullOrWhiteSpace($env:CLOUDFLARE_PUBLIC_URL)) {
 }
 
 Write-Host ""
-Write-Host "Cloudflare dashboard Public Hostname service URL for Docker tunnel mode:"
+Write-Host "Quick Tunnel Docker command:"
+Write-Host "  docker run --rm -it cloudflare/cloudflared:latest tunnel --no-autoupdate --url http://host.docker.internal:$port"
+Write-Host ""
+Write-Host "Future Named Tunnel Public Hostname service URL:"
 Write-Host "  http://rack:9292"
 Write-Host ""
 Write-Host "Local browser check URL:"

@@ -25,7 +25,7 @@ class Api
 
           unless (user = User.by_email(email))
             halt(400, 'User Name may not be empty for first login') if (name || '').empty?
-            halt(400, 'That user name is already registered with another email') if User.by_email(name)
+            halt(400, 'That user name is already registered with another email') if User.by_name(name)
 
             user = User.create(
               name: name,

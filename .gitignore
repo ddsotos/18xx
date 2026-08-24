@@ -1,4 +1,5 @@
 /.env*
+!/.env.online.example
 /.yardoc
 /_yardoc/
 /coverage/

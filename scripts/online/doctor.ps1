@@ -57,10 +57,10 @@ Check "local HTTP http://localhost:$Port/" {
 }
 
 Write-Host ""
-Write-Host "== Cloudflare Tunnel token =="
+Write-Host "== Named Tunnel token =="
 if ([string]::IsNullOrWhiteSpace($env:CLOUDFLARE_TUNNEL_TOKEN)) {
-  Write-Host "WARN: CLOUDFLARE_TUNNEL_TOKEN is not set"
-  Write-Host "Docker tunnel mode needs .env.online.local."
+  Write-Host "OK: CLOUDFLARE_TUNNEL_TOKEN is not set"
+  Write-Host "Quick Tunnel does not need a token."
 } else {
   Write-Host "OK: CLOUDFLARE_TUNNEL_TOKEN is set"
 }
@@ -76,8 +76,8 @@ if ($cloudflared) {
   Write-Host "cloudflared is not installed or not on PATH"
   $failed = $true
 } else {
-  Write-Host "WARN: cloudflared is not installed or not on PATH"
-  Write-Host "This is only required for host-installed cloudflared mode. Docker tunnel mode does not need it."
+  Write-Host "OK: cloudflared is not installed on the host"
+  Write-Host "Use the Docker Quick Tunnel command instead."
 }
 
 if ($failed) {

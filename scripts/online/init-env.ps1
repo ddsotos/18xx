@@ -45,4 +45,5 @@ if (Test-Path $target) {
 
 Copy-Item $source $target
 Write-Host "Created .env.online.local"
-Write-Host "Open it and paste CLOUDFLARE_TUNNEL_TOKEN from Cloudflare Zero Trust."
+Write-Host "Quick Tunnel works without editing this file."
+Write-Host "Edit ONLINE_PORT only if 9293 is already in use."

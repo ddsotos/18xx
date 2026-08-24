@@ -11,7 +11,7 @@ Windows 向けの身内オンラインプレイ補助スクリプト。
 | `dev-up.cmd -Detach -Wait` | Start the 18xx dev stack for Quick Tunnel play. |
 | `dev-down.cmd` | Stop the 18xx dev stack after Quick Tunnel is stopped. |
 | `db-backup.cmd` | Create a backup before or after play. |
-| `overview.cmd` | Show local URL, public URL, token state, compose status, and local HTTP status. |
+| `overview.cmd` | Show the local URL, Quick Tunnel command, compose status, and local HTTP status. |
 | `collect-diagnostics.cmd` | Write troubleshooting logs to `diagnostics/`. |
 
 Quick Tunnel itself is currently started directly:
@@ -32,7 +32,7 @@ cloudflared tunnel --url http://localhost:9293
 | --- | --- |
 | `init-env.cmd` | Create or update `.env.online.local` from `.env.online.example`. |
 | `preflight.cmd` | Validate local online settings before starting. |
-| `doctor.cmd` | Check Docker, compose, local HTTP, and tunnel-related settings. |
+| `doctor.cmd` | Check Docker, compose, local HTTP, and optional tunnel-related settings. |
 | `check-public.cmd` | Check a fixed Cloudflare public URL. Mainly for future Named Tunnel use. |
 
 ## Lower-Level Commands

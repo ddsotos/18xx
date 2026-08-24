@@ -58,9 +58,9 @@
 
 オンライン用 compose では `FRIEND_LOGIN_ENABLED=true` を設定し、パスワードなしの `Friend Login` を有効にする。
 
-友人は User Name と Email だけで入る。既存の User Name と Email が一致すれば同じユーザーとしてログインし、存在しなければ新規ユーザーを自動作成する。
+友人は User Name と Email だけで入る。初回は User Name と Email でユーザーを作成し、次回以降は Email だけで同じユーザーとしてログインできる。
 
-User Name と Email の片方だけが既存ユーザーと一致する場合は拒否する。これにより、同じ名前で別メール、または同じメールで別名の誤ログインを避ける。
+未登録の Email で既存の User Name を使った場合は拒否する。これにより、同じ名前で別メールの誤ログインを避ける。
 
 ### Docker またはホスト上の cloudflared
 
@@ -161,7 +161,6 @@ Quick Tunnel を停止すると、その URL は使えなくなる。再開時�
 
 ## 今後の作業
 
-1. Quick Tunnel 起動用の補助スクリプトを追加する。
-2. 友人のブラウザから `trycloudflare.com` URL でアクセスできることを確認する。
-3. 必要に応じてバックアップを外部ストレージへ定期コピーする。
-4. 固定 URL やメール制限が必要になったら、独自ドメイン、Named Tunnel、Cloudflare Access へ移行する。
+1. Quick Tunnel 起動用の補助スクリプトが必要か、実運用しながら判断する。
+2. 必要に応じてバックアップを外部ストレージへ定期コピーする。
+3. 固定 URL やメール制限が必要になったら、独自ドメイン、Named Tunnel、Cloudflare Access へ移行する。

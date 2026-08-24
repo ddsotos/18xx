@@ -9,7 +9,7 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $repoRoot
 
 . "$PSScriptRoot\env.ps1"
-Import-OnlineEnv -RequireTunnelToken
+Import-OnlineEnv -RequireTunnelToken:(-not $SkipTunnel)
 $port = Get-OnlinePort
 
 $devArgs = @('-Detach', '-Wait', '-Port', $port)
