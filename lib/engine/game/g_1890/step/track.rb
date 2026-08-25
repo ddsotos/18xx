@@ -17,6 +17,7 @@ module Engine
             else
               super
             end
+            @game.refresh_kobe_rapid_blocking!
             @game.clear_graph_for_entity(action.entity)
             return unless action.entity.id == '阪急' && action.tile.color == :yellow
 

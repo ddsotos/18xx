@@ -659,14 +659,18 @@ module Engine
         expect(ability.when).to eq(['sold'])
       end
 
-      it 'defines Hankai and Kobe City Tram revenue reductions for phase 4' do
+      it 'defines a phase 4 revenue reduction for Hankai only' do
         companies = game.initial_auction_companies
-        revenue_changes = [companies[1], companies[2]].map do |company|
-          company.all_abilities.find { |ability| ability.type == :revenue_change }
+        kobe_city_tram_revenue_change = companies[1].all_abilities.find do |ability|
+          ability.type == :revenue_change
+        end
+        hankai_revenue_change = companies[2].all_abilities.find do |ability|
+          ability.type == :revenue_change
         end
 
-        expect(revenue_changes.map(&:revenue)).to eq([5, 5])
-        expect(revenue_changes.map { |ability| ability.on_phase.to_s }).to eq(%w[4 4])
+        expect(kobe_city_tram_revenue_change).to be_nil
+        expect(hankai_revenue_change.revenue).to eq(5)
+        expect(hankai_revenue_change.on_phase.to_s).to eq('4')
       end
 
       it 'defines the attached share certificates in the initial packet' do
@@ -1552,6 +1556,36 @@ module Engine
         expect(kobe_city.blocks?(corporation)).to be(false)
       end
 
+      it 'occupies one Kobe station slot when bought' do
+        own_latecomer(game, '神高')
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        kobe_city = kobe_hex.tile.cities.first
+
+        expect(kobe_city.available_slots).to eq(2)
+
+        game.activate_kobe_rapid_blocking!
+
+        expect(kobe_city.available_slots).to eq(1)
+      end
+
+      it 'keeps the occupied Kobe station slot and blocking after an upgrade' do
+        own_latecomer(game, '神高')
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'GKO' })
+        game.activate_kobe_rapid_blocking!
+
+        expect(kobe_hex.tile.cities.first.available_slots).to eq(0)
+
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        game.refresh_kobe_rapid_blocking!
+        kobe_city = kobe_hex.tile.cities.first
+        corporation = game.corporations.find { |candidate| candidate.id != 'JR' }
+
+        expect(kobe_city.available_slots).to eq(1)
+        expect(kobe_city.blocks?(corporation)).to be(true)
+      end
+
       it 'shows the Kobe Rapid special blocking marker on Kobe' do
         company = game.instance_variable_get(:@latecomer_companies).find { |candidate| candidate.id == '神高' }
         player = game.players.first
@@ -1670,7 +1704,10 @@ module Engine
         player.companies << company
         game.companies << company
         corporation = game.corporations.first
-        kobe_city = game.hex_by_id('F5').tile.cities.first
+        kobe_hex = game.hex_by_id('F5')
+        kobe_hex.lay(game.tiles.find { |tile| tile.name == 'BKO' })
+        game.activate_kobe_rapid_blocking!
+        kobe_city = kobe_hex.tile.cities.first
         kobe_city.place_token(corporation, corporation.next_token, check_tokenable: false)
         kobe_stop = double('Kobe stop', hex: kobe_city.hex)
         allow(kobe_stop).to receive(:route_revenue).and_return(30)
@@ -1752,8 +1789,12 @@ module Engine
         f3_tile = game.tiles.find { |tile| tile.name == '6' }
         f3_tile.rotate!(2)
         game.hex_by_id('F3').lay(f3_tile)
+        f3_city = game.hex_by_id('F3').tile.cities.first
+        f3_token = corporation.next_token
+        f3_token.place(f3_city)
+        f3_city.tokens[0] = f3_token
         route = Route.new(game, game.phase, train)
-        [kobe_city, game.hex_by_id('F3').tile.cities.first].each { |node| route.touch_node(node) }
+        [kobe_city, f3_city].each { |node| route.touch_node(node) }
         round = game.operating_round(1)
         round.instance_variable_set(:@entities, [corporation])
         round.instance_variable_set(:@entity_index, 0)
@@ -1841,6 +1882,7 @@ module Engine
           kobe_city = kobe_hex.tile.cities.first
           if already_tokened
             kobe_city.place_token(corporation, corporation.next_token, check_tokenable: false)
+            game.activate_kobe_rapid_blocking!
           else
             game.activate_kobe_rapid_blocking!
             game.buy_kobe_rapid_passage!(corporation)
@@ -2213,11 +2255,14 @@ module Engine
         expect(close_prices.map(&:coordinates)).to contain_exactly([9, 0], [10, 0], [10, 1])
       end
 
-      it 'keeps the normal market share limit at 60 before a corporation enters the brown market' do
+      it 'limits the public market to 50 percent and player ownership to 60 percent' do
         corporation = game.corporations.first
+        player = game.players.first
         game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 70 })
 
-        expect(game.market_share_limit(corporation)).to eq(60)
+        expect(game.market_share_limit(corporation)).to eq(50)
+        expect(corporation.holding_ok?(player, 60)).to be(true)
+        expect(corporation.holding_ok?(player, 70)).to be(false)
       end
     end
 
@@ -2235,15 +2280,18 @@ module Engine
 
       it 'allows more than 60 percent ownership for brown-market corporations' do
         corporation = game.corporation_by_id('南海')
+        player = game.players.first
         game.stock_market.set_par(corporation, game.stock_market.par_prices.find { |price| price.price == 70 })
 
-        expect(game.market_share_limit(corporation)).to eq(60)
+        expect(game.market_share_limit(corporation)).to eq(50)
+        expect(corporation.holding_ok?(player, 70)).to be(false)
 
         brown_price = game.stock_market.market.flatten.compact.find { |price| price.price == 40 && price.type == :unlimited }
         corporation.share_price.corporations.delete(corporation)
         corporation.share_price = brown_price
 
-        expect(game.market_share_limit(corporation)).to eq(100)
+        expect(game.market_share_limit(corporation)).to eq(50)
+        expect(corporation.holding_ok?(player, 70)).to be(true)
       end
     end
 

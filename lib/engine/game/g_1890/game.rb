@@ -646,23 +646,36 @@ module Engine
       end
 
       def activate_kobe_rapid_blocking!
-        return if @kobe_rapid_blocking_active
+        company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
+        unless @kobe_rapid_blocking_active
+          kobe_city = hex_by_id('F5').tile.cities.first
+          returned_tokens = kobe_city.tokens.compact.reject { |token| token.corporation.id == 'JR' }
+          returned_tokens.each do |token|
+            corporation = token.corporation
+            token.remove!
+            token.price = 100
+            grant_kobe_rapid_passage!(corporation)
+            @log << "#{corporation.name} returns its Kobe token and receives Kobe Rapid passage"
+          end
+          update_kobe_rapid_passage_description!(company) if returned_tokens.any?
+          @kobe_rapid_blocking_active = true
+        end
+
+        refresh_kobe_rapid_blocking!
+      end
+
+      def refresh_kobe_rapid_blocking!
+        return unless @kobe_rapid_blocking_active
 
         company = company_by_id('神高') || @latecomer_companies.find { |candidate| candidate.id == '神高' }
-        kobe_hex = hex_by_id('F5')
-        kobe_tile = kobe_hex.tile
+        kobe_tile = hex_by_id('F5').tile
         kobe_tile.icons << Part::Icon.new('red_cube', 'kobe_rapid_block') unless
           kobe_tile.icons.any? { |icon| icon.name == 'kobe_rapid_block' }
         kobe_city = kobe_tile.cities.first
-        returned_tokens = kobe_city.tokens.compact.reject { |token| token.corporation.id == 'JR' }
-        returned_tokens.each do |token|
-          corporation = token.corporation
-          token.remove!
-          token.price = 100
-          grant_kobe_rapid_passage!(corporation)
-          @log << "#{corporation.name} returns its Kobe token and receives Kobe Rapid passage"
+        unless kobe_city.reservations.include?(company)
+          kobe_city.add_reservation!(company, kobe_city.get_slot(company))
         end
-        update_kobe_rapid_passage_description!(company) if returned_tokens.any?
+        return if kobe_city.instance_variable_get(:@kobe_rapid_blocking_installed)
 
         previous_blocks = kobe_city.method(:blocks?)
         game = self
@@ -672,7 +685,7 @@ module Engine
              !tokened_by?(corporation) &&
              !game.kobe_rapid_passage_bought?(corporation))
         end
-        @kobe_rapid_blocking_active = true
+        kobe_city.instance_variable_set(:@kobe_rapid_blocking_installed, true)
         clear_graph
       end
 
