@@ -1217,6 +1217,28 @@ module Engine
         expect(step.can_lay_tile?(metro)).to be(false)
       end
 
+      it 'does not allow the free Osaka Metro tile lay to exit the map' do
+        2.times { game.phase.next! }
+        metro = game.corporation_by_id('メトロ')
+        metro.owner = game.players.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [metro])
+        round.instance_variable_set(:@entity_index, 0)
+        round.start_operating
+        step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Track) }
+        osaka_west = game.hex_by_id('H11')
+        tile = game.tiles.find { |candidate| candidate.name == '12' }
+
+        tile.rotate!(2)
+        expect(tile.exits).to contain_exactly(2, 3, 4)
+        expect(osaka_west.neighbors.keys).not_to include(2)
+        expect(step.legal_tile_rotation?(metro, osaka_west, tile)).to be(false)
+
+        tile.rotate!(3)
+        expect(tile.exits).to contain_exactly(3, 4, 5)
+        expect(step.legal_tile_rotation?(metro, osaka_west, tile)).to be(true)
+      end
+
       it 'removes Osaka Metro special tile lay when its track step is passed' do
         metro = game.corporation_by_id('メトロ')
         metro.owner = game.players.first

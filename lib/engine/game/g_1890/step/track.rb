@@ -41,9 +41,8 @@ module Engine
             super
           end
 
-          def legal_tile_rotation?(entity_or_entities, hex, tile)
-            entity = Array(entity_or_entities).first
-            return true if @game.osaka_metro_special_tile_lay?(entity, hex)
+          def hex_neighbors(entity, hex)
+            return hex.neighbors.keys if @game.osaka_metro_special_tile_lay?(entity, hex)
 
             super
           end
