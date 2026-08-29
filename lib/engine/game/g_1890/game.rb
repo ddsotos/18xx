@@ -47,6 +47,8 @@ module Engine
 
         CAPITALIZATION = :full
 
+        TRACK_RESTRICTION = :permissive
+
         MARKET_SHARE_LIMIT = 50
 
         MUST_SELL_IN_BLOCKS = true

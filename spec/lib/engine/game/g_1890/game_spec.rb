@@ -409,6 +409,10 @@ module Engine
         expect(tiles.values_at('202', '205', '206', '208', '210', '211', '217')).to eq([1, 1, 1, 1, 1, 1, 1])
       end
 
+      it 'allows upgrades on connected hexes without requiring new track' do
+        expect(described_class::TRACK_RESTRICTION).to eq(:permissive)
+      end
+
       it 'starts the three Osaka city hexes with their prescribed yellow labels and revenues' do
         expect(game.hex_by_id('G12').tile.code).to include('revenue:40,slots:2', 'label=ON')
         expect(game.hex_by_id('H11').tile.code).to include('revenue:30')
