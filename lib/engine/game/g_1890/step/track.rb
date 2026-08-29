@@ -72,8 +72,8 @@ module Engine
                 return [] unless @game.phase.tiles.include?(:brown)
 
                 return special_upgradeable_tiles(entity, hex, 'BNI')
-              when 'I12'
-                return [] unless @game.phase.tiles.include?(:brown) && hex.tile.name == '12'
+              when 'H11'
+                return [] unless @game.phase.tiles.include?(:brown)
 
                 return special_upgradeable_tiles(entity, hex, 'BOW')
               end

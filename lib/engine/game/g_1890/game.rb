@@ -748,15 +748,14 @@ module Engine
       end
 
       def upgrades_to?(from, to, special = false, selected_company: nil)
-        return true if osaka_south_tile_upgrades_to_bow?(from, to)
+        return true if osaka_west_tile_upgrades_to_bow?(from, to)
         return true if double_city_tile_upgrades_to_217?(from, to)
 
         super
       end
 
-      def osaka_south_tile_upgrades_to_bow?(from, to)
-        from.hex&.id == 'I12' &&
-          from.name == '12' &&
+      def osaka_west_tile_upgrades_to_bow?(from, to)
+        from.hex&.id == 'H11' &&
           to.name == 'BOW' &&
           upgrades_to_correct_color?(from, to) &&
           from.paths_are_subset_of?(to.paths)

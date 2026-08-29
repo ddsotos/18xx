@@ -18,7 +18,7 @@ module Engine
             return company.min_bid if may_purchase?(company)
 
             high_bid = highest_bid(company)
-            high_bid ? high_bid.price + min_increment : company.min_bid
+            high_bid ? high_bid.price + min_increment : company.min_bid + min_increment
           end
         end
       end
