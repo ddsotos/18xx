@@ -391,7 +391,8 @@ module Engine
         expect(tiles['GKY']).to include('count' => 1, 'color' => 'green')
         expect(tiles['BKY']).to include('count' => 1, 'color' => 'brown')
         expect(tiles['BNI']).to include('count' => 1, 'color' => 'brown')
-        expect(tiles['BOS']).to include('count' => 1, 'color' => 'brown')
+        expect(tiles['BOW']).to include('count' => 1, 'color' => 'brown', 'code' => include('label=OW'))
+        expect(tiles).not_to have_key('BOS')
       end
 
       it 'keeps the prescribed standard yellow tile counts used by scenario C' do
@@ -550,18 +551,46 @@ module Engine
         nishinomiya = game.hex_by_id('F9')
         osaka_west = game.hex_by_id('H11')
         osaka_east = game.hex_by_id('H13')
-        green_city_tiles = game.tiles.select { |tile| tile.color == :green && tile.cities.any? }
-        nishinomiya.lay(green_city_tiles[0])
-        osaka_west.lay(green_city_tiles[1])
-        osaka_east.lay(green_city_tiles[2])
+        nishinomiya.lay(game.tiles.find { |tile| tile.name == '15' }.rotate!(1))
+        nishinomiya.tile.cities.first.place_token(corporation, corporation.next_token, check_tokenable: false)
 
         expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).not_to include('BNI')
 
         game.phase.next! until game.phase.name == '4'
 
         expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).to contain_exactly('BNI')
-        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOS')
-        expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOS')
+        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOW')
+        expect(track_step.upgradeable_tiles(corporation, osaka_east).map(&:name)).not_to include('BNI', 'BOW')
+      end
+
+      it 'allows only Osaka South tile 12 to upgrade to the BOW tile in the brown phase' do
+        corporation = game.corporations.first
+        round = game.operating_round(1)
+        round.instance_variable_set(:@entities, [corporation])
+        round.instance_variable_set(:@entity_index, 0)
+        track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
+        osaka_south = game.hex_by_id('I12')
+        osaka_west = game.hex_by_id('H11')
+        green_tiles = game.tiles.select { |tile| tile.name == '12' }
+        osaka_south.lay(green_tiles[0].rotate!(4))
+        osaka_west.lay(green_tiles[1].rotate!(3))
+        osaka_south.tile.cities.first.place_token(corporation, corporation.next_token, check_tokenable: false)
+
+        expect(track_step.upgradeable_tiles(corporation, osaka_south).map(&:name)).not_to include('BOW')
+
+        game.phase.next! until game.phase.name == '4'
+
+        upgrade = game.tiles.find { |tile| tile.name == 'BOW' }
+        upgrade.rotate!(0)
+        expect(track_step.upgradeable_tiles(corporation, osaka_south).map(&:name)).to contain_exactly('BOW')
+        expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOW')
+        expect(game.upgrades_to?(osaka_south.tile, upgrade)).to be(true)
+        expect(game.upgrades_to?(osaka_west.tile, upgrade)).to be(false)
+
+        track_step.process_lay_tile(Action::LayTile.new(corporation, hex: osaka_south, tile: upgrade, rotation: 0))
+
+        expect(osaka_south.tile.name).to eq('BOW')
+        expect(osaka_south.tile.label.to_s).to eq('OW')
       end
 
       it 'allows the Nishinomiya green city to upgrade to the special brown tile without losing track' do

@@ -71,13 +71,28 @@ module Engine
               when 'F9'
                 return [] unless @game.phase.tiles.include?(:brown)
 
-                return @game.tiles.select { |t| t.name == 'BNI' }
+                return special_upgradeable_tiles(entity, hex, 'BNI')
+              when 'I12'
+                return [] unless @game.phase.tiles.include?(:brown) && hex.tile.name == '12'
+
+                return special_upgradeable_tiles(entity, hex, 'BOW')
               end
             end
             tiles = super
-            tiles.reject { |t| %w[BNI BOS].include?(t.name) }
+            tiles.reject { |t| %w[BNI BOW].include?(t.name) }
           end
 
+          def special_upgradeable_tiles(entity, hex, tile_name)
+            tile = @game.tiles.find { |candidate| candidate.name == tile_name }
+            return [] unless tile
+
+            tile.rotate!(0)
+            tile.legal_rotations = legal_tile_rotations(entity, hex, tile)
+            return [] if tile.legal_rotations.empty?
+
+            tile.rotate!
+            [tile]
+          end
 
         end
       end
