@@ -543,7 +543,7 @@ module Engine
         expect(nara.cash).to eq(cash_before - 80)
       end
 
-      it 'restricts the Nishinomiya special brown tile but not Osaka West' do
+      it 'restricts the Nishinomiya special brown tile to the brown phase' do
         corporation = game.corporations.first
         round = game.operating_round(1)
         track_step = round.steps.find { |step| step.is_a?(Game::G1890::Step::Track) }
@@ -554,6 +554,10 @@ module Engine
         nishinomiya.lay(green_city_tiles[0])
         osaka_west.lay(green_city_tiles[1])
         osaka_east.lay(green_city_tiles[2])
+
+        expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).not_to include('BNI')
+
+        game.phase.next! until game.phase.name == '4'
 
         expect(track_step.upgradeable_tiles(corporation, nishinomiya).map(&:name)).to contain_exactly('BNI')
         expect(track_step.upgradeable_tiles(corporation, osaka_west).map(&:name)).not_to include('BOS')

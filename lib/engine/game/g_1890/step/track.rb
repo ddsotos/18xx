@@ -69,6 +69,8 @@ module Engine
             if hex.tile.color == :green
               case hex.id
               when 'F9'
+                return [] unless @game.phase.tiles.include?(:brown)
+
                 return @game.tiles.select { |t| t.name == 'BNI' }
               end
             end
