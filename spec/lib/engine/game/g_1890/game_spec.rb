@@ -2297,7 +2297,7 @@ module Engine
 
     describe 'Kintetsu conversion' do
       describe 'Kobe Electric latecomerization' do
-        it 'lets Kobe Electric declare latecomerization during its operating turn' do
+        it 'does not block Kobe Electric normal operating actions' do
           buy_all_initial_companies(game)
           kobe = game.minor_by_id('神戸')
           kobe_company = game.company_by_id('神戸')
@@ -2308,11 +2308,8 @@ module Engine
           round.steps.each(&:unpass!)
           round.steps.each(&:setup)
           round.start_operating
-          step = round.steps.find { |candidate| candidate.is_a?(Game::G1890::Step::Exchange) }
-
-          expect(round.active_step(kobe)).to eq(step)
-          expect(round.actions_for(kobe)).to include('choose', 'pass')
-          expect(step.choices).to include('kobe_electric_latecomerize' => 'Declare Kobe Electric as a latecomer company')
+          expect(round.active_step(kobe)).to be_a(Game::G1890::Step::Track)
+          expect(round.actions_for(kobe)).not_to include('choose')
           expect(kobe_company.owner).to eq(kobe.owner)
         end
 
@@ -2359,7 +2356,7 @@ module Engine
           round.steps.each(&:setup)
           round.start_operating
 
-          game.process_action(Action::Choose.new(kobe, choice: 'kobe_electric_latecomerize'))
+          game.process_action(Action::ChooseAbility.new(kobe_company, choice: 'kobe_electric_latecomerize'))
 
           expect(kobe).to be_closed
           expect(kobe.cash).to eq(0)
@@ -2373,7 +2370,7 @@ module Engine
           expect(game.num_certs(owner)).to eq(certificate_count_before - 1)
         end
 
-        it 'moves from Nara train pass to Kobe Electric in one action without logging a company skip' do
+        it 'moves from Nara final pass directly to Kobe Electric Track' do
           buy_all_initial_companies(game)
           nara = game.minor_by_id('奈良')
           kobe = game.minor_by_id('神戸')
@@ -2391,6 +2388,8 @@ module Engine
           game.process_action(Action::Pass.new(nara))
 
           expect(round.current_entity).to eq(kobe)
+          expect(round.active_step(kobe)).to be_a(Game::G1890::Step::Track)
+          expect(round.actions_for(kobe)).to include('lay_tile', 'pass')
           messages = game.log[log_size..].map(&:message)
           expect(messages).to include('奈良 passes buy trains')
           expect(messages).not_to include('奈良 skips buy companies')

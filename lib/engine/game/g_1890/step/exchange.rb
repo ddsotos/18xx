@@ -33,7 +33,6 @@ module Engine
           def actions(entity)
             actions = []
             actions.concat(ACTIONS) if can_exchange?(entity)
-            actions << 'choose' if can_latecomerize_kobe_electric?(entity)
             actions << 'choose_ability' if can_latecomerize_kobe_electric_ability?(entity)
             return [] if actions.empty?
 
@@ -41,19 +40,7 @@ module Engine
           end
 
           def blocks?
-            can_exchange?(current_entity) || can_latecomerize_kobe_electric?(current_entity)
-          end
-
-          def choice_name
-            'Kobe Electric'
-          end
-
-          def choices
-            return {} unless can_latecomerize_kobe_electric?(current_entity)
-
-            {
-              KOBE_ELECTRIC_LATECOMERIZE_CHOICE => 'Declare Kobe Electric as a latecomer company',
-            }
+            can_exchange?(current_entity)
           end
 
           def choices_ability(entity)
@@ -95,15 +82,6 @@ module Engine
             # @round.players_history[company.owner][bundle.corporation] << action if @round.respond_to?(:players_history)
           end
 
-          def process_choose(action)
-            raise GameError, 'Illegal choice' unless action.choice == KOBE_ELECTRIC_LATECOMERIZE_CHOICE
-            raise GameError, "#{action.entity.id} cannot latecomerize Kobe Electric" unless
-              can_latecomerize_kobe_electric?(action.entity)
-
-            @game.latecomerize_kobe_electric!
-            pass!
-          end
-
           def process_choose_ability(action)
             raise GameError, 'Illegal choice' unless action.choice == KOBE_ELECTRIC_LATECOMERIZE_CHOICE
             raise GameError, "#{action.entity.id} cannot latecomerize Kobe Electric" unless
@@ -120,16 +98,6 @@ module Engine
             return entity unless entity.company? && entity.type == :minor
 
             @game.minor_by_id(entity.id) || entity
-          end
-
-          def can_latecomerize_kobe_electric?(entity)
-            entity = exchange_minor_entity(entity)
-            kobe = @game.minor_by_id('神戸')
-            company = @game.company_by_id('神戸')
-            return false unless kobe&.owner && company&.owner && !kobe.closed?
-            return false if @game.kobe_electric_latecomerized?(company)
-
-            entity == kobe
           end
 
           def can_latecomerize_kobe_electric_ability?(entity)
