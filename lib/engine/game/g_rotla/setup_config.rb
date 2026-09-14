@@ -63,9 +63,9 @@ module Engine
         end
 
         def fields!(value, fields, label)
-          unless value.is_a?(Hash) && value.keys.sort == fields.sort
-            raise ArgumentError, "#{label} requires exactly: #{fields.join(', ')}"
-          end
+          return if value.is_a?(Hash) && value.keys.sort == fields.sort
+
+          raise ArgumentError, "#{label} requires exactly: #{fields.join(', ')}"
         end
 
         def id!(value, label)

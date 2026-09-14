@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require './spec/spec_helper'
 
 describe Engine::Game::GRotLA::MapGeometry do
   it 'rotates axial coordinates through known orientations and a complete cycle' do

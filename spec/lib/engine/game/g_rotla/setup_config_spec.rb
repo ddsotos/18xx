@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require './spec/spec_helper'
 
 describe Engine::Game::GRotLA::SetupConfig do
   # Artificial structural example, not an official map or a playable full-game save.
@@ -38,9 +38,8 @@ describe Engine::Game::GRotLA::SetupConfig do
     output = config.to_h
     output['map_manifest']['placements'][0]['origin'][1] = 99
     output['map_manifest']['projects'][0]['target_city_id'].replace('changed')
-    expect(config.to_h['map_manifest']['placements'][0]).to eq(
-      'copy_id' => 'test-1', 'origin' => [0, -1], 'rotation' => 2
-    )
+    placement = config.to_h['map_manifest']['placements'][0]
+    expect(placement).to eq('copy_id' => 'test-1', 'origin' => [0, -1], 'rotation' => 2)
     expect(config.to_h['map_manifest']['projects'][0]['target_city_id']).to eq('city-1')
   end
 

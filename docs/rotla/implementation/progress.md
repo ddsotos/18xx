@@ -29,7 +29,8 @@ Game.load/clone接続、株式/運営/合併/能力/終局/UIを引き続き実�
 今回のコードは独立した基盤で、RotLAはまだゲーム一覧から遊べない。
 
 実行環境が利用できないため、ローカルRuby/Opal/ブラウザ検証は未実行。
-既存GitHub Actionsを利用するため、設計ブランチをbaseとしたdraft PRを作成する。
+既存GitHub Actionsを利用するため、masterをbaseとした[draft PR #1](https://github.com/ddsotos/18xx/pull/1)を作成した。
+既存CIのPR対象パターンに合わせたもので、マージは行っていない。
 CI結果はPRのChecksを参照し、成功が確認できるまではテスト通過と扱わない。
 
 実行環境復旧後の対象テスト：
