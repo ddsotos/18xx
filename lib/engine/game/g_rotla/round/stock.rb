@@ -12,8 +12,22 @@ module Engine
         class Stock < Engine::Round::Stock
           protected
 
+          def finish_round
+            return restart_initial_stock_round if @game.rotla_restart_initial_stock_round?
+
+            super
+          end
+
           def corporations_to_move_price
             @game.corporations.select(&:floated?)
+          end
+
+          def restart_initial_stock_round
+            @game.rotla_reshuffle_minor_tableau!
+            @entities.each(&:unpass!)
+            @pass_order.clear
+            @last_to_act = nil
+            start_entity
           end
         end
       end

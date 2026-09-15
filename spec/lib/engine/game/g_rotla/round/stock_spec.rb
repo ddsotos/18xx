@@ -52,6 +52,10 @@ describe Engine::Game::GRotLA::Round::Stock do
         true
       end
 
+      def rotla_restart_initial_stock_round?
+        false
+      end
+
       def sold_out_increase?(_corporation)
         true
       end
@@ -86,5 +90,27 @@ describe Engine::Game::GRotLA::Round::Stock do
     expect(major.share_price.price).to eq(80)
     expect(unstarted.share_price.price).to eq(70)
     expect(game.movements).to contain_exactly(['Minor', 70, 80], ['Major', 70, 80])
+  end
+
+  it 'reshuffles and restarts the same initial round when no company was founded' do
+    players = %w[p1 p2 p3 p4].map { |id| Engine::Player.new(id, id.upcase) }
+    players.each(&:pass!)
+    game = Object.new
+    game.define_singleton_method(:rotla_restart_initial_stock_round?) { true }
+    reshuffled = false
+    game.define_singleton_method(:rotla_reshuffle_minor_tableau!) { reshuffled = true }
+    round = described_class.allocate
+    round.instance_variable_set(:@game, game)
+    round.instance_variable_set(:@entities, players)
+    round.instance_variable_set(:@pass_order, players.dup)
+    round.instance_variable_set(:@last_to_act, players[2])
+    expect(round).to receive(:start_entity)
+
+    round.send(:finish_round)
+
+    expect(reshuffled).to be(true)
+    expect(players).to all(satisfy { |player| !player.passed? })
+    expect(round.instance_variable_get(:@pass_order)).to be_empty
+    expect(round.instance_variable_get(:@last_to_act)).to be_nil
   end
 end
