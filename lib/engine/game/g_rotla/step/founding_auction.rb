@@ -50,7 +50,7 @@ module Engine
               actions = ['pass']
               actions.unshift('bid') if entity.cash >= @auction_state.high_bid + FoundingAuctionState::BID_INCREMENT
               actions
-            elsif !@minor_tableau.empty? && entity.cash >= FoundingAuctionState::MIN_BID
+            elsif !stock_trade_started? && !@minor_tableau.empty? && entity.cash >= FoundingAuctionState::MIN_BID
               ['bid']
             else
               []
@@ -74,18 +74,22 @@ module Engine
 
           def process_bid(action)
             reject_targeted_bid!(action)
+            reject_bid_after_stock_trade! unless @auction_state
+            reject_wrong_initiator!(action.entity) unless @auction_state
             validate_cash!(action.entity, action.price)
 
             if @auction_state
               apply_state { @auction_state.bid!(action.entity.id, action.price) }
             else
-              apply_state do
-                @auction_state = FoundingAuctionState.new(
+              new_state = apply_state do
+                FoundingAuctionState.new(
                   player_ids: entities.map(&:id),
                   initiator_id: action.entity.id,
                   price: action.price,
                 )
               end
+              record_stock_action!(action.entity)
+              @auction_state = new_state
             end
             @log << "#{action.entity.name} bids #{format_currency(action.price)} to found a Minor Company"
           end
@@ -151,6 +155,27 @@ module Engine
             return unless targeted
 
             raise GameError, 'A founding bid is for the right to choose a company later'
+          end
+
+          def reject_bid_after_stock_trade!
+            return unless stock_trade_started?
+
+            raise GameError, 'Cannot start a founding auction after trading shares'
+          end
+
+          def reject_wrong_initiator!(entity)
+            return if entity == current_entity
+
+            raise GameError, 'Only the current player may start a founding auction'
+          end
+
+          def record_stock_action!(entity)
+            @round.pass_order.delete(entity) if @round.respond_to?(:pass_order)
+            entity.unpass!
+          end
+
+          def stock_trade_started?
+            @round.respond_to?(:current_actions) && @round.current_actions&.any?
           end
 
           def validate_cash!(player, price)

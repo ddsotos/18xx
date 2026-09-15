@@ -50,11 +50,13 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
   let(:round_class) do
     Class.new do
       attr_reader :entities
-      attr_accessor :entity_index, :pending_adaptive_home
+      attr_accessor :entity_index, :pending_adaptive_home, :current_actions, :pass_order
 
       def initialize(entities, entity_index: 0)
         @entities = entities
         @entity_index = entity_index
+        @current_actions = []
+        @pass_order = []
       end
 
       def goto_entity!(entity)
@@ -93,6 +95,40 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
     expect(step.blocks?).to be(true)
     expect(step.active_entities).to eq([game.players[1]])
     expect(step.actions(game.players[1])).to eq(%w[bid pass])
+  end
+
+  it 'does not start an auction after a share transaction in the same normal turn' do
+    step, game, round = build_step
+    player = game.players.first
+    round.current_actions << Engine::Action::Pass.new(player)
+
+    expect(step.actions(player)).to be_empty
+    expect { step.process_bid(Engine::Action::Bid.new(player, price: 120)) }
+      .to raise_error(Engine::GameError, /after trading shares/)
+    expect(step.auction_state).to be_nil
+  end
+
+  it 'rejects an out-of-turn initiator and clears an earlier normal pass for a legal initiator' do
+    step, game, round = build_step
+    current_player = game.players.first
+    wrong_player = game.players[1]
+
+    expect { step.process_bid(Engine::Action::Bid.new(wrong_player, price: 120)) }
+      .to raise_error(Engine::GameError, /current player/)
+    expect(step.auction_state).to be_nil
+
+    current_player.pass!
+    round.pass_order << current_player
+
+    expect { step.process_bid(Engine::Action::Bid.new(current_player, price: 115)) }
+      .to raise_error(Engine::GameError, /at least/)
+    expect(current_player).to be_passed
+    expect(round.pass_order).to include(current_player)
+
+    step.process_bid(Engine::Action::Bid.new(current_player, price: 120))
+
+    expect(current_player).not_to be_passed
+    expect(round.pass_order).not_to include(current_player)
   end
 
   it 'rejects an unaffordable raise without changing auction state' do

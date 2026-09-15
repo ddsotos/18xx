@@ -19,6 +19,7 @@ describe Engine::Game::GRotLA::Entities do
     expect(described_class::MINOR_TOKENS).to eq([0])
     expect(described_class::MAJOR_TOKENS).to eq([0, 0, 60, 80])
     expect(described_class::CORPORATIONS).to all(satisfy { |corporation| corporation[:shares].sum == 100 })
+    expect(described_class::CORPORATIONS).to all(include(capitalization: :incremental))
   end
 
   it 'assigns one stable ability identity to every Minor Company' do

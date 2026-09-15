@@ -33,6 +33,7 @@ module Engine
             tokens: MINOR_TOKENS,
             float_percent: 40,
             max_ownership_percent: 60,
+            capitalization: :incremental,
             always_market_price: true,
           ).freeze
         end.freeze
@@ -52,6 +53,7 @@ module Engine
             tokens: MAJOR_TOKENS,
             float_percent: 20,
             max_ownership_percent: 60,
+            capitalization: :incremental,
             always_market_price: true,
           ).freeze
         end.freeze

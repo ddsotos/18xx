@@ -62,7 +62,7 @@
 
 | 既定 | RotLAで必要な扱い |
 |---|---|
-| CAPITALIZATION=:full | 落札額全額と追加株の購入代金を会社へ。増資型を検証 |
+| CAPITALIZATION=:full | 使用しない。会社定義を`:incremental`とし、落札額全額と追加株の購入代金を会社へ入れる |
 | SELL_MOVEMENT=:down_share | 通常SRは売却手番ごと同社1回下落 |
 | HOME_TOKEN_TIMING=:operate | 設立時ホーム配置。Adaptiveは選択を挟む |
 | MUST_BUY_TRAIN=:route | 路線の有無にかかわらず列車なしなら購入義務 |
