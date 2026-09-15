@@ -62,6 +62,14 @@ settingsへ保存する。競売は会社を先に指定しないFoundingAuction
 全検証後に行う将来のStock Stepへ残し、この状態オブジェクトでは変更しない。
 minor_tableauを必須化したためsettings schemaは2へ更新し、map manifestの版1とは独立させた。
 
+## 2026-09-15：設立競売Step・財務確定
+
+FoundingAuction Stepを追加し、通常手番のtargetless Bidで競売を開始、競売中だけ後続Stepを遮断する。
+Bid/Pass/ChooseをFoundingAuctionStateへ接続し、会社選択時に全条件を事前検証してから、初期株価設定、
+落札額全額の会社金庫への移動、40%社長証券の移管、会社表の更新を行う。株価は入札額半分以下へ
+切り下げ、黄色90・緑110・紫/灰135のフェーズ上限を適用する。同値株価の会社は既存tokenの下へ
+追加される。Adaptiveは財務確定後にpendingとして残し、ホーム選択を後続Stepへ分離した。
+
 ## 未完了
 
 W01の公式各部品台帳、W02のローカル起動、W03のゲーム登録・実際の固定盤面・

@@ -55,15 +55,24 @@ module Engine
         end
 
         def choose_company!(player_id, company_id, tableau:)
-          raise ArgumentError, 'Auction is not waiting for a company choice' unless @phase == :company_choice
-          raise ArgumentError, 'Only the auction winner may choose a company' unless player_id == winner_id
-          raise ArgumentError, 'Chosen company is not available' unless tableau.front?(company_id)
+          validate_company_choice!(player_id, company_id, tableau: tableau)
 
           tableau.take_front!(company_id)
           @chosen_company_id = company_id.dup
           @phase = :complete
           @current_bidder_id = nil
           company_id
+        end
+
+        # Validate a company choice without consuming the tableau front.  A
+        # Step uses this before moving cash/shares so a malformed Action cannot
+        # leave a partially settled foundation behind.
+        def validate_company_choice!(player_id, company_id, tableau:)
+          raise ArgumentError, 'Auction is not waiting for a company choice' unless @phase == :company_choice
+          raise ArgumentError, 'Only the auction winner may choose a company' unless player_id == winner_id
+          raise ArgumentError, 'Chosen company is not available' unless tableau.front?(company_id)
+
+          true
         end
 
         def to_h
