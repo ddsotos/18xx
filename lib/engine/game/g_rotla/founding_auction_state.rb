@@ -5,7 +5,7 @@ module Engine
     module GRotLA
       # State for auctioning the right to choose an available Minor Company.
       # Cash, share transfers, par price, and Adaptive home selection remain
-      # responsibilities of the future stock-round Step.
+      # responsibilities of the stock-round Steps.
       class FoundingAuctionState
         MIN_BID = 120
         BID_INCREMENT = 5

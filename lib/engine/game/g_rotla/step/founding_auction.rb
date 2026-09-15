@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../../../step/base'
+require_relative '../adaptive_home'
+require_relative '../entities'
 require_relative '../founding_auction_state'
 require_relative '../minor_tableau'
 
@@ -118,7 +120,7 @@ module Engine
             corporation.floated = true
             apply_state { @auction_state.choose_company!(winner.id, company_id, tableau: @minor_tableau) }
 
-            @round.pending_adaptive_home = corporation if company_id == 'ADA'
+            @round.pending_adaptive_home = corporation if company_id == Entities::ADAPTIVE_ID
             @log << "#{winner.name} founds #{corporation.full_name} for #{format_currency(@auction_state.high_bid)} " \
                     "at #{format_currency(share_price.price)}"
             @auction_state = nil
@@ -185,6 +187,10 @@ module Engine
                                     corporation.presidents_share.owner == corporation
             raise GameError, 'Chosen company does not have its unowned 40% president share' unless valid_president_share
             raise GameError, 'No phase-allowed share price exists for the winning bid' unless share_price
+
+            if company_id == Entities::ADAPTIVE_ID && GRotLA::AdaptiveHome.legal_cities(@game, corporation).empty?
+              raise GameError, 'Adaptive has no legal home city'
+            end
 
             validate_cash!(winner, @auction_state.high_bid)
           end

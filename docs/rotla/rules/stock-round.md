@@ -17,6 +17,19 @@
 | stock_trade | 通常手番の個人 | 売却群を確定→任意で1株購入→終了 | 次の個人へ |
 | stock_end | 自動 | 売り切れ判定・次SR優先権更新 | OR1へ |
 
+### Adaptiveホーム選択の実装契約
+
+`FoundingAuction`がAdaptiveを設立した後、`round.pending_adaptive_home`に会社を
+保持し、後続の`Step::AdaptiveHome`がその間の通常SR行為を遮断する。会社の所有者（初期社長）だけが
+`Engine::Action::Choose`で都市IDを選ぶ。都市IDはEngineの`City#id`（タイルIDと都市index）を使い、
+座標をActionへ直接埋め込まない。
+
+RotLAのゲームクラスは`rotla_adaptive_home_cities(corporation)`を実装し、首都と固有会社の都市を
+除いた「基本都市」の`Engine::Part::City`配列を返す。このフックがマップ固有の都市分類を担い、Stepは
+その配列に対して都市・タイル予約、通常・追加トークンがなく、空きスロットがあることを再検証する。線路やタイル上の既存ルートは
+候補から除外しない。選択確定時は未使用の会社トークンを`City#place_token(..., free: true)`で配置し、
+会社のホーム座標を更新して`pending_adaptive_home`をクリアする。
+
 競売辞退はその競売から離脱するだけ。通常SRのpassとは別管理する。
 全員が通常手番で連続passしたら終了。途中の取引・競売で連続pass数をリセットする。
 初回SRに会社が1つも設立されなかった場合の再シャッフル・SR再開は公式例外として実装する。

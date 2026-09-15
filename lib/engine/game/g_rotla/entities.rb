@@ -10,6 +10,7 @@ module Engine
         MAJOR_SHARES = ([20] + Array.new(8, 10)).freeze
         MINOR_TOKENS = [0].freeze
         MAJOR_TOKENS = [0, 0, 60, 80].freeze
+        ADAPTIVE_ID = 'ADA'.freeze
 
         MINOR_COMPANIES = [
           { sym: 'SPA', name: 'Spacious', ability_id: :spacious, color: '#8bcf7b', text_color: 'black' },

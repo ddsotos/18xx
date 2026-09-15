@@ -8,6 +8,7 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
   let(:game_class) do
     Class.new do
       attr_reader :players, :corporations, :stock_market, :share_pool, :phase, :log, :rotla_setup_config, :bank
+      attr_accessor :adaptive_home_candidates
 
       def initialize(columns, colors: [:yellow])
         @log = []
@@ -21,6 +22,9 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
         @share_pool = Engine::SharePool.new(self)
         @phase = Struct.new(:tiles).new(colors)
         @rotla_setup_config = Struct.new(:data) { def to_h = data }.new({ 'minor_tableau' => columns })
+        tile = Engine::Tile.for('57', index: 99)
+        Engine::Hex.new('Z99', tile: tile)
+        @adaptive_home_candidates = tile.cities
       end
 
       def corporation_by_id(id)
@@ -29,6 +33,14 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
 
       def format_currency(amount)
         "#{amount}金"
+      end
+
+      def rotla_adaptive_home_cities(_corporation)
+        @adaptive_home_candidates
+      end
+
+      def city_by_id(id)
+        @adaptive_home_candidates.find { |city| city.id == id }
       end
     end
   end
@@ -163,5 +175,22 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
     resolve_for(step, game, initiator_index: 0, bid: 120, company_id: 'SPA')
     resolve_for(step, game, initiator_index: 1, bid: 120, company_id: 'ADA')
     expect(step.pending_adaptive_home).to eq(game.corporation_by_id('ADA'))
+  end
+
+  it 'rejects Adaptive before financial settlement when no legal home remains' do
+    step, game, = build_step
+    resolve_for(step, game, initiator_index: 0, bid: 120, company_id: 'SPA')
+    game.adaptive_home_candidates = []
+    player = game.players[1]
+    step.process_bid(Engine::Action::Bid.new(player, price: 120))
+    game.players.rotate(2).first(3).each { |other_player| step.process_pass(Engine::Action::Pass.new(other_player)) }
+    corporation = game.corporation_by_id('ADA')
+    before = [player.cash, corporation.cash, corporation.percent_of(corporation), step.minor_tableau.snapshot]
+
+    expect { step.process_choose(Engine::Action::Choose.new(player, choice: 'ADA')) }
+      .to raise_error(Engine::GameError, /no legal home/)
+    expect([player.cash, corporation.cash, corporation.percent_of(corporation), step.minor_tableau.snapshot])
+      .to eq(before)
+    expect(corporation.share_price).to be_nil
   end
 end
