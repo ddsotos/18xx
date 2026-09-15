@@ -15,12 +15,13 @@ describe Engine::Game::GRotLA::FixedMap do
   let(:settings) do
     {
       'rotla' => {
-        'schema_version' => 1,
+        'schema_version' => 2,
         'ruleset' => 'en-second-printing',
         'mode' => 'long',
         'player_count' => 4,
         'map_manifest_version' => 1,
         'map_id' => 'synthetic',
+        'minor_tableau' => [%w[SPA ADA BRI OVN], %w[TUN RES EM AGR], %w[NP XPN XPR SUB]],
         'setup_journal' => [],
         'map_manifest' => {
           'map_id' => 'synthetic',

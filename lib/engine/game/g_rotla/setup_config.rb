@@ -1,18 +1,22 @@
 # frozen_string_literal: true
 
+require_relative 'minor_tableau'
+
 module Engine
   module Game
     module GRotLA
       # Structural validation only: the official component catalog must also be checked before starting a game.
       class SetupConfig
-        VERSION = 1
+        VERSION = 2
+        MAP_MANIFEST_VERSION = 1
         RULESET = 'en-second-printing'
-        FIELDS = %w[schema_version ruleset mode player_count map_manifest_version map_id map_manifest setup_journal].freeze
+        FIELDS = %w[
+          schema_version ruleset mode player_count map_manifest_version map_id map_manifest minor_tableau setup_journal
+        ].freeze
 
         def self.from_settings(settings)
-          unless settings.is_a?(Hash) && settings.key?('rotla')
-            raise ArgumentError, 'Missing settings.rotla'
-          end
+          valid_settings = settings.is_a?(Hash) && settings.key?('rotla')
+          raise ArgumentError, 'Missing settings.rotla' unless valid_settings
 
           new(settings['rotla'])
         end
@@ -69,7 +73,8 @@ module Engine
         end
 
         def id!(value, label)
-          raise ArgumentError, "#{label} must be a nonempty string" unless value.is_a?(String) && !value.strip.empty?
+          valid_id = value.is_a?(String) && !value.strip.empty?
+          raise ArgumentError, "#{label} must be a nonempty string" unless valid_id
         end
 
         def validate!
@@ -79,29 +84,28 @@ module Engine
             'ruleset' => RULESET,
             'mode' => 'long',
             'player_count' => 4,
-            'map_manifest_version' => VERSION,
+            'map_manifest_version' => MAP_MANIFEST_VERSION,
           }.each do |key, expected|
             raise ArgumentError, "Unsupported RotLA #{key}" unless @data[key] == expected
           end
           id!(@data['map_id'], 'map_id')
+          MinorTableau.new(columns: @data['minor_tableau'])
           unless @data['setup_journal'] == []
             raise ArgumentError, 'Only finalized fixed maps without a setup journal are supported'
           end
 
           manifest = @data['map_manifest']
           fields!(manifest, %w[map_id map_version placements projects], 'map_manifest')
-          unless manifest['map_id'] == @data['map_id'] && manifest['map_version'] == VERSION
-            raise ArgumentError, 'Map manifest identity/version does not match settings'
-          end
+          valid_manifest = manifest['map_id'] == @data['map_id'] && manifest['map_version'] == MAP_MANIFEST_VERSION
+          raise ArgumentError, 'Map manifest identity/version does not match settings' unless valid_manifest
 
           placements!(manifest['placements'])
           projects!(manifest['projects'])
         end
 
         def placements!(placements)
-          unless placements.is_a?(Array) && !placements.empty?
-            raise ArgumentError, 'Map placements must be a nonempty array'
-          end
+          valid_placements = placements.is_a?(Array) && !placements.empty?
+          raise ArgumentError, 'Map placements must be a nonempty array' unless valid_placements
 
           ids = []
           placements.each do |placement|
@@ -111,13 +115,12 @@ module Engine
 
             ids << placement['copy_id']
             origin = placement['origin']
-            unless origin.is_a?(Array) && origin.size == 2 && origin.all? { |n| n.is_a?(Integer) }
-              raise ArgumentError, 'Placement origin must contain two integers'
-            end
+            valid_origin = origin.is_a?(Array) && origin.size == 2 && origin.all? { |n| n.is_a?(Integer) }
+            raise ArgumentError, 'Placement origin must contain two integers' unless valid_origin
+
             rotation = placement['rotation']
-            unless rotation.is_a?(Integer) && (0..5).cover?(rotation)
-              raise ArgumentError, 'Placement rotation must be an integer from 0 to 5'
-            end
+            valid_rotation = rotation.is_a?(Integer) && (0..5).cover?(rotation)
+            raise ArgumentError, 'Placement rotation must be an integer from 0 to 5' unless valid_rotation
           end
         end
 

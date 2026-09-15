@@ -6,12 +6,13 @@ describe Engine::Game::GRotLA::SetupConfig do
   # Artificial structural example, not an official map or a playable full-game save.
   let(:data) do
     {
-      'schema_version' => 1,
+      'schema_version' => 2,
       'ruleset' => 'en-second-printing',
       'mode' => 'long',
       'player_count' => 4,
       'map_manifest_version' => 1,
       'map_id' => 'synthetic-test',
+      'minor_tableau' => [%w[SPA ADA BRI OVN], %w[TUN RES EM AGR], %w[NP XPN XPR SUB]],
       'map_manifest' => {
         'map_id' => 'synthetic-test',
         'map_version' => 1,
@@ -31,7 +32,7 @@ describe Engine::Game::GRotLA::SetupConfig do
   end
 
   it 'owns a snapshot independent of input and exported nested values' do
-    data['map_manifest']['placements'][0]['copy_id'] = 'test-1'.dup
+    data['map_manifest']['placements'][0]['copy_id'] = +'test-1'
     config = described_class.new(data)
     data['map_manifest']['placements'][0]['origin'][0] = 99
     data['map_manifest']['placements'][0]['copy_id'].replace('changed')
@@ -44,8 +45,11 @@ describe Engine::Game::GRotLA::SetupConfig do
   end
 
   {
-    'schema_version' => 2, 'ruleset' => 'first-printing', 'mode' => 'short',
-    'player_count' => 3, 'map_manifest_version' => 2,
+    'schema_version' => 1,
+    'ruleset' => 'first-printing',
+    'mode' => 'short',
+    'player_count' => 3,
+    'map_manifest_version' => 2,
   }.each do |field, invalid|
     it "rejects unsupported #{field}" do
       data[field] = invalid
@@ -77,12 +81,19 @@ describe Engine::Game::GRotLA::SetupConfig do
 
   it 'rejects mismatched map identities' do
     data['map_manifest']['map_id'] = 'different-map'
-    expect { described_class.new(data) }.to raise_error(ArgumentError, /identity\/version/)
+    expect { described_class.new(data) }.to raise_error(ArgumentError, %r{identity/version})
   end
 
   it 'rejects unfinished setup histories' do
     data['setup_journal'] = [{ 'type' => 'place' }]
     expect { described_class.new(data) }.to raise_error(ArgumentError, /finalized fixed maps/)
+  end
+
+  it 'rejects an incomplete or duplicate Minor Company tableau' do
+    data['minor_tableau'][0].pop
+    expect { described_class.new(data) }.to raise_error(ArgumentError, /Minor tableau/)
+    data['minor_tableau'][0] << data['minor_tableau'][1][0]
+    expect { described_class.new(data) }.to raise_error(ArgumentError, /every Long Game Minor Company/)
   end
 
   it 'rejects missing placements and duplicate physical copies' do

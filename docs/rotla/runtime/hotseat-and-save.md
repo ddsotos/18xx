@@ -24,13 +24,14 @@
 {
   "settings": {
     "rotla": {
-      "schema_version": 1,
+      "schema_version": 2,
       "ruleset": "en-second-printing",
       "mode": "long",
       "player_count": 4,
       "map_manifest_version": 1,
       "map_id": "long4-verified-01",
       "map_manifest": {},
+      "minor_tableau": [["SPA", "ADA", "BRI", "OVN"], ["TUN", "RES", "EM", "AGR"], ["NP", "XPN", "XPR", "SUB"]],
       "setup_journal": []
     }
   }
