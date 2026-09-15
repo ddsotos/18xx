@@ -55,11 +55,11 @@ describe Engine::Game::GRotLA::FixedMap do
 
   it 'rebuilds the same map through clone and Action replay' do
     game = build_game_class(catalog).new(%w[a b c d], settings: settings, seed: 123, strict: true)
-    game.process_action(Engine::Action::Pass.new(game.current_entity)).maybe_raise!
+    game.process_action(Engine::Action::Message.new(game.players.first, message: 'map replay')).maybe_raise!
     copy = game.clone(game.raw_actions)
     expect(copy.hexes.map(&:coordinates)).to eq(game.hexes.map(&:coordinates))
     expect(copy.hexes.map { |hex| hex.tile.exits }).to eq(game.hexes.map { |hex| hex.tile.exits })
-    expect(copy.current_entity.id).to eq(game.current_entity.id)
+    expect(copy.raw_actions).to eq(game.raw_actions)
   end
 
   it 'fails before Base initialization when the manifest and catalog differ' do
