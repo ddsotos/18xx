@@ -3,6 +3,7 @@
 require_relative 'setup_config'
 require_relative 'map_geometry'
 require_relative 'engine_map'
+require_relative '../../tile'
 
 module Engine
   module Game
@@ -10,6 +11,8 @@ module Engine
       # Compile placements against a supplied physical-tile catalog. Catalog codes
       # use Engine tile DSL edges at rotation zero, not axial direction indices.
       class MapBuilder
+        CITY_TYPES = %w[basic capital company].freeze
+
         def initialize(config, catalog:)
           manifest = config.to_h.fetch('map_manifest')
           raise ArgumentError, 'Capital project effects are not implemented yet' unless manifest['projects'].empty?
@@ -46,6 +49,26 @@ module Engine
           hexes
         end
 
+        # Resolve semantic map-city metadata only after Base has constructed the
+        # actual Engine::Part::City objects. Keeping this classification in the
+        # physical catalog makes it survive map placement and rotation without
+        # inferring rules from generated Engine coordinates.
+        def cities_by_type(game, type)
+          type = type.to_s
+          raise ArgumentError, "Unknown RotLA city type: #{type}" unless CITY_TYPES.include?(type)
+
+          @cells.flat_map do |cell|
+            next [] unless cell[:city_type] == type
+
+            hex = game.hex_by_id(cell[:coordinate])
+            raise ArgumentError, "Compiled RotLA hex #{cell[:coordinate]} is missing" unless hex
+
+            # Classification belongs to the map hex rather than a preprinted
+            # city ordinal, so a later tile upgrade returns its current cities.
+            hex.tile.cities
+          end
+        end
+
         private
 
         def expand(placement, definition)
@@ -60,11 +83,20 @@ module Engine
             valid_cell = valid_color && cell['code'].is_a?(String)
             raise ArgumentError, 'Catalog hexes require a supported color and tile DSL code' unless valid_cell
 
+            city_type = cell['city_type']
+            city_count = Engine::Tile.decode(cell['code']).count(&:city?)
+            type_matches_city = city_count.zero? ? city_type.nil? : CITY_TYPES.include?(city_type)
+            valid_city_type = cell.key?('city_type') && type_matches_city
+            unless valid_city_type
+              raise ArgumentError, 'Catalog city_type must classify each city hex as basic, capital, or company'
+            end
+
             {
               axial: axial,
               color: cell['color'].to_sym,
               code: rotate_static_edges(cell['code'], placement['rotation']),
               rotation: placement['rotation'],
+              city_type: city_type&.dup&.freeze,
             }
           end
         end

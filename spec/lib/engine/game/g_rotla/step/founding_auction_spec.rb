@@ -7,7 +7,8 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
 
   let(:game_class) do
     Class.new do
-      attr_reader :players, :corporations, :stock_market, :share_pool, :phase, :log, :rotla_setup_config, :bank
+      attr_reader :players, :corporations, :stock_market, :share_pool, :phase, :log, :rotla_minor_tableau,
+                  :rotla_setup_config, :bank
       attr_accessor :adaptive_home_candidates
 
       def initialize(columns, colors: [:yellow])
@@ -22,6 +23,7 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
         @share_pool = Engine::SharePool.new(self)
         @phase = Struct.new(:tiles).new(colors)
         @rotla_setup_config = Struct.new(:data) { def to_h = data }.new({ 'minor_tableau' => columns })
+        @rotla_minor_tableau = Engine::Game::GRotLA::MinorTableau.new(columns: columns)
         tile = Engine::Tile.for('57', index: 99)
         Engine::Hex.new('Z99', tile: tile)
         @adaptive_home_candidates = tile.cities
@@ -168,6 +170,17 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
     resolve_for(step, game, initiator_index: 1, bid: 120, company_id: 'TUN')
     price = game.stock_market.par_prices.find { |share_price| share_price.price == 60 }
     expect(price.corporations.map(&:id)).to eq(%w[SPA TUN])
+  end
+
+  it 'keeps the tableau on the game when a later stock round creates a new step' do
+    step, game, round = build_step
+    resolve_for(step, game, initiator_index: 0, bid: 120, company_id: 'SPA')
+
+    later_step = described_class.new(game, round)
+    later_step.setup
+
+    expect(later_step.minor_tableau).to equal(game.rotla_minor_tableau)
+    expect(later_step.minor_tableau.front_ids).to eq(%w[ADA TUN NP])
   end
 
   it 'defers Adaptive home placement after financial settlement' do

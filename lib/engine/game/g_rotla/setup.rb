@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require_relative 'minor_tableau'
 require_relative 'setup_config'
 
 module Engine
@@ -8,13 +9,16 @@ module Engine
     module GRotLA
       # Included by the future RotLA Game; leaves other titles' construction and replay unchanged.
       module Setup
-        attr_reader :rotla_setup_config
+        attr_reader :rotla_minor_tableau, :rotla_setup_config
 
         def initialize(names, settings: nil, **kwargs)
           @rotla_setup_config = SetupConfig.from_settings(settings)
           valid_players = names.respond_to?(:size) && names.size == @rotla_setup_config.to_h['player_count']
           raise ArgumentError, 'RotLA requires exactly four players' unless valid_players
 
+          @rotla_minor_tableau = MinorTableau.new(
+            columns: @rotla_setup_config.to_h.fetch('minor_tableau'),
+          )
           @rotla_settings = JSON.parse(JSON.generate(settings))
           @rotla_settings['rotla'] = @rotla_setup_config.to_h
           @rotla_clone_options = kwargs.except(:actions, :at_action)

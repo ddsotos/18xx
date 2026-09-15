@@ -30,6 +30,12 @@ module Engine
         def init_hexes(companies, corporations)
           @rotla_map_builder.apply_rotations!(super)
         end
+
+        # Adaptive may choose only a basic city. Dynamic availability (tokens,
+        # reservations, and slots) remains the responsibility of AdaptiveHome.
+        def rotla_adaptive_home_cities(_corporation)
+          @rotla_map_builder.cities_by_type(self, :basic)
+        end
       end
     end
   end

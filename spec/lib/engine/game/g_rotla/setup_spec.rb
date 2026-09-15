@@ -43,6 +43,7 @@ describe Engine::Game::GRotLA::Setup do
 
   it 'makes validated settings available before engine hex/graph initialization' do
     expect(game.config_at_hex_init).to eq(settings['rotla'])
+    expect(game.rotla_minor_tableau.snapshot).to eq(settings['rotla']['minor_tableau'])
     expect(game.hexes).not_to be_empty
     expect(game.graph).to be_a(Engine::Graph)
   end
@@ -76,6 +77,8 @@ describe Engine::Game::GRotLA::Setup do
     expect(copy.rotla_setup_config.to_h).to eq(original)
     expect(copy.rotla_settings['extra']['nested']).to eq(['preserved'])
     expect(copy.rotla_setup_config).not_to equal(game.rotla_setup_config)
+    expect(copy.rotla_minor_tableau).not_to equal(game.rotla_minor_tableau)
+    expect(copy.rotla_minor_tableau.snapshot).to eq(game.rotla_minor_tableau.snapshot)
     expect(copy.use_engine_v2).to be(true)
   end
 

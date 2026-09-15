@@ -17,9 +17,10 @@ module Engine
           attr_reader :auction_state, :minor_tableau
 
           def setup
-            @minor_tableau ||= MinorTableau.new(
-              columns: @game.rotla_setup_config.to_h.fetch('minor_tableau'),
-            )
+            @minor_tableau = @game.rotla_minor_tableau
+            return if @minor_tableau.is_a?(MinorTableau)
+
+            raise GameError, 'RotLA game must own a persistent MinorTableau'
           end
 
           def description

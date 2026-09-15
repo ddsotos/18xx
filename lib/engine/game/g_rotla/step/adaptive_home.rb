@@ -12,8 +12,8 @@ module Engine
         #
         # The map-specific game hook returns basic Engine::Part::City objects;
         # this step deliberately does not contain map coordinates or guessed
-        # city IDs. Choices are serialized using City#id, which is stable as
-        # the tile ID and city index (for example, "X7-0-0").
+        # city IDs. Choices are serialized using City#id, the engine-standard
+        # tile ID and tile-part index (for example, "X7-0-0").
         class AdaptiveHome < Engine::Step::Base
           ACTIONS = %w[choose].freeze
 

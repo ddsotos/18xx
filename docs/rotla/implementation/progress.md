@@ -76,6 +76,15 @@ AdaptiveHome Stepを追加し、初期社長だけがEngine標準の都市IDをC
 先頭hubをCity APIで置き、ホーム座標とグラフを更新する。Adaptive選択前にも候補の存在を検証するため、
 落札金・株・株価・会社表を変更した後にホーム不能で停止することはない。
 
+物理マップcatalogの各ローカルhexに`city_type`（`basic` / `capital` / `company` / 都市なしの`nil`）を
+必須化した。MapBuilderは配置・回転後の座標と分類を保持し、FixedMapの
+`rotla_adaptive_home_cities`は`basic` hex上にある現在タイルのCityを返す。これにより既設線路や
+タイルアップグレードを都市分類と混同しない。首都プロジェクト効果と実GameのStock Round配線は未完了。
+
+Stock Round配線前の状態寿命も修正した。MinorTableauはFoundingAuction Stepごとの一時状態ではなく
+Setupが生成するGame所有状態とし、後続SRの新しいStepも同じ除去済み表を参照する。新規Game・clone・
+Action再生では初期settingsから表を作り、設立Action列によって同じ状態へ戻す。
+
 ## 未完了
 
 W01の公式各部品台帳、W02のローカル起動、W03のゲーム登録・実際の固定盤面・

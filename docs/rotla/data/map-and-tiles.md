@@ -26,7 +26,7 @@ Adaptiveの実際のホーム選択は設立時なので、ここで勝手に確
 |---|---|
 | タイル種別 | type_id, local_hexes, source_ref |
 | 物理個体 | copy_id, type_id。複数枚の同型タイルを区別 |
-| 各ローカルhex | axial[q,r], terrain, city, paths, boundary, home_ref |
+| 各ローカルhex | axial[q,r], terrain, city_type, paths, boundary, home_ref |
 | 配置 | copy_id, origin[q,r], rotation(0..5) |
 | プロジェクト適用 | project_copy_id, target_city_id, effect_type |
 | 完成マップ | map_id, map_version, placements, projects |
@@ -35,6 +35,13 @@ Adaptiveの実際のホーム選択は設立時なので、ここで勝手に確
 定義には図柄・相対位置だけを持ち、原点と回転は配置情報に置く。
 マップIDや座標は説明例であり、未検証の公式盤面を作成済みとしない。
 固定シナリオの配列・Hashをゲーム間で共有して破壊しない。
+
+`city_type`は都市hexを`basic`、`capital`、`company`のいずれかに分類し、都市のないhexでは
+`nil`とする。都市番号ではなくhexに属する意味情報なので、タイルがアップグレードされた後も
+そのhex上の現在の`Engine::Part::City`全件へ適用する。線路が印刷済みかどうかは都市分類に
+影響しない。Adaptiveのホーム候補は`basic`都市だけを起点にし、空き・予約・トークンの動的条件は
+設立時に別途検査する。座標名から首都や会社都市を推測しない。首都プロジェクトによる分類変更は
+プロジェクト効果の実装時に加える。
 
 ## 3. 座標・回転
 

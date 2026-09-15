@@ -21,7 +21,7 @@
 
 `FoundingAuction`がAdaptiveを設立した後、`round.pending_adaptive_home`に会社を
 保持し、後続の`Step::AdaptiveHome`がその間の通常SR行為を遮断する。会社の所有者（初期社長）だけが
-`Engine::Action::Choose`で都市IDを選ぶ。都市IDはEngineの`City#id`（タイルIDと都市index）を使い、
+`Engine::Action::Choose`で都市IDを選ぶ。都市IDはEngineの`City#id`（タイルIDとtile part index）を使い、
 座標をActionへ直接埋め込まない。
 
 RotLAのゲームクラスは`rotla_adaptive_home_cities(corporation)`を実装し、首都と固有会社の都市を
@@ -29,6 +29,10 @@ RotLAのゲームクラスは`rotla_adaptive_home_cities(corporation)`を実装�
 その配列に対して都市・タイル予約、通常・追加トークンがなく、空きスロットがあることを再検証する。線路やタイル上の既存ルートは
 候補から除外しない。選択確定時は未使用の会社トークンを`City#place_token(..., free: true)`で配置し、
 会社のホーム座標を更新して`pending_adaptive_home`をクリアする。
+
+固定マップでは`FixedMap`がこのフックを提供する。物理マップcatalogのhex単位`city_type`を使い、
+`basic`に分類されたhex上の現在タイルの都市を返すため、設立前の合法なタイルアップグレードでも
+preprinted tileの都市番号には依存しない。首都プロジェクト効果による分類変更は未実装である。
 
 競売辞退はその競売から離脱するだけ。通常SRのpassとは別管理する。
 全員が通常手番で連続passしたら終了。途中の取引・競売で連続pass数をリセットする。

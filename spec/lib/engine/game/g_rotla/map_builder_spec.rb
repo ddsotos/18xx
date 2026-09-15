@@ -25,9 +25,24 @@ describe Engine::Game::GRotLA::MapBuilder do
   let(:catalog) do
     {
       'piece' => [
-        { 'axial' => [0, 0], 'color' => 'yellow', 'code' => 'city=revenue:20;path=a:5,b:_0' },
-        { 'axial' => [1, 0], 'color' => 'yellow', 'code' => 'city=revenue:30;path=a:2,b:_0' },
-        { 'axial' => [0, 1], 'color' => 'white', 'code' => 'border=edge:5,type:impassable;stub=edge:4' },
+        {
+          'axial' => [0, 0],
+          'color' => 'yellow',
+          'code' => 'city=revenue:20;path=a:5,b:_0',
+          'city_type' => 'basic',
+        },
+        {
+          'axial' => [1, 0],
+          'color' => 'yellow',
+          'code' => 'city=revenue:30;path=a:2,b:_0',
+          'city_type' => 'capital',
+        },
+        {
+          'axial' => [0, 1],
+          'color' => 'white',
+          'code' => 'border=edge:5,type:impassable;stub=edge:4',
+          'city_type' => nil,
+        },
       ],
     }
   end
@@ -58,6 +73,37 @@ describe Engine::Game::GRotLA::MapBuilder do
     exported = builder.game_hexes
     exported[:yellow].values.first.replace('city=revenue:999')
     expect(builder.game_hexes).to eq(expected)
+  end
+
+  it 'resolves rotated city classifications to the constructed Engine cities' do
+    map = builder
+    harness = Class.new(Engine::Game::G1889::Game) do
+      define_method(:game_hexes) { map.game_hexes }
+      define_method(:init_companies) { |_players| [] }
+      define_method(:init_corporations) { |_market| [] }
+      define_method(:init_hexes) { |companies, corporations| map.apply_rotations!(super(companies, corporations)) }
+    end
+    game = harness.new(%w[a b c d], seed: 123)
+
+    expect(map.cities_by_type(game, :basic)).to eq([game.hexes[0].tile.cities.first])
+    expect(map.cities_by_type(game, :capital)).to eq([game.hexes[1].tile.cities.first])
+    expect(map.cities_by_type(game, :company)).to eq([])
+
+    upgraded = Engine::Tile.for('14', index: 99)
+    game.hexes[0].tile = upgraded
+    expect(map.cities_by_type(game, :basic)).to eq(upgraded.cities)
+  end
+
+  it 'requires an explicit legal classification for every city' do
+    catalog['piece'][0].delete('city_type')
+    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /classify each city hex/)
+
+    catalog['piece'][0]['city_type'] = 'unknown'
+    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /classify each city hex/)
+
+    catalog['piece'][0]['city_type'] = 'basic'
+    catalog['piece'][2]['city_type'] = 'basic'
+    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /classify each city hex/)
   end
 
   it 'rejects missing and unused physical copies' do
@@ -92,6 +138,7 @@ describe Engine::Game::GRotLA::MapBuilder do
 
   it 'rejects rotated partitions until their vertex geometry is implemented' do
     catalog['piece'][0]['code'] = 'partition=a:0,b:3,type:water'
+    catalog['piece'][0]['city_type'] = nil
     expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /partition geometry/)
   end
 end
