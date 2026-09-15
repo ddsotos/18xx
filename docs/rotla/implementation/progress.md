@@ -91,9 +91,13 @@ Action再生では初期settingsから表を作り、設立Action列によって
 株価を下げる。株取引後の競売開始もUIとAction処理の両方で拒否する。会社定義は追加株代金を
 会社へ入れる`incremental`資本方式にした。
 
-Stock RoundのStep順は`StockRoundSteps`に集約した。実Gameが未実装のため、`Game#stock_round`から
-この配列を使う接続、SR終了時の小会社を含む売り切れ株価上昇、連続passと優先権の最終処理は未完了である。
-実Gameでは証券上限表示も無効化する。
+Stock RoundのStep順は`StockRoundSteps`に集約し、`StockRound`モジュールの`Game#stock_round`から
+RotLA専用`Round::Stock`へ渡す。専用Roundは浮動済みの小会社・大会社をSR終了時の処理対象にし、
+全株が個人所有なら1段階上昇させる。証券上限はGame APIでも非表示・無制限とした。競売の各Bidは
+通常passを解除し、最後の非pass行為として記録する。
+
+具体的なGameクラスへのmodule include、初回SRで会社が設立されなかった場合の会社表再編、
+連続passと次SR優先権のfixture確認は未完了である。
 
 ## 未完了
 

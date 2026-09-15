@@ -50,7 +50,7 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
   let(:round_class) do
     Class.new do
       attr_reader :entities
-      attr_accessor :entity_index, :pending_adaptive_home, :current_actions, :pass_order
+      attr_accessor :entity_index, :pending_adaptive_home, :current_actions, :pass_order, :last_to_act
 
       def initialize(entities, entity_index: 0)
         @entities = entities
@@ -129,6 +129,22 @@ describe Engine::Game::GRotLA::Step::FoundingAuction do
 
     expect(current_player).not_to be_passed
     expect(round.pass_order).not_to include(current_player)
+    expect(round.last_to_act).to eq(current_player)
+  end
+
+  it 'clears an earlier normal pass when that player raises the auction bid' do
+    step, game, round = build_step
+    initiator = game.players.first
+    raiser = game.players[1]
+    step.process_bid(Engine::Action::Bid.new(initiator, price: 120))
+    raiser.pass!
+    round.pass_order << raiser
+
+    step.process_bid(Engine::Action::Bid.new(raiser, price: 125))
+
+    expect(raiser).not_to be_passed
+    expect(round.pass_order).not_to include(raiser)
+    expect(round.last_to_act).to eq(raiser)
   end
 
   it 'rejects an unaffordable raise without changing auction state' do

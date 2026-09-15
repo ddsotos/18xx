@@ -80,6 +80,7 @@ module Engine
 
             if @auction_state
               apply_state { @auction_state.bid!(action.entity.id, action.price) }
+              record_stock_action!(action.entity)
             else
               new_state = apply_state do
                 FoundingAuctionState.new(
@@ -171,6 +172,7 @@ module Engine
 
           def record_stock_action!(entity)
             @round.pass_order.delete(entity) if @round.respond_to?(:pass_order)
+            @round.last_to_act = entity if @round.respond_to?(:last_to_act=)
             entity.unpass!
           end
 

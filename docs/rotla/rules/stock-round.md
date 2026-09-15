@@ -96,12 +96,15 @@ RotLAには証券枚数上限がないため、Engine共通のcert limitは購�
 実Gameの`stock_round`は`StockRoundSteps.steps`を渡す。順序は
 `FoundingAuction → AdaptiveHome → StockTrade`で固定し、前二者が待機状態でないときだけ
 通常株取引がblocking Stepになる。
+`StockRound`モジュールはこの生成処理と、証券上限非表示・無制限値をGameへ提供する。
 
 ## 4. 株価列とSR終了
 
 株価列の順番をEngineの市場トークン配列で一元管理する案とする。
 全株が個人所有なら1段階上昇し、移動先の列末尾へ入る。
 会社自己保有またはプール保有があれば売り切れではない。
+Engine標準のStock Roundは`:minor`をSR終了時の株価処理から除外するため、RotLA専用
+`Round::Stock`は浮動済みの小会社・大会社を両方対象にする。
 次SR優先権は最後の非pass行為に従い、競売発起人/落札者の扱いを公式例とfixtureで照合する。
 競売後の通常手番復帰は前節の確定規則で実装する。
 
