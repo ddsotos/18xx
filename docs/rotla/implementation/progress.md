@@ -19,19 +19,30 @@ to_hが成功しても、公式の全タイル・列車・都市の照合や盤�
 外部の公式部品台帳と照合する処理は次工程で追加する。
 
 MapGeometryの方向番号は内部axial座標用であり、Engine::Hexの辺番号ではない。
-変換adapter、印刷線路の回転、地形・黒境界、首都効果の適用は未実装。
+EngineMapでflat layoutの倍精度座標・辺番号へ変換する。MapBuilderは物理タイル台帳と配置から
+game_hexes形式を生成し、経路・border・stubを初期化中に回転する。回転partitionは明示的に拒否する。
+地形・黒境界の合法性と首都効果の適用は未実装。
 RSpec内の盤面は人工的な入力例であり、公式の固定マップではない。
+
+## 2026-09-15：エンジン接続・保存複製
+
+Setupモジュールを追加し、Base初期化より先に設定と実プレイヤー数を検証する。
+Game.loadのsettings転送、生成されたseed、engine v2設定、Action再生、clone、Undoで
+同じRotLA設定が維持されることを実際のGame::Base派生クラスで確認した。
+
+人工3ヘックスを既存Engine::Hexへ変換し、回転後のpath・border・stub、隣接、Graph生成を確認した。
+追加分を含むRotLA対象RSpecは52 examples、0 failures。変更6ファイルのRuboCopは違反0件。
+Solの設計レビューとLunaのEngineMap実装を統合した。ブラウザ操作と全体compile_allは未確認。
 
 ## 未完了
 
 W01の公式各部品台帳、W02のローカル起動、W03のゲーム登録・実際の固定盤面・
-Game.load/clone接続、株式/運営/合併/能力/終局/UIを引き続き実装する。
+株式/運営/合併/能力/終局/UIを引き続き実装する。
 今回のコードは独立した基盤で、RotLAはまだゲーム一覧から遊べない。
 
-実行環境が利用できないため、ローカルRuby/Opal/ブラウザ検証は未実行。
 既存GitHub Actionsを利用するため、masterをbaseとした[draft PR #1](https://github.com/ddsotos/18xx/pull/1)を作成した。
 既存CIのPR対象パターンに合わせたもので、マージは行っていない。
-CI結果はPRのChecksを参照し、成功が確認できるまではテスト通過と扱わない。
+既存基盤テストはユーザー側で通過済み。今回の追加は上記の対象テスト結果も記録した。
 
 実行環境復旧後の対象テスト：
 
