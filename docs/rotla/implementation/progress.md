@@ -34,6 +34,10 @@ Game.loadのsettings転送、生成されたseed、engine v2設定、Action再�
 追加分を含むRotLA対象RSpecは52 examples、0 failures。変更6ファイルのRuboCopは違反0件。
 Solの設計レビューとLunaのEngineMap実装を統合した。ブラウザ操作と全体compile_allは未確認。
 
+FixedMapモジュールは、将来のGameクラスのMAP_CATALOGと保存manifestをMapBuilderへ渡し、
+game_hexesとinit_hexesへ接続する。Setup→FixedMapのinclude順とクラス固有台帳を強制し、
+cloneとAction再生でも同じ盤面を再構築する仕様テストを追加した。この追加4テストはPR上のCI確認待ち。
+
 ## 未完了
 
 W01の公式各部品台帳、W02のローカル起動、W03のゲーム登録・実際の固定盤面・
