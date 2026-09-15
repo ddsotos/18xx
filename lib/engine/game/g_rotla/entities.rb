@@ -4,13 +4,15 @@ module Engine
   module Game
     module GRotLA
       # Entity identities and financial structure for the four-player Long Game.
-      # Home coordinates are intentionally supplied by the generated map manifest.
+      # The provisional map supplies stable homes; the official catalog may
+      # replace only this coordinate list without changing company identities.
       module Entities
         MINOR_SHARES = [40, 20, 20, 20].freeze
         MAJOR_SHARES = ([20] + Array.new(8, 10)).freeze
         MINOR_TOKENS = [0].freeze
         MAJOR_TOKENS = [0, 0, 60, 80].freeze
         ADAPTIVE_ID = 'ADA'.freeze
+        HOME_COORDINATES = %w[A1 C3 E5 G7 A5 C7 E9 G11 A9 C11 E13].freeze
 
         MINOR_COMPANIES = [
           { sym: 'SPA', name: 'Spacious', ability_id: :spacious, color: '#8bcf7b', text_color: 'black' },
@@ -25,9 +27,9 @@ module Engine
           { sym: 'XPN', name: 'Expansive', ability_id: :expansive, color: '#e94e86' },
           { sym: 'XPR', name: 'Express', ability_id: :express, color: '#b62f43' },
           { sym: 'SUB', name: 'Suburban', ability_id: :suburban, color: '#ef9c91', text_color: 'black' },
-        ].map do |company|
+        ].map.with_index do |company, index|
           company.merge(
-            logo: "rotla/#{company[:sym]}",
+            logo: 'rotla/minor',
             type: 'minor',
             shares: MINOR_SHARES,
             tokens: MINOR_TOKENS,
@@ -35,6 +37,7 @@ module Engine
             max_ownership_percent: 60,
             capitalization: :incremental,
             always_market_price: true,
+            coordinates: company[:sym] == ADAPTIVE_ID ? nil : HOME_COORDINATES[index - (index > 1 ? 1 : 0)],
           ).freeze
         end.freeze
 
@@ -47,7 +50,7 @@ module Engine
           { sym: 'E', name: 'Experiment', color: '#8f4f9f' },
         ].map do |corporation|
           corporation.merge(
-            logo: "rotla/#{corporation[:sym]}",
+            logo: 'rotla/major',
             type: 'major',
             shares: MAJOR_SHARES,
             tokens: MAJOR_TOKENS,
