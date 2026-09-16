@@ -6,71 +6,241 @@ module Engine
   module Game
     module GRotLA
       module Step
-        # Ability-neutral merger core for the playable alpha. A single stable
-        # Choose value identifies both the partner and unused Major.
+        # Runs one Minor merger as a replayable offer/consent/Major-choice flow.
+        # Company abilities may broaden the connection rule later; this step
+        # deliberately implements only the ability-neutral rule.
         class Merge < Engine::Step::Base
+          ACCEPT = 'accept'
+          REJECT = 'reject'
+
+          def round_state
+            {
+              pending_merger: nil,
+              rejected_mergers: [],
+            }
+          end
+
           def description
-            'Merge Minor Companies'
+            case pending_merger&.fetch(:phase, nil)
+            when :consent
+              'Consent to Minor Company Merger'
+            when :choose_major
+              'Choose Major Company'
+            else
+              'Merge Minor Companies'
+            end
           end
 
           def pass_description
             'Skip Merger'
           end
 
+          def active_entities
+            return super unless pending_merger
+
+            first, second = pending_companies
+            case pending_merger[:phase]
+            when :consent
+              [second.owner]
+            when :choose_major
+              [prospective_president(first, second)]
+            else
+              []
+            end
+          end
+
           def actions(entity)
             return [] unless entity == current_entity
 
-            merger_choices(entity).empty? ? ['pass'] : %w[choose pass]
+            return ['choose'] if pending_merger
+
+            merger_partners(entity).empty? ? ['pass'] : %w[choose pass]
+          end
+
+          def choice_name
+            case pending_merger&.fetch(:phase, nil)
+            when :consent
+              'Accept or reject merger'
+            when :choose_major
+              'Choose the new Major Company'
+            else
+              'Choose a Minor Company to merge with'
+            end
           end
 
           def choices
-            merger_choices(current_entity).to_h do |partner, major|
-              key = choice_key(partner, major)
-              [key, "Merge with #{partner.name} as #{major.name}"]
+            case pending_merger&.fetch(:phase, nil)
+            when :consent
+              consent_choices
+            when :choose_major
+              major_choices
+            else
+              merger_partner_choices(current_entity)
             end
           end
 
           def process_choose(action)
-            proposer = action.entity
-            partner_id, major_id = parse_choice(action.choice)
-            partner = @game.corporation_by_id(partner_id)
-            major = @game.corporation_by_id(major_id)
-            unless merger_choices(proposer).include?([partner, major])
-              raise GameError, 'This Minor Company merger is no longer available'
+            case pending_merger&.fetch(:phase, nil)
+            when :consent
+              process_consent(action)
+            when :choose_major
+              process_major_choice(action)
+            else
+              process_offer(action)
             end
-
-            apply_merger!(proposer, partner, major)
-            pass!
           end
 
           def process_pass(action)
+            unless action.entity == current_entity && pending_merger.nil?
+              raise GameError, 'This Minor Company cannot pass now'
+            end
+
             @log << "#{action.entity.name} does not merge"
             pass!
           end
 
           private
 
-          def merger_choices(proposer)
-            return [] unless proposer&.type == :minor && proposer.floated? && !proposer.closed?
+          def pending_merger
+            @round.pending_merger
+          end
 
-            partners = @game.corporations.select do |corporation|
-              corporation != proposer && corporation.type == :minor && corporation.floated? && !corporation.closed?
+          def pending_companies
+            [
+              @game.corporation_by_id(pending_merger[:first]),
+              @game.corporation_by_id(pending_merger[:second]),
+            ]
+          end
+
+          def process_offer(action)
+            proposer = action.entity
+            partner_id = parse_prefixed_choice(action.choice, 'merge')
+            partner = @game.corporation_by_id(partner_id)
+            unless proposer == current_entity && merger_partners(proposer).include?(partner)
+              raise GameError, 'This Minor Company merger is no longer available'
             end
-            majors = @game.corporations.select do |corporation|
+
+            @round.pending_merger = {
+              phase: :consent,
+              first: proposer.id,
+              second: partner.id,
+            }
+            @log << "#{proposer.name} proposes a merger with #{partner.name}"
+
+            return unless proposer.owner == partner.owner
+
+            @log << "#{partner.owner.name} automatically consents as president of both Minor Companies"
+            @round.pending_merger[:phase] = :choose_major
+          end
+
+          def process_consent(action)
+            first, second = validate_pending_companies!(:consent)
+            unless action.entity == second.owner
+              raise GameError, 'Only the partner president may answer this merger offer'
+            end
+
+            case action.choice.to_s
+            when ACCEPT
+              @log << "#{second.owner.name} consents to the merger of #{first.name} and #{second.name}"
+              @round.pending_merger[:phase] = :choose_major
+            when REJECT
+              @log << "#{second.owner.name} rejects the merger of #{first.name} and #{second.name}"
+              @round.rejected_mergers << merger_pair_key(first, second)
+              @round.pending_merger = nil
+              pass!
+            else
+              raise GameError, 'Invalid merger consent choice'
+            end
+          end
+
+          def process_major_choice(action)
+            first, second = validate_pending_companies!(:choose_major)
+            president = prospective_president(first, second)
+            raise GameError, 'Only the new Major president may choose the company' unless action.entity == president
+
+            major_id = parse_prefixed_choice(action.choice, 'major')
+            major = @game.corporation_by_id(major_id)
+            raise GameError, 'This Major Company is no longer available' unless available_majors.include?(major)
+
+            apply_merger!(first, second, major)
+            @round.pending_merged_corporation = major if @game.num_corp_trains(major) > @game.train_limit(major)
+            @round.pending_merger = nil
+            pass!
+          end
+
+          def validate_pending_companies!(phase)
+            unless pending_merger&.fetch(:phase, nil) == phase
+              raise GameError, 'There is no pending merger at this stage'
+            end
+
+            first, second = pending_companies
+            unless mergeable_minor?(first) && mergeable_minor?(second) && @game.rotla_merge_connected?(first, second)
+              raise GameError, 'The pending Minor Company merger is no longer available'
+            end
+
+            [first, second]
+          end
+
+          def merger_partner_choices(proposer)
+            merger_partners(proposer).to_h do |partner|
+              ["merge:#{partner.id}", "Propose merger with #{partner.name}"]
+            end
+          end
+
+          def consent_choices
+            first, second = pending_companies
+            {
+              ACCEPT => "Accept merger of #{first.name} and #{second.name}",
+              REJECT => "Reject merger of #{first.name} and #{second.name}",
+            }
+          end
+
+          def major_choices
+            available_majors.to_h { |major| ["major:#{major.id}", "Form #{major.name}"] }
+          end
+
+          def merger_partners(proposer)
+            return [] unless mergeable_minor?(proposer)
+            return [] if available_majors.empty?
+
+            @game.corporations.select do |corporation|
+              mergeable_minor?(corporation) &&
+                corporation != proposer &&
+                !@round.rejected_mergers.include?(merger_pair_key(proposer, corporation)) &&
+                @game.rotla_merge_connected?(proposer, corporation)
+            end
+          end
+
+          def mergeable_minor?(corporation)
+            corporation&.type == :minor && corporation.floated? && !corporation.closed?
+          end
+
+          def available_majors
+            @game.corporations.select do |corporation|
               corporation.type == :major && !corporation.ipoed && !corporation.closed?
             end
-            partners.product(majors)
           end
 
-          def choice_key(partner, major)
-            "merge:#{partner.id}:#{major.id}"
+          def merger_pair_key(first, second)
+            [first.id, second.id].sort.join(':')
           end
 
-          def parse_choice(choice)
-            prefix, partner_id, major_id = choice.to_s.split(':', 3)
-            raise GameError, 'Invalid merger choice' unless prefix == 'merge' && partner_id && major_id
+          def parse_prefixed_choice(choice, expected_prefix)
+            prefix, corporation_id, extra = choice.to_s.split(':', 3)
+            unless prefix == expected_prefix && corporation_id && !corporation_id.empty? && extra.nil?
+              raise GameError, 'Invalid merger choice'
+            end
 
-            [partner_id, major_id]
+            corporation_id
+          end
+
+          def prospective_president(first, second)
+            holdings = @game.players.to_h do |player|
+              [player, (first.share_holders[player] + second.share_holders[player]) / 2]
+            end
+            maximum = holdings.values.max
+            tied = holdings.select { |_player, percent| percent == maximum }.keys
+            tied.include?(first.owner) ? first.owner : tied.first
           end
 
           def apply_merger!(first, second, major)
@@ -103,7 +273,9 @@ module Engine
               plan[target] += percent
             end
             plan[major] = plan.fetch(major, 0) + (100 - plan.values.sum)
-            raise GameError, 'Merger share conversion is not in ten-percent units' if plan.values.any? { |p| (p % 10).positive? }
+            if plan.values.any? { |percent| (percent % 10).positive? }
+              raise GameError, 'Merger share conversion is not in ten-percent units'
+            end
 
             plan
           end
@@ -153,7 +325,9 @@ module Engine
                   next
                 end
 
-                replacement = major.next_token || Engine::Token.new(major, price: 0).tap { |new_token| major.tokens << new_token }
+                replacement = major.next_token || Engine::Token.new(major, price: 0).tap do |new_token|
+                  major.tokens << new_token
+                end
                 token.swap!(replacement, check_tokenable: false)
                 used_cities[city] = true
               end

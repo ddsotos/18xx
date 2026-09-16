@@ -9,6 +9,7 @@ require_relative 'map'
 require_relative 'meta'
 require_relative 'round/merger'
 require_relative 'setup'
+require_relative 'step/discard_merged_trains'
 require_relative 'step/dividend'
 require_relative 'step/issue_or_redeem'
 require_relative 'step/leadoff_train'
@@ -76,7 +77,18 @@ module Engine
         end
 
         def merger_round
-          Round::Merger.new(self, [Step::Merge])
+          Round::Merger.new(self, [Step::Merge, Step::DiscardMergedTrains])
+        end
+
+        # Merger connectivity is independent of train distance. The normal graph
+        # still enforces token blocking, so a partner hub must be reachable by an
+        # unblocked continuous route from one of the proposer's hubs.
+        def rotla_merge_connected?(first, second)
+          partner_cities = second.tokens.select(&:used).filter_map(&:city)
+          return false if partner_cities.empty?
+
+          connected_nodes = graph_for_entity(first).connected_nodes(first)
+          partner_cities.any? { |city| connected_nodes.key?(city) }
         end
 
         def next_round!

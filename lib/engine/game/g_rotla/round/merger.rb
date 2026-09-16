@@ -7,8 +7,8 @@ module Engine
     module GRotLA
       module Round
         # Ability-neutral merger round used by the playable vertical slice.
-        # Explicit consent and official-map connection checks remain separate
-        # rule refinements; the round and its choices are replay-stable now.
+        # Pending consent, Major selection, and excess-train cleanup remain
+        # blocking states before the round advances to the next Minor.
         class Merger < Engine::Round::Merger
           def self.round_name
             'Merger Round'
