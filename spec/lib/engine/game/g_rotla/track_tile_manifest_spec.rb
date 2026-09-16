@@ -21,13 +21,11 @@ describe Engine::Game::GRotLA::TrackTileManifest do
   it 'assigns a stable unique ID and source group to every illustrated type' do
     expect(tiles.map { |tile| tile[:id] }.uniq.size).to eq(tiles.size)
     expect(tiles.map { |tile| tile[:source_group] }.sort).to eq((1..54).to_a)
-    expect(tiles).to all(
-      satisfy {
-        |tile| tile[:count].positive? &&
-          tile[:source_image].is_a?(Integer) &&
-          tile[:source_top].size == 2
-      },
-    )
+    tiles.each do |tile|
+      expect(tile[:count]).to be_positive
+      expect(tile[:source_image]).to be_a(Integer)
+      expect(tile[:source_top].size).to eq(2)
+    end
   end
 
   it 'matches the five non-upgradable bridge tiles described by the rules' do
