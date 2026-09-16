@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'track_tiles'
+
 module Engine
   module Game
     module GRotLA
@@ -52,7 +54,7 @@ module Engine
           },
         }.freeze
 
-        TILES = {}.freeze
+        TILES = TrackTiles::TILES
         LOCATION_NAMES = {}.freeze
       end
     end

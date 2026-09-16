@@ -52,6 +52,7 @@ module Engine
         MUST_EMERGENCY_ISSUE_BEFORE_EBUY = false
         GAME_END_CHECK = { bankrupt: :immediate }.freeze
         TILE_LAYS = [{ lay: true, upgrade: true, cost: 0 }, { lay: true, upgrade: false, cost: 0 }].freeze
+        TRACK_UPGRADE_COLORS = %i[yellow green purple gray].freeze
 
         def initialize(names, settings: nil, **kwargs)
           settings = JSON.parse(JSON.generate(settings || {}))
@@ -206,8 +207,13 @@ module Engine
           corporation.operated?
         end
 
-        def tile_lays(_entity)
-          []
+        def upgrades_to_correct_color?(from, to, selected_company: nil)
+          return false if from.color == :blue || to.color == :blue
+
+          from_index = TRACK_UPGRADE_COLORS.index(from.color)
+          return super(from, to, selected_company: selected_company) unless from_index
+
+          to.color == TRACK_UPGRADE_COLORS[from_index + 1]
         end
 
         def issuable_shares(entity)

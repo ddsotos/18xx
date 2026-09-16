@@ -55,4 +55,35 @@ describe Engine::Game::GRotLA::Game do
       Engine::Step::BuyTrain,
     )
   end
+
+  it 'enables the printed two-lay track allowance' do
+    expect(game.tile_lays(game.corporations.first)).to eq(described_class::TILE_LAYS)
+  end
+
+  it 'uses the printed yellow, green, purple, gray tile progression' do
+    tiles = %i[yellow green purple gray].map do |color|
+      Engine::Tile.from_code(color.to_s, color, 'path=a:0,b:2')
+    end
+
+    expect(game.upgrades_to_correct_color?(tiles[0], tiles[1])).to be(true)
+    expect(game.upgrades_to_correct_color?(tiles[1], tiles[2])).to be(true)
+    expect(game.upgrades_to_correct_color?(tiles[2], tiles[3])).to be(true)
+    expect(game.upgrades_to_correct_color?(tiles[3], tiles[0])).to be(false)
+  end
+
+  it 'preserves star, Eastern Mining, and Northern Port upgrade families' do
+    tile = lambda do |tile_id|
+      definition = Engine::Game::GRotLA::Map::TILES.fetch(tile_id)
+      Engine::Tile.from_code(tile_id, definition.fetch('color'), definition.fetch('code'))
+    end
+
+    expect(game.upgrades_to?(tile.call('RLA-Y04'), tile.call('RLA-G20'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-G20'), tile.call('RLA-P12'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-P12'), tile.call('RLA-X02'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-G23'), tile.call('RLA-P13'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-P13'), tile.call('RLA-X03'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-G24'), tile.call('RLA-P14'))).to be(true)
+    expect(game.upgrades_to?(tile.call('RLA-Y04'), tile.call('RLA-G13'))).to be(false)
+    expect(game.upgrades_to?(tile.call('RLA-Y02'), tile.call('RLA-G20'))).to be(false)
+  end
 end

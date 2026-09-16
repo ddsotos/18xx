@@ -13,12 +13,14 @@
 - 物理タイル135枚
 - 図柄54種類
 - 色別枚数
-- 各図柄の枚数、都市数を含む大分類、部品図上の位置
+- 各図柄の枚数、hub spot数を含む大分類、部品図上の位置
 - 橋タイル5枚の内訳
+- 全54種類の辺0〜5の接続、収益、hub spot数
+- star、Eastern Mining、Northern Portのアップグレード系列
 
-まだ確定していないものは、各辺と都市・分岐点の接続を表すEngine DSL、特殊記号の
-アップグレード系列、固有背景名である。これらは小さい部品図から推測せず、別の
-ベクトル化確認を終えてから `Map::TILES` へ接続する。
+固有の地名・道路背景と特殊記号の原画は再現していない。ゲーム判定には安定したラベル
+`S`、`EM`、`NP`を使う。線路、収益、hub spot数、アップグレード判定に必要な情報は
+`TrackTiles::TILES`を介して`Map::TILES`へ接続済みである。
 
 ## 2. 読み取り方法
 
@@ -30,6 +32,14 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 `(-1.738, +2.317)` を同じ山としてまとめた。これにより54山・135枚となり、
 目視で隠れた枚数を推定せずに数えられる。Ruby台帳の `source_group`、
 `source_image`、`source_top` はこの再照合用情報である。
+
+辺は印刷タイルの右上を0として時計回りに0〜5とした。yellowの単線3形状を回転した
+テンプレートとしてgreen/purple図柄へ重ね、黒線の一致度で各pathを分解した。
+green 16図柄とpurple 11図柄はいずれも最良のpath集合が次候補より明確に一致した。
+
+部品図の複数の白丸は別都市ではなく、同じ都市のhub spotである。紙面p.13の
+「Cities cannot be created or removed」「They will often gain additional city spots」に従い、
+全city tileをcity 1個とし、白丸の数を`slots`へ設定した。
 
 ## 3. 集計
 
@@ -53,7 +63,7 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 | RLA-Y03 | 7 | city straight | 3 / 319 |
 | RLA-Y04 | 1 | city straight | 4 / 68 |
 | RLA-Y05 | 1 | city straight | 5 / 66 |
-| RLA-Y06 | 1 | city three-way | 6 / 64 |
+| RLA-Y06 | 1 | city sharp curve（star） | 6 / 64 |
 | RLA-Y07 | 13 | straight | 7 / 223 |
 | RLA-Y08 | 6 | sharp curve | 8 / 361 |
 | RLA-Y09 | 5 | city sharp curve | 9 / 379 |
@@ -62,9 +72,9 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 
 | ID | 枚数 | 大分類 | source group / image |
 |---|---:|---|---|
-| RLA-G01 | 4 | three-way junction | 10 / 211 |
-| RLA-G02 | 4 | three-way junction | 11 / 199 |
-| RLA-G03 | 2 | three-way junction | 12 / 193 |
+| RLA-G01 | 4 | two paths | 10 / 211 |
+| RLA-G02 | 4 | two paths | 11 / 199 |
+| RLA-G03 | 2 | two paths | 12 / 193 |
 | RLA-G04 | 1 | two paths | 13 / 48 |
 | RLA-G05 | 1 | two paths | 14 / 38 |
 | RLA-G06 | 1 | two paths | 15 / 36 |
@@ -74,18 +84,18 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 | RLA-G10 | 1 | two paths | 19 / 30 |
 | RLA-G11 | 1 | two paths | 20 / 28 |
 | RLA-G12 | 1 | two paths | 21 / 24 |
-| RLA-G13 | 5 | two-city | 22 / 142 |
-| RLA-G14 | 4 | two-city | 23 / 304 |
-| RLA-G15 | 4 | two-city | 24 / 130 |
+| RLA-G13 | 5 | city / 2 spots | 22 / 142 |
+| RLA-G14 | 4 | city / 2 spots | 23 / 304 |
+| RLA-G15 | 4 | city / 2 spots | 24 / 130 |
 | RLA-G16 | 1 | crossing paths | 25 / 34 |
 | RLA-G17 | 1 | parallel curves | 26 / 26 |
 | RLA-G18 | 1 | crossing paths | 27 / 46 |
 | RLA-G19 | 1 | crossing paths | 28 / 44 |
-| RLA-G20 | 2 | two-city | 32 / 124 |
-| RLA-G21 | 2 | two-city | 33 / 118 |
-| RLA-G22 | 1 | two-city | 34 / 54 |
-| RLA-G23 | 1 | two-city special | 35 / 58 |
-| RLA-G24 | 1 | two-city special | 36 / 56 |
+| RLA-G20 | 2 | city / 2 spots（star） | 32 / 124 |
+| RLA-G21 | 2 | city / 2 spots（star） | 33 / 118 |
+| RLA-G22 | 1 | city / 2 spots（star） | 34 / 54 |
+| RLA-G23 | 1 | city / 2 spots（Eastern Mining） | 35 / 58 |
+| RLA-G24 | 1 | city / 2 spots（Northern Port） | 36 / 56 |
 
 ### Purple
 
@@ -101,19 +111,19 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 | RLA-P08 | 1 | multi-path | 41 / 20 |
 | RLA-P09 | 1 | multi-path | 42 / 14 |
 | RLA-P10 | 1 | multi-path | 43 / 16 |
-| RLA-P11 | 6 | two-city | 44 / 100 |
-| RLA-P12 | 2 | three-city | 46 / 85 |
-| RLA-P13 | 1 | three-city special | 47 / 50 |
-| RLA-P14 | 1 | four-city special | 48 / 52 |
+| RLA-P11 | 6 | city / 2 spots | 44 / 100 |
+| RLA-P12 | 2 | city / 3 spots（star） | 46 / 85 |
+| RLA-P13 | 1 | city / 3 spots（Eastern Mining） | 47 / 50 |
+| RLA-P14 | 1 | city / 4 spots（Northern Port） | 48 / 52 |
 | RLA-P15 | 1 | crossing paths | 49 / 22 |
 
 ### Gray
 
 | ID | 枚数 | 大分類 | source group / image |
 |---|---:|---|---|
-| RLA-X01 | 3 | two-city | 45 / 91 |
-| RLA-X02 | 1 | three-city | 50 / 60 |
-| RLA-X03 | 1 | three-city special | 51 / 62 |
+| RLA-X01 | 3 | city / 2 spots | 45 / 91 |
+| RLA-X02 | 1 | city / 3 spots（star） | 50 / 60 |
+| RLA-X03 | 1 | city / 3 spots（Eastern Mining） | 51 / 62 |
 
 ### Blue（Bridging Company専用）
 
@@ -126,13 +136,15 @@ PDF p.3の内部画像を抽出すると、線路タイル領域には画像配�
 橋の内訳は紙面p.3、p.13の「broad curve 2、straight 2、sharp curve 1」と一致する。
 橋は通常のyellow layの代わりに水上へ置き、アップグレード不可である。
 
-## 5. 次の実装単位
+## 5. 実装状態と次の単位
 
-1. 54種類それぞれについて、辺0〜5、都市、junction、交差非接続をベクトル化する。
-2. 特殊記号を読み取り、同一記号だけにアップグレードできる系列を作る。
-3. revenueとcity slotsを照合する。
-4. `TrackTileManifest::TILES` からEngineの `TILES` 定数を生成する。
-5. 合計枚数、アップグレード保存、橋の配置制限をspecで固定する。
+- `TrackTileManifest`：物理枚数とPDF再照合情報
+- `TrackTiles::PATH_SPECS`：非city tileの独立したpath組
+- `TrackTiles::CITY_SPECS`：収益、slots、exit、特殊系列
+- `TrackTiles::TILES`：Engine DSLへ変換した54種類
+- `Map::TILES`：上記在庫を使用
+- 色進行：yellow→green→purple→gray
 
-物理枚数台帳とルート形状を別段階にしたのは、低解像度の部品図から交差接続や特殊記号を
-推測して、合法手やアップグレードを誤らせないためである。
+次はBridging Companyだけがblue tileを水hexへyellow layの代わりに置ける制限と、
+橋をアップグレードできない制限をTrack Stepへ接続する。特殊記号は同じラベル同士のみを
+通常アップグレード候補にし、Eastern Miningの時計回り/反時計回りの2配置は回転候補で検証する。
