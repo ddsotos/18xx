@@ -15,8 +15,6 @@ module Engine
 
         def initialize(config, catalog:)
           manifest = config.to_h.fetch('map_manifest')
-          raise ArgumentError, 'Capital project effects are not implemented yet' unless manifest['projects'].empty?
-
           valid_catalog = catalog.is_a?(Hash) && catalog.keys.all?(String)
           raise ArgumentError, 'Map catalog must be keyed by physical copy_id strings' unless valid_catalog
 
@@ -28,6 +26,7 @@ module Engine
           @cells = placements.flat_map { |placement| expand(placement, catalog.fetch(placement['copy_id'])) }
           coordinates = EngineMap.coordinates(@cells.map { |cell| cell[:axial] })
           @cells.each { |cell| cell[:coordinate] = coordinates.fetch(cell[:axial]) }
+          apply_projects!(manifest['projects'])
         end
 
         # Return data in Base#game_hexes format, detached on every call.
@@ -69,7 +68,40 @@ module Engine
           end
         end
 
+        def coordinates_by_type(type)
+          type = type.to_s
+          raise ArgumentError, "Unknown RotLA city type: #{type}" unless CITY_TYPES.include?(type)
+
+          @cells.filter_map { |cell| cell[:coordinate] if cell[:city_type] == type }
+        end
+
+        def company_home_coordinates
+          @cells
+            .select { |cell| cell[:city_type] == 'company' }
+            .sort_by { |cell| cell[:copy_id] }
+            .map { |cell| cell[:coordinate] }
+        end
+
         private
+
+        def apply_projects!(projects)
+          selected = []
+          projects.each do |project|
+            unless project['effect_type'] == 'capital'
+              raise ArgumentError, "Unsupported map project effect: #{project['effect_type']}"
+            end
+
+            target = project['target_city_id']
+            raise ArgumentError, 'Capital projects must select different cities' if selected.include?(target)
+
+            cell = @cells.find { |candidate| candidate[:coordinate] == target }
+            valid_target = cell && cell[:city_type] == 'basic' && Engine::Tile.decode(cell[:code]).any?(&:city?)
+            raise ArgumentError, "Capital project target is not a basic city: #{target}" unless valid_target
+
+            cell[:city_type] = 'capital'.freeze
+            selected << target
+          end
+        end
 
         def expand(placement, definition)
           valid_definition = definition.is_a?(Array) && definition.size == 3 && definition.all?(Hash)
@@ -92,6 +124,7 @@ module Engine
             end
 
             {
+              copy_id: placement['copy_id'].dup.freeze,
               axial: axial,
               color: cell['color'].to_sym,
               code: rotate_static_edges(cell['code'], placement['rotation']),

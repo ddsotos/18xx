@@ -90,10 +90,6 @@ module Engine
           end
           id!(@data['map_id'], 'map_id')
           MinorTableau.new(columns: @data['minor_tableau'])
-          unless @data['setup_journal'] == []
-            raise ArgumentError, 'Only finalized fixed maps without a setup journal are supported'
-          end
-
           manifest = @data['map_manifest']
           fields!(manifest, %w[map_id map_version placements projects], 'map_manifest')
           valid_manifest = manifest['map_id'] == @data['map_id'] && manifest['map_version'] == MAP_MANIFEST_VERSION
@@ -101,6 +97,7 @@ module Engine
 
           placements!(manifest['placements'])
           projects!(manifest['projects'])
+          setup_journal!(@data['setup_journal'], manifest)
         end
 
         def placements!(placements)
@@ -134,6 +131,47 @@ module Engine
             raise ArgumentError, 'Duplicate project_copy_id' if ids.include?(project['project_copy_id'])
 
             ids << project['project_copy_id']
+          end
+        end
+
+        def setup_journal!(journal, manifest)
+          raise ArgumentError, 'Map setup journal must be an array' unless journal.is_a?(Array)
+          return if journal.empty?
+
+          placements = []
+          projects = []
+          capital_phase = false
+          journal.each_with_index do |entry, index|
+            raise ArgumentError, 'Map setup journal entries must be objects' unless entry.is_a?(Hash)
+            unless entry['actor_index'] == index % @data['player_count']
+              raise ArgumentError, 'Map setup journal actor is out of turn'
+            end
+
+            case entry['type']
+            when 'place'
+              raise ArgumentError, 'Map tile cannot be placed after a capital project' if capital_phase
+
+              fields!(entry, %w[type actor_index copy_id origin rotation], 'map setup placement')
+              placement = entry.slice('copy_id', 'origin', 'rotation')
+              placements!([placement])
+              placements << placement
+            when 'choose_project_target'
+              capital_phase = true
+              fields!(entry, %w[type actor_index project_copy_id target_city_id], 'capital project choice')
+              id!(entry['project_copy_id'], 'project_copy_id')
+              id!(entry['target_city_id'], 'target_city_id')
+              projects << {
+                'project_copy_id' => entry['project_copy_id'],
+                'target_city_id' => entry['target_city_id'],
+                'effect_type' => 'capital',
+              }
+            else
+              raise ArgumentError, 'Unknown map setup journal action'
+            end
+          end
+
+          unless placements == manifest['placements'] && projects == manifest['projects']
+            raise ArgumentError, 'Map setup journal does not reproduce the finalized manifest'
           end
         end
       end

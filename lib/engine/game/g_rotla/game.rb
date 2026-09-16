@@ -64,6 +64,22 @@ module Engine
           stock_round
         end
 
+        def init_corporations(stock_market)
+          corporations = super
+          home_coordinates = @rotla_map_builder.company_home_coordinates
+          fixed_home_minors = corporations.select do |corporation|
+            corporation.type == :minor && corporation.id != Entities::ADAPTIVE_ID
+          end
+          unless home_coordinates.size == fixed_home_minors.size
+            raise GameError, 'The finalized RotLA map must provide one home for each non-Adaptive Minor Company'
+          end
+
+          fixed_home_minors.zip(home_coordinates) do |corporation, coordinate|
+            corporation.coordinates = coordinate
+          end
+          corporations
+        end
+
         def operating_round(round_num)
           Engine::Round::Operating.new(self, [
             Engine::Step::Bankrupt,
