@@ -8,13 +8,11 @@ module Engine
       # map, so replacing the provisional geometry does not affect round code.
       module Map
         MAP_ID = 'long4-playable-v0'
-        PIECE_ORIGINS = [
-          [0, 0], [2, 0], [4, 0], [6, 0],
-          [0, 2], [2, 2], [4, 2], [6, 2],
-          [0, 4], [2, 4], [4, 4], [6, 4],
-        ].map(&:freeze).freeze
+        PIECE_ORIGINS = 3.times.flat_map do |row|
+          11.times.map { |column| [column * 2, row * 2].freeze }
+        end.freeze
 
-        COMPANY_HOME_COORDINATES = %w[A1 C3 E5 G7 A5 C7 E9 G11 A9 C11 E13].freeze
+        COMPANY_HOME_COUNT = 11
 
         CITY_CODE = 'city=revenue:yellow_20|green_30|purple_40|gray_50,slots:3;' \
                     'path=a:0,b:_0;path=a:1,b:_0;path=a:2,b:_0;' \
@@ -22,7 +20,7 @@ module Engine
 
         MAP_CATALOG = PIECE_ORIGINS.each_index.to_h do |index|
           copy_id = format('long4-%02d', index + 1)
-          first_type = index < COMPANY_HOME_COORDINATES.size ? 'company' : 'basic'
+          first_type = index < COMPANY_HOME_COUNT ? 'company' : 'basic'
           cells = [
             { 'axial' => [0, 0], 'color' => 'yellow', 'code' => CITY_CODE, 'city_type' => first_type },
             { 'axial' => [1, 0], 'color' => 'yellow', 'code' => CITY_CODE, 'city_type' => 'basic' },
@@ -44,7 +42,11 @@ module Engine
             'map_manifest' => {
               'map_id' => MAP_ID,
               'map_version' => 1,
-              'projects' => [],
+              'projects' => [
+                { 'project_copy_id' => 'capital-01', 'target_city_id' => 'B2', 'effect_type' => 'capital' },
+                { 'project_copy_id' => 'capital-02', 'target_city_id' => 'D4', 'effect_type' => 'capital' },
+                { 'project_copy_id' => 'capital-03', 'target_city_id' => 'F6', 'effect_type' => 'capital' },
+              ],
               'placements' => PIECE_ORIGINS.each_with_index.map do |origin, index|
                 { 'copy_id' => format('long4-%02d', index + 1), 'origin' => origin, 'rotation' => 0 }
               end,

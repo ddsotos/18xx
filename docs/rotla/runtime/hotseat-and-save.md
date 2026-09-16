@@ -115,3 +115,13 @@ alpha版では新規Hotseat作成時に4人ロングの既定settingsを自動�
 5. 第6サイクル終了時にGame overと最終資産が表示されることを確認する。
 
 開発用盤面は全都市が印刷済み線路で接続されているため、Trackは自動skipする。
+
+## 8. タイル配置フェイズ試作
+
+`feat/rotla-map-tile-placement`では、RotLAを選んだHotseat作成画面にMap Tile Placementを表示する。
+Player 1〜4が順番に仮3ヘックスタイル33枚を空きslotへ置き、0〜5の回転を選ぶ。その後、
+3枚のCapitalタイルごとに未選択の基本都市を1つ選ぶ。全36手が終わるまでCreateは無効である。
+
+配置結果は`map_manifest`、操作列は`setup_journal`へ保存する。Import時にはjournalの担当席・順序・
+配置・首都対象が完成manifestと一致しなければ開始を拒否する。仮タイルは公式部品図を表現しておらず、
+公式33枚へ差し替えるまで配置ルールと収益・地形の正確性を保証しない。

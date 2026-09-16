@@ -118,11 +118,24 @@ describe Engine::Game::GRotLA::MapBuilder do
     expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /distinct/)
   end
 
-  it 'rejects unresolved project effects instead of dropping them from the map' do
+  it 'applies Capital tile targets to basic-city classification' do
     data['map_manifest']['projects'] << {
-      'project_copy_id' => 'capital', 'target_city_id' => 'city', 'effect_type' => 'capital'
+      'project_copy_id' => 'capital', 'target_city_id' => 'B2', 'effect_type' => 'capital'
     }
-    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /not implemented/)
+    map = described_class.new(config, catalog: catalog)
+
+    expect(map.coordinates_by_type(:basic)).to eq([])
+    expect(map.coordinates_by_type(:capital)).to eq(%w[B2 B4])
+  end
+
+  it 'rejects non-basic, repeated, and unknown Capital tile targets' do
+    data['map_manifest']['projects'] << {
+      'project_copy_id' => 'capital', 'target_city_id' => 'B4', 'effect_type' => 'capital'
+    }
+    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /not a basic city/)
+
+    data['map_manifest']['projects'][0]['target_city_id'] = 'Z99'
+    expect { described_class.new(config, catalog: catalog) }.to raise_error(ArgumentError, /not a basic city/)
   end
 
   it 'requires a three-hex definition and validates all rotation targets before mutation' do

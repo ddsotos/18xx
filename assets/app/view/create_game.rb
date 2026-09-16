@@ -3,6 +3,7 @@
 # backtick_javascript: true
 
 require 'game_manager'
+require 'engine/game/g_rotla/map_setup'
 require 'lib/whats_this'
 require 'view/form'
 
@@ -25,6 +26,8 @@ module View
     needs :optional_rules, default: [], store: true
     needs :is_async, default: nil, store: true
     needs :keywords, default: nil, store: true
+    needs :rotla_setup_journal, default: [], store: true
+    needs :rotla_setup_rotation, default: 0, store: true
 
     # hashmap, game title to min/max player count
     needs :min_p, default: {}, store: false
@@ -37,6 +40,7 @@ module View
     def render_create_button(check_options: true)
       error = check_options &&
               selected_game_or_variant.check_options(@optional_rules, @min_players, @max_players)&.[](:error)
+      error ||= rotla_map_setup_required? && !rotla_map_setup.complete?
       (render_button('Create', { style: { margin: '0.5rem 1rem 1rem 0' }, attrs: { disabled: !!error } }) { submit })
     end
 
@@ -97,6 +101,7 @@ module View
             (1..(@max_players || @max_p[selected_game_or_variant.title])).each do |n|
               inputs << render_input('', id: "player_#{n}", attrs: { value: "Player #{n}" })
             end
+            inputs << render_rotla_map_setup if rotla_map_setup_required?
           end
 
           inputs << render_random_seed
@@ -429,6 +434,7 @@ module View
       return if !selected_game_or_variant && @mode != :json
 
       game_params = params
+      rotla_settings = rotla_map_setup.rotla_settings if rotla_map_setup_required?
 
       if @mode != :json
         title = selected_game_or_variant.title
@@ -458,6 +464,7 @@ module View
         }
         game_data[:settings][:seed] = game_params[:seed] if game_params[:seed]
         game_data[:settings][:use_engine_v2] = game_params[:use_engine_v2] if game_params[:use_engine_v2]
+        game_data[:settings][:rotla] = rotla_settings if rotla_settings
 
       when :json
         begin
@@ -612,6 +619,79 @@ module View
             }
           ),
         ])
+    end
+
+    def rotla_map_setup_required?
+      @mode == :hotseat && selected_game_or_variant&.title == Engine::Game::GRotLA::Meta::GAME_TITLE
+    end
+
+    def rotla_map_setup
+      Engine::Game::GRotLA::MapSetup.new(journal: @rotla_setup_journal || [])
+    end
+
+    def render_rotla_map_setup
+      draft = rotla_map_setup
+      actor = "Player #{draft.current_actor_index + 1}"
+      children = [
+        h(:h3, 'Map Tile Placement'),
+        h(:p, 'Place 33 provisional three-hex map tiles, then choose a city for each of the three Capital tiles.'),
+      ]
+
+      case draft.phase
+      when :map_tiles
+        legal_slots = draft.legal_slot_indices(@rotla_setup_rotation)
+        children << h(:p, "#{actor}: place #{draft.current_copy_id}; rotation #{@rotla_setup_rotation}")
+        rotate_left = render_button('Rotate left') do
+          store(:rotla_setup_rotation, (@rotla_setup_rotation - 1) % 6)
+        end
+        rotate_right = render_button('Rotate right') do
+          store(:rotla_setup_rotation, (@rotla_setup_rotation + 1) % 6)
+        end
+        children << h(:div, { style: { marginBottom: '0.5rem' } }, [rotate_left, rotate_right])
+        rows = Engine::Game::GRotLA::Map::PIECE_ORIGINS.each_slice(4).with_index.map do |origins, row|
+          h(:tr, origins.each_with_index.map do |origin, column|
+            slot_index = (row * 4) + column
+            placement = draft.placements.find { |item| item['origin'] == origin }
+            content = if placement
+                        "#{placement['copy_id']} (r#{placement['rotation']})"
+                      elsif legal_slots.include?(slot_index)
+                        render_button("Place #{slot_index + 1}") do
+                          updated = rotla_map_setup
+                          updated.place!(slot_index: slot_index, rotation: @rotla_setup_rotation)
+                          store(:rotla_setup_journal, updated.journal)
+                        end
+                      else
+                        'Unavailable'
+                      end
+            slot_label = h(:div, "Slot #{slot_index + 1} [#{origin.join(',')}]")
+            h(:td, { style: { border: '1px solid gray', padding: '0.4rem', minWidth: '8rem' } }, [
+              slot_label,
+              h(:div, content),
+            ])
+          end)
+        end
+        children << h(:table, { style: { borderCollapse: 'collapse' } }, [h(:tbody, rows)])
+      when :capital_projects
+        children << h(:p, "#{actor}: place #{draft.current_copy_id} by choosing a basic city")
+        buttons = draft.capital_candidates.map do |coordinate|
+          render_button(coordinate) do
+            updated = rotla_map_setup
+            updated.choose_capital!(target_city_id: coordinate)
+            store(:rotla_setup_journal, updated.journal)
+          end
+        end
+        children << h(:div, buttons)
+      when :complete
+        targets = draft.projects.map { |project| project['target_city_id'] }.join(', ')
+        children << h(:p, "Map setup complete. Capitals: #{targets}")
+      end
+
+      restart = render_button('Restart Map Setup') do
+        store(:rotla_setup_journal, [])
+        store(:rotla_setup_rotation, 0)
+      end
+      children << restart
+      h(:div, { style: { border: '1px solid gray', padding: '0.75rem', margin: '1rem 0' } }, children)
     end
 
     def game_rows_data

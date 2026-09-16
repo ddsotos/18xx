@@ -84,9 +84,20 @@ describe Engine::Game::GRotLA::SetupConfig do
     expect { described_class.new(data) }.to raise_error(ArgumentError, %r{identity/version})
   end
 
-  it 'rejects unfinished setup histories' do
-    data['setup_journal'] = [{ 'type' => 'place' }]
-    expect { described_class.new(data) }.to raise_error(ArgumentError, /finalized fixed maps/)
+  it 'accepts only setup journals that reproduce the finalized manifest' do
+    data['setup_journal'] = [
+      {
+        'type' => 'place', 'actor_index' => 0, 'copy_id' => 'test-1', 'origin' => [0, -1], 'rotation' => 2,
+      },
+      {
+        'type' => 'choose_project_target', 'actor_index' => 1,
+        'project_copy_id' => 'project-1', 'target_city_id' => 'city-1',
+      },
+    ]
+    expect(described_class.new(data).to_h).to eq(data)
+
+    data['setup_journal'][1]['target_city_id'] = 'different-city'
+    expect { described_class.new(data) }.to raise_error(ArgumentError, /does not reproduce/)
   end
 
   it 'rejects an incomplete or duplicate Minor Company tableau' do
