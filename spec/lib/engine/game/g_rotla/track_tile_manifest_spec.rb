@@ -22,11 +22,11 @@ describe Engine::Game::GRotLA::TrackTileManifest do
     expect(tiles.map { |tile| tile[:id] }.uniq.size).to eq(tiles.size)
     expect(tiles.map { |tile| tile[:source_group] }.sort).to eq((1..54).to_a)
     expect(tiles).to all(
-      satisfy do |tile|
-        tile[:count].positive? &&
+      satisfy {
+        |tile| tile[:count].positive? &&
           tile[:source_image].is_a?(Integer) &&
           tile[:source_top].size == 2
-      end
+      },
     )
   end
 
