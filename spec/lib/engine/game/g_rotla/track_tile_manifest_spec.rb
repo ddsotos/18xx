@@ -26,7 +26,7 @@ describe Engine::Game::GRotLA::TrackTileManifest do
         tile[:count].positive? &&
           tile[:source_image].is_a?(Integer) &&
           tile[:source_top].size == 2
-      end,
+      end
     )
   end
 
