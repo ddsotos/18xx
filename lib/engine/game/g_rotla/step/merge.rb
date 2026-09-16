@@ -256,6 +256,7 @@ module Engine
             transfer_assets!(first, major)
             transfer_assets!(second, major)
             transfer_tokens!(first, second, major)
+            @game.rotla_transfer_abilities!([first, second], major)
             close_minor!(first)
             close_minor!(second)
             @game.clear_graph

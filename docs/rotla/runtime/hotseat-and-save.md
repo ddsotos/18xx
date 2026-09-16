@@ -101,12 +101,13 @@ Linux/macOS/Windows WSL2は検証した環境を明記し、未検証OSを対応
 外部ネットワーク遮断後もlocalhostで開始・再開・保存・完走できることを確認する。
 localStorage消去に備え、既存JSON持出し導線が使用できることを操作手順に示す。
 alpha版では新規Hotseat作成時に4人ロングの既定settingsを自動投入する。ゲーム名は
-`Railways of the Lost Atlas`。開発用固定マップ`long4-playable-v0`を使い、固有能力と公式固定盤面は未実装である。
+`Railways of the Lost Atlas`。開発用固定マップ`long4-playable-v0`を使い、公式固定盤面と一部固有能力は未実装である。
+Adaptive、Spacious、Overnight、Expressと、合併時の能力引継ぎは実装済みである。
 合併相手の明示同意、現盤面の通常グラフに基づく合併接続判定、合併直後の列車超過整理、資産移管、
 6サイクル終了は操作できる。
 起動・ブラウザ操作・オフライン動作の実機確認はユーザー環境で行う。
 
-## 7. 能力なしalphaの確認手順
+## 7. alphaの確認手順
 
 1. リポジトリ直下で`make dev_up_b`を実行し、`http://localhost:9292`を開く。
 2. New GameでHotseat、`Railways of the Lost Atlas`、4人を選ぶ。追加設定は不要。

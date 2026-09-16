@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative '../base'
+require_relative 'abilities'
 require_relative 'entities'
 require_relative 'fixed_map'
 require_relative 'game_data'
@@ -24,6 +25,7 @@ module Engine
         include GameData
         include Entities
         include Map
+        include Abilities
 
         MAP_CATALOG = Map::MAP_CATALOG
 
@@ -80,6 +82,71 @@ module Engine
           Round::Merger.new(self, [Step::Merge, Step::DiscardMergedTrains])
         end
 
+        def train_limit(entity)
+          super + (rotla_has_ability?(entity, :spacious) ? 1 : 0)
+        end
+
+        def check_distance(route, visits, train = nil)
+          train ||= route.train
+          visits = rotla_overnight_stops(route.corporation, visits)
+          return super(route, visits, train) unless rotla_express_active?(route.corporation, train)
+          return super(route, visits, train) unless train.distance.is_a?(Numeric)
+
+          express_train = train.dup
+          express_train.distance = train.distance + 1
+          super(route, visits, express_train)
+        end
+
+        def check_connected(route, corporation)
+          return super unless rotla_has_ability?(corporation, :overnight)
+          return if route.ordered_paths.each_cons(2).all? { |first, second| first.connects_to?(second, nil) }
+
+          raise GameError, 'Route is not connected'
+        end
+
+        def check_other(route)
+          super
+          return unless rotla_has_ability?(route.corporation, :overnight)
+
+          paying_stops = rotla_overnight_stops(route.corporation, route.visited_stops)
+          if !route.connection_data.empty? && paying_stops.size < 2 && !route.train.local?
+            raise RouteTooShort, 'Overnight route must have at least 2 non-blocked stops'
+          end
+
+          pass_through_visits = route.connection_data
+            .flat_map { |connection| [connection[:left], connection[:right]] }
+            .compact
+            .select { |stop| rotla_overnight_pass_through?(route.corporation, stop) }
+          return unless pass_through_visits.tally.values.any? { |count| count > 2 }
+
+          raise GameError, 'Overnight route cannot visit the same blocked city more than once'
+        end
+
+        def revenue_stops(route)
+          rotla_overnight_stops(route.corporation, super)
+        end
+
+        def route_distance(route)
+          rotla_overnight_stops(route.corporation, route.visited_stops).sum(&:visit_cost)
+        end
+
+        def graph_for_entity(entity)
+          return rotla_overnight_graph if rotla_has_ability?(entity, :overnight)
+
+          super
+        end
+
+        def token_graph_for_entity(entity)
+          return rotla_overnight_graph if rotla_has_ability?(entity, :overnight)
+
+          super
+        end
+
+        def clear_graph
+          super
+          @rotla_overnight_graph&.clear
+        end
+
         # Merger connectivity is independent of train distance. The normal graph
         # still enforces token blocking, so a partner hub must be reachable by an
         # unblocked continuous route from one of the proposer's hubs.
@@ -87,7 +154,12 @@ module Engine
           partner_cities = second.tokens.select(&:used).filter_map(&:city)
           return false if partner_cities.empty?
 
-          connected_nodes = graph_for_entity(first).connected_nodes(first)
+          graph = if rotla_has_ability?(first, :overnight) || rotla_has_ability?(second, :overnight)
+                    rotla_overnight_graph
+                  else
+                    graph_for_entity(first)
+                  end
+          connected_nodes = graph.connected_nodes(first)
           partner_cities.any? { |city| connected_nodes.key?(city) }
         end
 
@@ -158,9 +230,34 @@ module Engine
 
         def status_array(corporation)
           status = Array(super)
-          ability = Entities::ABILITY_BY_MINOR[corporation.id]
-          status << "Ability pending: #{ability}" if ability
+          abilities = rotla_ability_ids(corporation).map do |ability_id|
+            name = rotla_ability_name(ability_id)
+            rotla_ability_implemented?(ability_id) ? name : "#{name} (pending)"
+          end
+          status << "Abilities: #{abilities.join(', ')}" unless abilities.empty?
           status
+        end
+
+        private
+
+        def rotla_express_active?(corporation, train)
+          rotla_has_ability?(corporation, :express) &&
+            corporation.trains.one? &&
+            corporation.trains.first == train
+        end
+
+        def rotla_overnight_stops(corporation, stops)
+          return stops unless rotla_has_ability?(corporation, :overnight)
+
+          stops.reject { |stop| rotla_overnight_pass_through?(corporation, stop) }
+        end
+
+        def rotla_overnight_pass_through?(corporation, stop)
+          stop.city? && stop.blocks?(corporation)
+        end
+
+        def rotla_overnight_graph
+          @rotla_overnight_graph ||= Engine::Graph.new(self, no_blocking: true)
         end
       end
     end

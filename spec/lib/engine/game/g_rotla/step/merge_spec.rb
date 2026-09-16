@@ -63,6 +63,9 @@ describe Engine::Game::GRotLA::Step::Merge do
     expect(game.players[0].percent_of(major)).to eq(20)
     expect(game.players[1].percent_of(major)).to eq(20)
     expect(major.tokens.count(&:used)).to eq(2)
+    expect(game.rotla_ability_ids(major)).to contain_exactly(:spacious, :tunneling)
+    expect(game.rotla_ability_ids(first)).to be_empty
+    expect(game.rotla_ability_ids(second)).to be_empty
     expect(round.pending_merger).to be_nil
   end
 
